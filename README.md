@@ -92,6 +92,9 @@ go build -o autospec ./cmd/autospec
 
 # Install locally
 sudo mv autospec /usr/local/bin/
+
+# Verify installation
+autospec version
 ```
 
 ##### Legacy Bash Scripts (Deprecated)
@@ -437,39 +440,9 @@ command -v specify git >/dev/null && echo "Required dependencies found"
 
 ## Troubleshooting
 
-### "Command not found: specify"
+### "Command not found: specify" or "Command not found: jq"
 
-You need to install SpecKit first using `uv`:
-```bash
-# Install uv if not already installed
-# See: https://github.com/astral-sh/uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Install SpecKit
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
-
-# Verify installation
-specify --version
-
-# Check all dependencies
-specify check
-```
-
-See installation instructions: https://github.com/github/spec-kit
-
-### "Command not found: jq"
-
-Install jq:
-```bash
-# Ubuntu/Debian
-sudo apt-get install jq
-
-# macOS
-brew install jq
-
-# Arch Linux
-sudo pacman -S jq
-```
+See [PREREQUISITES.md](PREREQUISITES.md) for installation instructions.
 
 ### "Retry limit exhausted"
 
