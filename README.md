@@ -314,6 +314,26 @@ echo '{"timeout": 600}' > .autospec/config.json
 
 When a command exceeds the timeout, it's terminated and returns exit code 5. See [docs/timeout.md](docs/timeout.md) for detailed configuration options.
 
+### Shell Completion
+
+Enable tab completion for faster CLI usage:
+
+```bash
+# Generate zsh completion
+mkdir -p ~/.zsh_completions
+autospec completion zsh > ~/.zsh_completions/_autospec
+
+# Add to ~/.zshrc (before compinit):
+fpath=(~/.zsh_completions $fpath)
+autoload -U compinit
+compinit
+
+# Reload shell
+exec zsh
+```
+
+Supports bash, zsh, fish, and powershell. See [docs/shell-completion.md](docs/shell-completion.md) for detailed setup instructions and troubleshooting.
+
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for detailed configuration options.
 
 ## Troubleshooting
