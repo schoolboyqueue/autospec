@@ -186,6 +186,12 @@ func init() {
 **Goal**: Port bash validation library to Go
 
 #### Tasks:
+- [ ] Implement pre-flight validation:
+  - Check if `specify` CLI is available (system-level)
+  - Verify `.claude/commands/` directory exists in current project
+  - Validate required SpecKit slash commands are present
+  - Do NOT run `specify check` (that's system-level, not project-level)
+- [ ] Implement SpecKit initialization detection
 - [ ] Implement file existence validation
 - [ ] Implement markdown parsing (extract tasks, phases)
 - [ ] Port retry state management (use JSON files in ~/.autospec/state/)
@@ -211,6 +217,7 @@ package validator
 
 import (
     "os"
+    "os/exec"
     "path/filepath"
 )
 
@@ -220,6 +227,43 @@ type SpecValidator struct {
 
 func NewSpecValidator(specsDir string) *SpecValidator {
     return &SpecValidator{specsDir: specsDir}
+}
+
+// PreflightCheck verifies the current project directory is initialized with SpecKit
+func (v *SpecValidator) PreflightCheck() error {
+    // Check if specify CLI is available (system-level check)
+    if _, err := exec.LookPath("specify"); err != nil {
+        return ErrSpecifyNotFound
+    }
+
+    // Check if .claude/commands/ directory exists in current project
+    if _, err := os.Stat(".claude/commands"); os.IsNotExist(err) {
+        return ErrSpecKitNotInitialized
+    }
+
+    // Check if SpecKit slash commands are present
+    requiredCommands := []string{
+        ".claude/commands/speckit.specify.md",
+        ".claude/commands/speckit.plan.md",
+        ".claude/commands/speckit.tasks.md",
+        ".claude/commands/speckit.implement.md",
+    }
+
+    var missingCommands []string
+    for _, cmdFile := range requiredCommands {
+        if _, err := os.Stat(cmdFile); os.IsNotExist(err) {
+            missingCommands = append(missingCommands, cmdFile)
+        }
+    }
+
+    if len(missingCommands) > 0 {
+        return fmt.Errorf("%w: missing commands: %v", ErrSpecKitNotInitialized, missingCommands)
+    }
+
+    // Optionally: Check if specs/ directory exists (will be created on first use)
+    // This is not strictly required, so we don't fail if it's missing
+
+    return nil
 }
 
 func (v *SpecValidator) ValidateSpecExists(specName, fileName string) error {
@@ -362,11 +406,18 @@ func runWorkflow(cmd *cobra.Command, args []string) error {
         return fmt.Errorf("load config: %w", err)
     }
 
-    // Create Claude client
-    client := claude.NewClient(cfg)
-
     // Create validator
     v := validator.NewSpecValidator(cfg.SpecsDir)
+
+    // PRE-FLIGHT CHECK: Verify project is initialized with SpecKit
+    fmt.Println("Pre-flight check: Verifying project setup...")
+    if err := v.PreflightCheck(); err != nil {
+        return fmt.Errorf("pre-flight check failed: %w\n\nPlease run:\n  specify init . --ai claude --force\n  specify check", err)
+    }
+    fmt.Println("✓ Project is ready\n")
+
+    // Create Claude client
+    client := claude.NewClient(cfg)
 
     // Run workflow steps
     fmt.Println("Step 1/3: Creating specification...")
@@ -1132,12 +1183,29 @@ Move-Item autospec\autospec.exe C:\Windows\System32\
 ## Quick Start
 
 ```bash
-# Initialize in your repo
+# 1. Install SpecKit (prerequisite)
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# 2. Initialize SpecKit templates in your repo
 cd my-project
+specify init . --ai claude --force
+specify check  # Verify all required tools are installed
+
+# 3. Initialize autospec (when using Go binary)
 autospec init
 
-# Run full workflow
+# 4. Run full workflow (includes automatic pre-flight check)
 autospec workflow "Add user authentication"
+
+# autospec automatically runs these checks before any command:
+# - Verifies `specify` CLI is available (system-level)
+# - Checks if .claude/commands/ directory exists in current project
+# - Validates SpecKit slash commands are present:
+#   - .claude/commands/speckit.specify.md
+#   - .claude/commands/speckit.plan.md
+#   - .claude/commands/speckit.tasks.md
+#   - .claude/commands/speckit.implement.md
+# - Only proceeds if all checks pass
 
 # Or run individual steps
 autospec specify "Add OAuth support"
@@ -1147,6 +1215,38 @@ autospec implement
 
 # Check status
 autospec status
+```
+
+**Pre-flight Check Output:**
+```
+$ autospec workflow "Add user authentication"
+Pre-flight check: Verifying project setup...
+✓ Project is ready
+
+Step 1/3: Creating specification...
+...
+```
+
+**If project not initialized:**
+```
+$ autospec workflow "Add user authentication"
+Pre-flight check: Verifying project setup...
+Error: pre-flight check failed: SpecKit not initialized - run: specify init . --ai claude --force
+
+Please run:
+  specify init . --ai claude --force
+  specify check
+```
+
+**If SpecKit commands missing:**
+```
+$ autospec workflow "Add user authentication"
+Pre-flight check: Verifying project setup...
+Error: SpecKit not initialized: missing commands:
+  [.claude/commands/speckit.specify.md .claude/commands/speckit.plan.md]
+
+Please run:
+  specify init . --ai claude --force
 ```
 
 ## Configuration
@@ -1237,12 +1337,35 @@ require (
 )
 ```
 
-**Runtime Dependencies**: NONE ✅
+**Runtime Dependencies**: MINIMAL ✅
 
-The binary is completely self-contained. Users don't need:
+The binary is completely self-contained. Users only need:
+- `claude` CLI (for executing Claude Code commands)
+- `specify` CLI (for initializing SpecKit templates - prerequisite setup)
+  - Install: `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`
+  - Repository: https://github.com/github/spec-kit
+
+Users don't need:
 - bash, jq, grep, sed (all logic in Go)
 - git binary (using go-git library)
-- Any external tools except `claude` CLI itself
+- Any other external tools
+
+**Initial Setup Requirement:**
+Before using autospec or SpecKit commands in Claude Code, users must initialize their project:
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install SpecKit
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# Initialize project (creates .claude/commands/speckit.*.md)
+cd your-project
+specify init . --ai claude --force
+
+# Verify all dependencies
+specify check
+```
 
 ### Error Handling
 
@@ -1255,13 +1378,16 @@ package speckit
 import "errors"
 
 var (
-    ErrSpecNotFound      = errors.New("spec directory not found")
-    ErrFileNotFound      = errors.New("expected file not found")
-    ErrRetryExhausted    = errors.New("retry limit exhausted")
-    ErrInvalidArgs       = errors.New("invalid arguments")
-    ErrMissingDeps       = errors.New("missing dependencies")
-    ErrClaudeNotFound    = errors.New("claude command not found")
-    ErrConfigInvalid     = errors.New("configuration invalid")
+    ErrSpecNotFound          = errors.New("spec directory not found")
+    ErrFileNotFound          = errors.New("expected file not found")
+    ErrRetryExhausted        = errors.New("retry limit exhausted")
+    ErrInvalidArgs           = errors.New("invalid arguments")
+    ErrMissingDeps           = errors.New("missing dependencies")
+    ErrClaudeNotFound        = errors.New("claude command not found")
+    ErrConfigInvalid         = errors.New("configuration invalid")
+    ErrSpecifyNotFound       = errors.New("specify command not found - install with: uv tool install specify-cli --from git+https://github.com/github/spec-kit.git")
+    ErrProjectNotReady       = errors.New("project not ready - specify check failed")
+    ErrSpecKitNotInitialized = errors.New("SpecKit not initialized - run: specify init . --ai claude --force")
 )
 ```
 
@@ -1437,7 +1563,12 @@ func GetRepoRoot() (string, error) {
 - [ ] Binary size < 15MB
 - [ ] Startup time < 50ms
 - [ ] Works on Linux, macOS, Windows
-- [ ] No runtime dependencies required
+- [ ] Pre-flight check validates current project directory:
+  - Verifies `.claude/commands/` exists
+  - Checks for required SpecKit slash commands
+  - Does NOT just run `specify check` (system-level only)
+- [ ] Clear error messages when SpecKit not initialized
+- [ ] Minimal runtime dependencies (only `claude` and `specify` CLIs)
 - [ ] Backward compatible with existing configs
 
 ---
@@ -1525,15 +1656,21 @@ func GetRepoRoot() (string, error) {
 
 ### Technical
 - ✅ Binary works on Linux/macOS/Windows
-- ✅ No runtime dependencies
+- ✅ Minimal runtime dependencies (only `claude` and `specify` CLIs)
+- ✅ Pre-flight validation checks current project directory:
+  - Verifies `.claude/commands/` directory exists
+  - Validates SpecKit slash commands are present
+  - Fast file system checks (not running external commands)
 - ✅ All 60+ tests passing
 - ✅ Install time < 30 seconds
 - ✅ Binary size < 15MB
+- ✅ Pre-flight check time < 100ms (file system checks only)
 
 ### User Experience
 - ✅ One-command installation
-- ✅ Works anywhere without configuration
-- ✅ Clear error messages
+- ✅ Automatic project validation before running commands
+- ✅ Clear error messages with actionable instructions
+- ✅ Guided setup when SpecKit not initialized
 - ✅ `--help` provides useful info
 - ✅ Fast execution (< 5s for workflows)
 
@@ -1555,13 +1692,15 @@ This plan transitions Auto Claude SpecKit from a bash-based tool to a **100% pur
 |--------|-------------|------------|
 | **Distribution** | Clone repo, copy scripts | Single binary download |
 | **Installation** | Manual path editing | `go install` or download |
-| **Dependencies** | bash, jq, git, grep, sed | None (pure Go) |
+| **Dependencies** | bash, jq, git, grep, sed | Minimal: `claude`, `specify` CLIs |
 | **Platform Support** | Linux/macOS only | Linux/macOS/Windows |
 | **Maintenance** | Shell scripts | Type-safe Go code |
 | **Testing** | bats framework | Native Go tests |
 | **Claude Command** | Hardcoded custom command | Configurable with template support |
+| **Pre-flight Check** | Manual verification | Automatic project directory validation |
 | **Performance** | ~0.22s validation | <0.1s validation (faster) |
 | **Binary Size** | N/A | ~10-15MB |
+| **Error Messages** | Generic shell errors | Actionable with setup instructions |
 
 ### Pure Go Implementation Confirmed ✅
 

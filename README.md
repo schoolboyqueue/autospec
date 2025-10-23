@@ -19,6 +19,20 @@ Auto Claude SpecKit provides bash scripts and Claude Code hooks that automate th
 
 ### Installation
 
+#### Prerequisites
+
+1. Install SpecKit (required):
+```bash
+# Install SpecKit using uv (only installation method)
+# See: https://github.com/github/spec-kit
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# Verify installation
+specify --version
+```
+
+#### Auto Claude SpecKit Setup
+
 1. Clone this repository:
 ```bash
 git clone https://github.com/yourusername/auto-claude-speckit.git
@@ -45,6 +59,35 @@ sudo pacman -S bats
 # Check prerequisites
 command -v jq git grep sed >/dev/null && echo "All dependencies found"
 ```
+
+### Initial Setup
+
+Before using the SpecKit commands in Claude Code, you must initialize your project with the Specify templates:
+
+```bash
+# Non-interactive initialization (recommended for automation)
+specify init . --ai claude --force
+
+# Interactive initialization (choose AI assistant)
+specify init .
+
+# Check that all required tools are installed
+specify check
+```
+
+**What this does:**
+- Downloads the latest SpecKit templates from GitHub
+- Sets up `.claude/commands/speckit.*.md` slash commands
+- Configures project structure for feature development
+- Initializes git repository (if not already present)
+
+**Options:**
+- `--ai claude` - Skip interactive AI selection, use Claude
+- `--force` - Skip confirmation if directory not empty
+- `--no-git` - Skip git repository initialization
+- `--ignore-agent-tools` - Skip checks for AI agent tools like Claude Code
+
+After initialization, you can use the `/speckit.*` commands in Claude Code.
 
 ### Basic Usage
 
@@ -340,12 +383,42 @@ Required:
 - jq 1.6+
 - git
 - grep, sed (standard Unix tools)
+- `specify` CLI tool (for template initialization)
 
 Optional:
 - bats-core (for running tests)
 - Claude Code CLI (for hook integration)
 
+**Check dependencies:**
+```bash
+# Check if all required tools are installed
+specify check
+
+# Manual check
+command -v specify jq git grep sed >/dev/null && echo "All dependencies found"
+```
+
 ## Troubleshooting
+
+### "Command not found: specify"
+
+You need to install SpecKit first using `uv`:
+```bash
+# Install uv if not already installed
+# See: https://github.com/astral-sh/uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install SpecKit
+uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# Verify installation
+specify --version
+
+# Check all dependencies
+specify check
+```
+
+See installation instructions: https://github.com/github/spec-kit
 
 ### "Command not found: jq"
 
