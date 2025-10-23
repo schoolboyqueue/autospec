@@ -31,6 +31,34 @@ uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
 specify --version
 ```
 
+2. Platform-Specific Requirements:
+
+**All Platforms:**
+- Git must be installed and available in PATH
+- Claude CLI must be installed and configured (for workflow automation)
+
+**Windows:**
+- Git Bash recommended for best compatibility
+- Ensure `git.exe` is in your system PATH
+- PowerShell 5.0+ supported
+
+**macOS:**
+- Xcode Command Line Tools (includes git): `xcode-select --install`
+- Homebrew recommended for installing dependencies
+
+**Linux:**
+- Git package from your distribution's package manager
+- No additional requirements
+
+**Verification:**
+```bash
+# Verify git is accessible
+git --version
+
+# Verify claude is accessible (optional but recommended)
+claude --version
+```
+
 #### Auto Claude SpecKit Setup
 
 ##### Option 1: Install Pre-Built Binary (Recommended)

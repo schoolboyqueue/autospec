@@ -100,18 +100,18 @@
 
 ### Implementation for User Story 2
 
-- [ ] T039 [P] [US2] Ensure all file paths use filepath.Join() in internal/config/config.go
-- [ ] T040 [P] [US2] Ensure all file paths use filepath.Join() in internal/validation/validation.go
-- [ ] T041 [P] [US2] Ensure all file paths use filepath.Join() in internal/retry/retry.go
-- [ ] T042 [P] [US2] Ensure all file paths use filepath.Join() in internal/spec/spec.go
-- [ ] T043 [P] [US2] Ensure all file paths use filepath.Join() in internal/workflow/workflow.go
-- [ ] T044 [US2] Handle home directory expansion (~/) correctly for Windows in internal/config/config.go
-- [ ] T045 [US2] Test path handling on Windows, macOS, Linux for config file locations
-- [ ] T046 [P] [US2] Add integration test for cross-platform config loading in integration/config_test.go
-- [ ] T047 [P] [US2] Add integration test for cross-platform retry state persistence in integration/retry_test.go
-- [ ] T048 [US2] Verify git command execution works on Windows in internal/git/git_test.go
-- [ ] T049 [US2] Test complete workflow on Windows, macOS, Linux platforms
-- [ ] T050 [P] [US2] Document platform-specific requirements in README.md (git must be in PATH)
+- [X] T039 [P] [US2] Ensure all file paths use filepath.Join() in internal/config/config.go
+- [X] T040 [P] [US2] Ensure all file paths use filepath.Join() in internal/validation/validation.go
+- [X] T041 [P] [US2] Ensure all file paths use filepath.Join() in internal/retry/retry.go
+- [X] T042 [P] [US2] Ensure all file paths use filepath.Join() in internal/spec/spec.go
+- [X] T043 [P] [US2] Ensure all file paths use filepath.Join() in internal/workflow/workflow.go
+- [X] T044 [US2] Handle home directory expansion (~/) correctly for Windows in internal/config/config.go
+- [X] T045 [US2] Test path handling on Windows, macOS, Linux for config file locations
+- [X] T046 [P] [US2] Add integration test for cross-platform config loading in integration/config_test.go
+- [X] T047 [P] [US2] Add integration test for cross-platform retry state persistence in integration/retry_test.go
+- [X] T048 [US2] Verify git command execution works on Windows in internal/git/git_test.go
+- [X] T049 [US2] Test complete workflow on Windows, macOS, Linux platforms
+- [X] T050 [P] [US2] Document platform-specific requirements in README.md (git must be in PATH)
 
 **Checkpoint**: User Story 2 complete - tool works identically across all platforms
 
@@ -125,17 +125,17 @@
 
 ### Implementation for User Story 3
 
-- [ ] T051 [P] [US3] Implement directory existence checks in internal/workflow/preflight.go
-- [ ] T052 [P] [US3] Implement CLI dependency checks (claude, specify) in internal/workflow/preflight.go
-- [ ] T053 [US3] Implement git root detection for helpful error messages in internal/workflow/preflight.go
-- [ ] T054 [US3] Generate warning message listing missing directories in internal/workflow/preflight.go
-- [ ] T055 [US3] Add user prompt "Do you want to continue anyway? [y/N]" in internal/workflow/preflight.go
-- [ ] T056 [US3] Implement --skip-preflight flag handling in internal/cli/workflow.go
-- [ ] T057 [US3] Add pre-flight checks to workflow command in internal/cli/workflow.go
-- [ ] T058 [P] [US3] Write unit tests for pre-flight validation in internal/workflow/preflight_test.go (6-8 tests)
-- [ ] T059 [P] [US3] Add benchmark for pre-flight validation in internal/workflow/preflight_test.go (target: <100ms)
-- [ ] T060 [P] [US3] Write testscript test for pre-flight warnings in cmd/autospec/testdata/scripts/preflight.txt
-- [ ] T061 [US3] Test pre-flight check with missing .claude/commands/ and .specify/ directories
+- [X] T051 [P] [US3] Implement directory existence checks in internal/workflow/preflight.go
+- [X] T052 [P] [US3] Implement CLI dependency checks (claude, specify) in internal/workflow/preflight.go
+- [X] T053 [US3] Implement git root detection for helpful error messages in internal/workflow/preflight.go
+- [X] T054 [US3] Generate warning message listing missing directories in internal/workflow/preflight.go
+- [X] T055 [US3] Add user prompt "Do you want to continue anyway? [y/N]" in internal/workflow/preflight.go
+- [X] T056 [US3] Implement --skip-preflight flag handling in internal/cli/workflow.go
+- [X] T057 [US3] Add pre-flight checks to workflow command in internal/cli/workflow.go
+- [X] T058 [P] [US3] Write unit tests for pre-flight validation in internal/workflow/preflight_test.go (6-8 tests)
+- [X] T059 [P] [US3] Add benchmark for pre-flight validation in internal/workflow/preflight_test.go (target: <100ms)
+- [X] T060 [P] [US3] Write testscript test for pre-flight warnings in cmd/autospec/testdata/scripts/preflight.txt
+- [X] T061 [US3] Test pre-flight check with missing .claude/commands/ and .specify/ directories
 
 **Checkpoint**: User Story 3 complete - helpful warnings guide users through setup issues
 
