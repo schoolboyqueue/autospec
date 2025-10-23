@@ -4,7 +4,7 @@ Automated validation and workflow scripts for Claude Code's SpecKit feature deve
 
 ## What is This?
 
-Auto Claude SpecKit provides bash scripts and Claude Code hooks that automate the validation of SpecKit workflows. It ensures your feature specifications, plans, and tasks are complete before allowing Claude to stop, and automatically retries commands when artifacts are missing.
+Auto Claude SpecKit is a cross-platform Go binary and Claude Code hook system that automates the validation of SpecKit workflows. It ensures your feature specifications, plans, and tasks are complete before allowing Claude to stop, and automatically retries commands when artifacts are missing.
 
 ### Key Features
 
@@ -12,8 +12,9 @@ Auto Claude SpecKit provides bash scripts and Claude Code hooks that automate th
 - **Hook-Based Enforcement**: Prevents Claude from stopping until required artifacts exist
 - **Phase Completion Detection**: Validates implementation progress in `tasks.md`
 - **Continuation Prompts**: Automatically generates prompts to resume incomplete work
-- **Performance Optimized**: Sub-second validation times (0.22s average)
-- **Comprehensive Testing**: 60+ tests with bats-core framework
+- **Performance Optimized**: Sub-second validation times (<10ms per validation)
+- **Cross-Platform**: Native binaries for Linux, macOS, and Windows
+- **Comprehensive Testing**: Unit tests, benchmarks, and integration tests in Go
 
 ## Quick Start
 
@@ -28,8 +29,8 @@ Auto Claude SpecKit provides bash scripts and Claude Code hooks that automate th
 - Go 1.21+ (for building from source)
 
 **Optional:**
-- jq (JSON processor)
-- bats-core (for running tests)
+- jq (JSON processor for config manipulation)
+- make (for using Makefile commands)
 
 See [PREREQUISITES.md](PREREQUISITES.md) for detailed installation instructions and platform-specific requirements.
 
@@ -85,28 +86,16 @@ cd auto-claude-speckit
 2. Build the binary:
 ```bash
 # Build for your current platform
-go build -o autospec ./cmd/autospec
+make build
 
-# Or build for all platforms
-./scripts/build-all.sh
+# Or build for all platforms (Linux/macOS/Windows)
+make build-all
 
 # Install locally
-sudo mv autospec /usr/local/bin/
+make install
 
 # Verify installation
 autospec version
-```
-
-##### Legacy Bash Scripts (Deprecated)
-
-The original bash scripts are still available in the `legacy/` directory but are deprecated in favor of the Go binary. They require additional dependencies:
-
-```bash
-# Install bats-core for testing (optional)
-npm install -g bats
-
-# Ensure dependencies are installed
-command -v jq git grep sed >/dev/null && echo "All dependencies found"
 ```
 
 ### Initial Setup
@@ -193,119 +182,7 @@ autospec config show
 
 #### 5. Hook-Based Automatic Validation
 
-Enable hooks to prevent Claude from stopping until artifacts are complete:
-
-```bash
-# 1. Copy settings template
-cp .claude/spec-workflow-settings.json .claude/my-workflow-settings.json
-
-# 2. Edit to add desired hook (e.g., stop-speckit-specify.sh)
-# Replace {{HOOK_SCRIPT}} with: /full/path/to/scripts/hooks/stop-speckit-specify.sh
-
-# 3. Launch Claude with isolated settings
-claude --settings .claude/my-workflow-settings.json
-```
-
-**Available hooks:**
-- `stop-speckit-specify.sh`: Ensures `spec.md` exists before stopping
-- `stop-speckit-plan.sh`: Ensures `plan.md` exists
-- `stop-speckit-tasks.sh`: Ensures `tasks.md` exists
-- `stop-speckit-implement.sh`: Ensures all implementation phases complete
-- `stop-speckit-clarify.sh`: Ensures clarifications are captured
-
-Each hook automatically retries up to 3 times before blocking.
-
-## Architecture
-
-### Core Components
-
-1. **Validation Library** (`scripts/lib/speckit-validation-lib.sh`)
-   - File existence validation
-   - Retry state management
-   - Task counting and phase parsing
-   - Continuation prompt generation
-   - Exit code conventions (0=success, 1=failed, 2=exhausted, 3=invalid, 4=missing deps)
-
-2. **Workflow Script** (`scripts/speckit-workflow-validate.sh`)
-   - Executes complete SpecKit workflow
-   - Validates each command's output
-   - Implements automatic retry logic
-   - Supports dry-run mode
-
-3. **Implementation Validator** (`scripts/speckit-implement-validate.sh`)
-   - Parses `tasks.md` markdown structure
-   - Counts unchecked tasks per phase
-   - Detects phase completion
-   - Generates context-aware continuation prompts
-
-4. **Hook Scripts** (`scripts/hooks/stop-speckit-*.sh`)
-   - Integrates with Claude Code's Stop hooks
-   - Blocks premature stopping
-   - Manages retry state
-   - Provides helpful error messages
-
-### Directory Structure
-
-```
-auto-claude-speckit/
-├── scripts/
-│   ├── lib/
-│   │   └── speckit-validation-lib.sh    # Core validation functions
-│   ├── hooks/
-│   │   ├── stop-speckit-specify.sh      # Specification hook
-│   │   ├── stop-speckit-plan.sh         # Planning hook
-│   │   ├── stop-speckit-tasks.sh        # Task generation hook
-│   │   ├── stop-speckit-implement.sh    # Implementation hook
-│   │   └── stop-speckit-clarify.sh      # Clarification hook
-│   ├── speckit-workflow-validate.sh     # Automated workflow runner
-│   └── speckit-implement-validate.sh    # Implementation validator
-├── tests/
-│   ├── lib/
-│   │   └── validation-lib.bats          # Library unit tests
-│   ├── scripts/
-│   │   ├── workflow-validate.bats       # Workflow tests
-│   │   └── implement-validate.bats      # Implementation tests
-│   ├── hooks/
-│   │   └── stop-speckit-*.bats          # Hook tests
-│   ├── fixtures/                        # Test fixtures
-│   ├── mocks/                           # Mock scripts
-│   ├── test_helper.bash                 # Test utilities
-│   ├── quickstart-validation.bats       # Quickstart examples
-│   ├── integration.bats                 # End-to-end tests
-│   ├── run-all-tests.sh                 # Test runner
-│   └── README.md                        # Testing guide
-├── .claude/
-│   └── spec-workflow-settings.json      # Settings template
-└── README.md
-```
-
-## Testing
-
-### Running Tests
-
-```bash
-# Run all tests
-./tests/run-all-tests.sh
-
-# Run specific test suite
-bats tests/lib/validation-lib.bats
-bats tests/scripts/workflow-validate.bats
-bats tests/hooks/stop-speckit-implement.bats
-
-# Run with verbose output
-bats -t tests/integration.bats
-```
-
-### Test Coverage
-
-- **60+ unit tests** for validation library functions
-- **Workflow tests** for retry logic and command execution
-- **Implementation tests** for phase detection and continuation prompts
-- **Hook tests** for blocking/allowing behavior
-- **Integration tests** for end-to-end workflows
-- **Quickstart validation** to ensure documentation examples work
-
-See `tests/README.md` for detailed testing documentation.
+Enable hooks to prevent Claude from stopping until artifacts are complete. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for details on hook configuration.
 
 ## Use Cases
 
@@ -412,25 +289,44 @@ export AUTOSPEC_SPECS_DIR="./my-specs"
 
 Default: 3 attempts per command
 
-Override in scripts:
+Override via command-line flag:
 ```bash
-./scripts/speckit-workflow-validate.sh --max-retries 5 my-feature
+autospec workflow "feature description" --max-retries 5
 ```
 
-Or set environment variable:
+Or set in config file (`.autospec/config.json`):
+```json
+{
+  "max_retries": 5
+}
+```
+
+Or use environment variable:
 ```bash
-export SPECKIT_MAX_RETRIES=5
-./scripts/speckit-workflow-validate.sh my-feature
+export AUTOSPEC_MAX_RETRIES=5
+autospec workflow "feature description"
 ```
 
 ### Spec Location
 
 Default: `specs/<spec-name>/`
 
-Override:
+Override via command-line flag:
 ```bash
-export SPEC_BASE_DIR="/path/to/my/specs"
-./scripts/speckit-workflow-validate.sh my-feature
+autospec --specs-dir ./features workflow "feature description"
+```
+
+Or set in config file:
+```json
+{
+  "specs_dir": "./features"
+}
+```
+
+Or use environment variable:
+```bash
+export AUTOSPEC_SPECS_DIR="./features"
+autospec workflow "feature description"
 ```
 
 ### Exit Codes
@@ -491,18 +387,21 @@ This is expected behavior when artifacts are incomplete.
 3. Check retry count: hooks stop blocking after 3 attempts
 4. Temporarily disable hook by removing it from settings
 
-### Tests fail with "bats: command not found"
+### Build fails with "Go not found"
 
-Install bats-core following instructions in `tests/README.md`.
+Install Go 1.21+ from https://go.dev/doc/install
+
+Verify installation: `go version`
 
 ## Contributing
 
 Contributions welcome! Please:
 
-1. Run tests before submitting: `./tests/run-all-tests.sh`
-2. Follow shellcheck standards: `shellcheck scripts/**/*.sh`
-3. Add tests for new features
-4. Update documentation
+1. Run tests before submitting: `make test`
+2. Follow Go standards: `make lint`
+3. Add tests for new features (table-driven tests preferred)
+4. Add benchmarks for performance-critical code
+5. Update documentation (README.md and CLAUDE.md)
 
 ## License
 
@@ -513,13 +412,16 @@ MIT License - see LICENSE file for details
 Created as part of the SpecKit Validation Hooks feature for Claude Code.
 
 Built with:
-- Bash scripting
-- bats-core testing framework
-- jq for JSON processing
+- Go 1.21+ (cross-platform binary)
+- Cobra CLI framework
+- Koanf configuration library
 - Claude Code hook system
 
 ## Support
 
-Issues and questions: https://github.com/yourusername/auto-claude-speckit/issues
+Issues and questions: https://github.com/anthropics/auto-claude-speckit/issues
 
-Documentation: See `tests/README.md` for testing guide
+Documentation:
+- See `CLAUDE.md` for development guide
+- See `Makefile` for available commands
+- Run `autospec --help` for CLI usage
