@@ -148,18 +148,34 @@ specify init . --ai claude --force
 
 #### 3. Run Complete Workflow
 
-The simplest way to generate a complete feature specification:
+**Option A: Full workflow (specify → plan → tasks → implement)**
+
+The fastest way to go from idea to implemented feature:
 
 ```bash
-autospec workflow "Add user authentication with OAuth support"
+autospec full "Add user authentication with OAuth support"
 ```
 
 This automatically:
 - Generates `specs/<feature-name>/spec.md` (specification)
 - Creates `specs/<feature-name>/plan.md` (implementation plan)
 - Produces `specs/<feature-name>/tasks.md` (actionable tasks)
+- **Implements all tasks** via `/speckit.implement`
 - Validates each artifact before proceeding
 - Retries up to 3 times if any file is missing
+
+**Option B: Workflow without implementation**
+
+To generate planning artifacts without implementing:
+
+```bash
+autospec workflow "Add user authentication with OAuth support"
+```
+
+Then implement later with:
+```bash
+autospec implement
+```
 
 #### 4. Check Progress and Continue
 
@@ -193,10 +209,21 @@ Enable hooks to prevent Claude from stopping until artifacts are complete. See [
 
 ## Use Cases
 
-### 1. Fully Automated Feature Development
+### 1. End-to-End Automated Feature Development
 
 ```bash
-# Start workflow with automatic validation
+# Run complete workflow from idea to implementation in one command
+autospec full "Add user authentication with OAuth"
+
+# Claude generates spec.md, plan.md, tasks.md and implements everything
+# If any file is missing or tasks incomplete, workflow automatically retries
+# All phases validated before proceeding
+```
+
+### 2. Phased Feature Development
+
+```bash
+# Start workflow with automatic validation (planning only)
 autospec workflow "Add user authentication with OAuth"
 
 # Claude generates spec.md, plan.md, tasks.md with automatic retries
@@ -209,7 +236,7 @@ autospec status
 autospec implement
 ```
 
-### 2. Hook-Enforced Completeness
+### 3. Hook-Enforced Completeness
 
 ```bash
 # Enable implementation hook
@@ -220,7 +247,7 @@ claude --settings .claude/implement-hook-settings.json
 # Provides clear feedback about remaining work
 ```
 
-### 3. CI/CD Integration
+### 4. CI/CD Integration
 
 ```bash
 # Validate feature completion in CI pipeline
@@ -235,7 +262,7 @@ else
 fi
 ```
 
-### 4. Working with Configuration
+### 5. Working with Configuration
 
 ```bash
 # Initialize project configuration

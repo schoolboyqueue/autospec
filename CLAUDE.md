@@ -60,7 +60,10 @@ shellcheck scripts/**/*.sh
 
 ### Using the CLI
 ```bash
-# Run complete workflow: specify → plan → tasks
+# Run complete workflow: specify → plan → tasks → implement
+autospec full "Add user authentication feature"
+
+# Run workflow without implementation: specify → plan → tasks
 autospec workflow "Add user authentication feature"
 
 # Run individual phases
@@ -68,6 +71,9 @@ autospec specify "feature description"
 autospec plan
 autospec tasks
 autospec implement
+
+# Check dependencies
+autospec doctor
 
 # Check status
 autospec status
@@ -87,8 +93,10 @@ Auto Claude SpecKit is a **cross-platform Go binary** that automates SpecKit wor
 
 Cobra-based command structure providing user-facing commands:
 - **root.go**: Root command with global flags (`--config`, `--specs-dir`, `--debug`, etc.)
-- **workflow.go**: Orchestrates complete specify → plan → tasks workflow
+- **full.go**: Orchestrates complete specify → plan → tasks → implement workflow
+- **workflow.go**: Orchestrates specify → plan → tasks workflow (no implementation)
 - **specify.go, plan.go, tasks.go, implement.go**: Individual phase commands
+- **doctor.go**: Health check command for dependencies
 - **status.go**: Reports current spec progress
 - **config.go**: Configuration management commands
 - **init.go**: Initializes configuration files
@@ -98,6 +106,9 @@ Cobra-based command structure providing user-facing commands:
 
 Manages the complete SpecKit workflow lifecycle:
 - **workflow.go**: `WorkflowOrchestrator` executes multi-phase workflows with validation
+  - `RunFullWorkflow()`: Complete workflow including implementation (specify → plan → tasks → implement)
+  - `RunCompleteWorkflow()`: Planning workflow only (specify → plan → tasks)
+  - `ExecuteImplement()`: Implementation phase only
 - **executor.go**: `Executor` handles phase execution with retry logic
 - **claude.go**: `ClaudeExecutor` interfaces with Claude CLI or API
 - **preflight.go**: Pre-flight checks for dependencies (claude, specify CLIs)
@@ -157,8 +168,10 @@ Git repository helpers:
 
 ### Workflow Execution Flow
 
+**Full Workflow (specify → plan → tasks → implement):**
+
 ```
-WorkflowOrchestrator.RunCompleteWorkflow()
+WorkflowOrchestrator.RunFullWorkflow()
   ↓
   Pre-flight checks (if not skipped)
   ↓
@@ -175,6 +188,25 @@ WorkflowOrchestrator.RunCompleteWorkflow()
   Phase 3: Tasks
     → Executor.ExecutePhase(PhaseTasks, "/speckit.tasks", ValidateTasks)
     → Validates tasks.md exists
+  ↓
+  Phase 4: Implement
+    → Executor.ExecutePhase(PhaseImplement, "/speckit.implement", ValidateTasksComplete)
+    → Validates all tasks are checked
+```
+
+**Planning Workflow (specify → plan → tasks):**
+
+```
+WorkflowOrchestrator.RunCompleteWorkflow()
+  ↓
+  Pre-flight checks (if not skipped)
+  ↓
+  Phase 1: Specify
+  ↓
+  Phase 2: Plan
+  ↓
+  Phase 3: Tasks
+  (stops before implementation)
 ```
 
 ### Phase Execution with Retry
