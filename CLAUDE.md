@@ -129,7 +129,7 @@ Key settings:
 - `max_retries`: Maximum retry attempts (default: 3)
 - `specs_dir`: Directory for feature specs (default: "./specs")
 - `state_dir`: Retry state storage (default: "~/.autospec/state")
-- `timeout`: Command execution timeout in seconds (default: 0 = no timeout, valid range: 0 or 1-3600)
+- `timeout`: Command execution timeout in seconds (default: 0 = no timeout, valid range: 0 or 1-604800 (7 days))
 
 **Timeout Behavior**:
 - `0` or missing: No timeout (infinite wait) - backward compatible default

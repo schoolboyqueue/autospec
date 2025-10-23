@@ -247,10 +247,11 @@ func TestLoad_TimeoutValidRange(t *testing.T) {
 	}{
 		{"minimum valid", 1, true},
 		{"mid-range valid", 300, true},
-		{"maximum valid", 3600, true},
+		{"maximum valid (1 hour)", 3600, true},
+		{"7 days (maximum)", 604800, true},
 		{"zero (no timeout)", 0, true},
 		{"below minimum", -5, false},
-		{"above maximum", 3601, false},
+		{"above maximum", 604801, false},
 	}
 
 	for _, tt := range tests {
