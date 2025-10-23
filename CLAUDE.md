@@ -421,3 +421,10 @@ If needed, legacy bash scripts are still available:
 - `~/.autospec/state/retry.json`: Retry state
 - `specs/*/`: Feature specifications
 - `Makefile`: Common development commands
+
+## Active Technologies
+- Go 1.25.1 (003-command-timeout)
+- File system (JSON config files in ~/.autospec/config.json and .autospec/config.json, state in ~/.autospec/state/retry.json) (003-command-timeout)
+
+## Recent Changes
+- 003-command-timeout: Added Go 1.25.1
