@@ -20,10 +20,11 @@ RESET_RETRY=false
 
 show_help() {
     cat <<EOF
-Usage: $0 <spec-name> [options]
+Usage: $0 [spec-name] [options]
 
 Arguments:
-  spec-name             Name of the spec (e.g., "my-feature" or "002-my-feature")
+  spec-name             Name of the spec (optional, auto-detected from git branch)
+                        (e.g., "my-feature" or "002-my-feature")
 
 Options:
   --retry-limit N       Maximum retry attempts (default: 2)
@@ -38,14 +39,17 @@ Environment Variables:
   SPECKIT_DEBUG         Enable verbose logging
 
 Examples:
-  # Validate implementation completion
+  # Validate implementation completion (auto-detect spec)
+  $0
+
+  # Validate specific spec
   $0 my-feature
 
   # Output as JSON for programmatic use
   $0 002-my-feature --json
 
   # Generate continuation prompt
-  $0 my-feature --continuation
+  $0 --continuation
 
 Exit Codes:
   0 - All phases complete
@@ -99,11 +103,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Validate required arguments
+# Auto-detect spec if not provided
 if [ -z "$SPEC_NAME" ]; then
-    log_error "Spec name required"
-    show_help
-    exit "$EXIT_INVALID_ARGS"
+    log_debug "No spec provided, attempting auto-detection..."
+    DETECTED_SPEC=$(detect_current_spec)
+    if [ -n "$DETECTED_SPEC" ]; then
+        log_info "Detected active spec: $DETECTED_SPEC"
+        SPEC_NAME="$DETECTED_SPEC"
+    else
+        log_error "Could not auto-detect spec. Please provide spec name or ensure you're on a feature branch."
+        show_help
+        exit "$EXIT_INVALID_ARGS"
+    fi
 fi
 
 # Check dependencies
@@ -121,6 +132,9 @@ if [ -z "$SPEC_DIR" ]; then
     log_error "Looked in: $SPECKIT_SPECS_DIR"
     exit "$EXIT_MISSING_DEPS"
 fi
+
+log_debug "Using spec: $SPEC_NAME"
+log_debug "Spec directory: $SPEC_DIR"
 
 TASKS_FILE="$SPEC_DIR/tasks.md"
 
