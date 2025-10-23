@@ -48,40 +48,51 @@ require (
 	// ============================================================================
 	// TEST-ONLY INDIRECT DEPENDENCIES (NOT in binary - only used by testify)
 	// ============================================================================
-	github.com/davecgh/go-spew v1.1.1       // indirect - Deep pretty printer (100K source, 0 KB in binary)
-	github.com/pmezard/go-difflib v1.0.0    // indirect - Diff library (36K source, 0 KB in binary)
-	github.com/rogpeppe/go-internal v1.14.1 // indirect - Go utilities (252K source, 0 KB in binary)
-
-	// YAML parser - pulled in by testify/assert/yaml even though we don't use YAML assertions.
-	// We only use assert.Equal, assert.NoError, etc. but testify bundles all assertion types.
-	gopkg.in/yaml.v3 v3.0.1 // indirect - YAML parser (364K source, 0 KB in binary)
+	github.com/davecgh/go-spew v1.1.1 // indirect; indirect - Deep pretty printer (100K source, 0 KB in binary)
 
 	// ============================================================================
 	// PRODUCTION INDIRECT DEPENDENCIES (included in binary)
 	// ============================================================================
 
 	// Configuration and file system utilities
-	github.com/fsnotify/fsnotify v1.9.0        // indirect - Cross-platform file system notifications (232K)
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect - Decode generic maps into structs (152K)
-	github.com/knadh/koanf/maps v0.1.2         // indirect - Map manipulation utilities (included in koanf)
+	github.com/fsnotify/fsnotify v1.9.0 // indirect; indirect - Cross-platform file system notifications (232K)
 
 	// Validation support libraries
-	github.com/gabriel-vasile/mimetype v1.4.10            // indirect - MIME type detection (236K)
-	github.com/go-playground/locales v0.14.1              // indirect - Locale/translation support (84K)
-	github.com/go-playground/universal-translator v0.18.1 // indirect - i18n translator (84K)
-	github.com/leodido/go-urn v1.4.0                      // indirect - URN parser
+	github.com/gabriel-vasile/mimetype v1.4.10 // indirect; indirect - MIME type detection (236K)
+	github.com/go-playground/locales v0.14.1 // indirect; indirect - Locale/translation support (84K)
+	github.com/go-playground/universal-translator v0.18.1 // indirect; indirect - i18n translator (84K)
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect; indirect - Decode generic maps into structs (152K)
 
 	// CLI framework dependencies
-	github.com/inconshreveable/mousetrap v1.1.0 // indirect - Windows console handling (28K)
-	github.com/spf13/pflag v1.0.9               // indirect - POSIX/GNU-style flags (312K)
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect; indirect - Windows console handling (28K)
+	github.com/knadh/koanf/maps v0.1.2 // indirect; indirect - Map manipulation utilities (included in koanf)
+	github.com/leodido/go-urn v1.4.0 // indirect; indirect - URN parser
 
 	// Reflection and struct utilities
-	github.com/mitchellh/copystructure v1.2.0 // indirect - Deep copying of Go structures (32K)
-	github.com/mitchellh/reflectwalk v1.0.2   // indirect - Reflection-based struct walking (36K)
+	github.com/mitchellh/copystructure v1.2.0 // indirect; indirect - Deep copying of Go structures (32K)
+	github.com/mitchellh/reflectwalk v1.0.2 // indirect; indirect - Reflection-based struct walking (36K)
+	github.com/pmezard/go-difflib v1.0.0 // indirect; indirect - Diff library (36K source, 0 KB in binary)
+	github.com/rogpeppe/go-internal v1.14.1 // indirect - Go utilities (252K source, 0 KB in binary)
+	github.com/spf13/pflag v1.0.9 // indirect; indirect - POSIX/GNU-style flags (312K)
 
 	// Go standard library extensions
-	golang.org/x/crypto v0.42.0 // indirect - Cryptographic functions (156K)
-	golang.org/x/sys v0.36.0    // indirect - Low-level OS primitives (9.0M) ⚠️ LARGEST DEPENDENCY
-	golang.org/x/text v0.29.0   // indirect - Text processing/encoding (428K)
-	golang.org/x/tools v0.36.0  // indirect - Go tools and packages (32K vendored subset)
+	golang.org/x/crypto v0.42.0 // indirect; indirect - Cryptographic functions (156K)
+	golang.org/x/sys v0.37.0 // indirect; indirect - Low-level OS primitives (9.0M) ⚠️ LARGEST DEPENDENCY
+	golang.org/x/text v0.29.0 // indirect; indirect - Text processing/encoding (428K)
+	golang.org/x/tools v0.36.0 // indirect; indirect - Go tools and packages (32K vendored subset)
+
+	// YAML parser - pulled in by testify/assert/yaml even though we don't use YAML assertions.
+	// We only use assert.Equal, assert.NoError, etc. but testify bundles all assertion types.
+	gopkg.in/yaml.v3 v3.0.1 // indirect; indirect - YAML parser (364K source, 0 KB in binary)
+)
+
+require (
+	github.com/briandowns/spinner v1.23.2
+	golang.org/x/term v0.35.0
+)
+
+require (
+	github.com/fatih/color v1.7.0 // indirect
+	github.com/mattn/go-colorable v0.1.2 // indirect
+	github.com/mattn/go-isatty v0.0.8 // indirect
 )

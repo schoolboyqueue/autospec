@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/anthropics/auto-claude-speckit/internal/config"
+	"github.com/anthropics/auto-claude-speckit/internal/progress"
 	"github.com/anthropics/auto-claude-speckit/internal/spec"
 )
 
@@ -26,11 +27,20 @@ func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
 		Timeout:         cfg.Timeout,
 	}
 
+	// Detect terminal capabilities and create progress display
+	caps := progress.DetectTerminalCapabilities()
+	var progressDisplay *progress.ProgressDisplay
+	if caps.IsTTY {
+		progressDisplay = progress.NewProgressDisplay(caps)
+	}
+
 	executor := &Executor{
-		Claude:     claude,
-		StateDir:   cfg.StateDir,
-		SpecsDir:   cfg.SpecsDir,
-		MaxRetries: cfg.MaxRetries,
+		Claude:          claude,
+		StateDir:        cfg.StateDir,
+		SpecsDir:        cfg.SpecsDir,
+		MaxRetries:      cfg.MaxRetries,
+		ProgressDisplay: progressDisplay,
+		TotalPhases:     3, // Default to 3 phases (specify, plan, tasks)
 	}
 
 	return &WorkflowOrchestrator{
@@ -92,6 +102,9 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 
 // RunFullWorkflow executes the complete specify → plan → tasks → implement workflow
 func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume bool) error {
+	// Set total phases for full workflow
+	w.Executor.TotalPhases = 4
+
 	// Run pre-flight checks
 	if ShouldRunPreflightChecks(w.SkipPreflight) {
 		if err := w.runPreflightChecks(); err != nil {

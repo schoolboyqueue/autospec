@@ -3,16 +3,19 @@ package workflow
 import (
 	"fmt"
 
+	"github.com/anthropics/auto-claude-speckit/internal/progress"
 	"github.com/anthropics/auto-claude-speckit/internal/retry"
 	"github.com/anthropics/auto-claude-speckit/internal/validation"
 )
 
 // Executor handles command execution with retry logic
 type Executor struct {
-	Claude     *ClaudeExecutor
-	StateDir   string
-	SpecsDir   string
-	MaxRetries int
+	Claude          *ClaudeExecutor
+	StateDir        string
+	SpecsDir        string
+	MaxRetries      int
+	ProgressDisplay *progress.ProgressDisplay // Optional progress display
+	TotalPhases     int                       // Total phases in workflow
 }
 
 // Phase represents a workflow phase (specify, plan, tasks, implement)
@@ -24,6 +27,34 @@ const (
 	PhaseTasks     Phase = "tasks"
 	PhaseImplement Phase = "implement"
 )
+
+// getPhaseNumber returns the sequential number for a phase (1-based)
+func (e *Executor) getPhaseNumber(phase Phase) int {
+	switch phase {
+	case PhaseSpecify:
+		return 1
+	case PhasePlan:
+		return 2
+	case PhaseTasks:
+		return 3
+	case PhaseImplement:
+		return 4
+	default:
+		return 0
+	}
+}
+
+// buildPhaseInfo constructs a PhaseInfo from Phase enum and retry state
+func (e *Executor) buildPhaseInfo(phase Phase, retryCount int) progress.PhaseInfo {
+	return progress.PhaseInfo{
+		Name:        string(phase),
+		Number:      e.getPhaseNumber(phase),
+		TotalPhases: e.TotalPhases,
+		Status:      progress.PhaseInProgress,
+		RetryCount:  retryCount,
+		MaxRetries:  e.MaxRetries,
+	}
+}
 
 // PhaseResult represents the result of executing a workflow phase
 type PhaseResult struct {
@@ -47,9 +78,23 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 		return result, fmt.Errorf("failed to load retry state: %w", err)
 	}
 
+	// Build phase info and start progress display
+	phaseInfo := e.buildPhaseInfo(phase, retryState.Count)
+	if e.ProgressDisplay != nil {
+		if err := e.ProgressDisplay.StartPhase(phaseInfo); err != nil {
+			// Log warning but don't fail execution
+			fmt.Printf("Warning: progress display error: %v\n", err)
+		}
+	}
+
 	// Execute command
 	if err := e.Claude.Execute(command); err != nil {
 		result.Error = fmt.Errorf("command execution failed: %w", err)
+
+		// Show failure in progress display
+		if e.ProgressDisplay != nil {
+			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
+		}
 
 		// Increment retry count
 		if incrementErr := retryState.Increment(); incrementErr != nil {
@@ -80,6 +125,11 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 	if err := validateFunc(specDir); err != nil {
 		result.Error = fmt.Errorf("validation failed: %w", err)
 
+		// Show failure in progress display
+		if e.ProgressDisplay != nil {
+			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
+		}
+
 		// Increment retry count
 		if incrementErr := retryState.Increment(); incrementErr != nil {
 			if exhaustedErr, ok := incrementErr.(*retry.RetryExhaustedError); ok {
@@ -96,7 +146,16 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 		return result, result.Error
 	}
 
-	// Success! Reset retry count
+	// Success! Show completion in progress display
+	if e.ProgressDisplay != nil {
+		phaseInfo.Status = progress.PhaseCompleted
+		if err := e.ProgressDisplay.CompletePhase(phaseInfo); err != nil {
+			// Log warning but don't fail execution
+			fmt.Printf("Warning: progress display error: %v\n", err)
+		}
+	}
+
+	// Reset retry count
 	if err := retry.ResetRetryCount(e.StateDir, specName, string(phase)); err != nil {
 		// Log error but don't fail - reset is not critical
 		fmt.Printf("Warning: failed to reset retry count: %v\n", err)
