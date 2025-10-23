@@ -14,8 +14,8 @@ import (
 // TestCrossPlatformConfigLoading tests configuration loading on all platforms
 func TestCrossPlatformConfigLoading(t *testing.T) {
 	tests := map[string]struct {
-		configContent string
-		envVars       map[string]string
+		configContent  string
+		envVars        map[string]string
 		wantMaxRetries int
 		wantSpecsDir   string
 	}{

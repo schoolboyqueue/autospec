@@ -10,9 +10,9 @@ import (
 
 // WorkflowOrchestrator manages the complete specify → plan → tasks workflow
 type WorkflowOrchestrator struct {
-	Executor  *Executor
-	Config    *config.Configuration
-	SpecsDir  string
+	Executor      *Executor
+	Config        *config.Configuration
+	SpecsDir      string
 	SkipPreflight bool
 }
 

@@ -12,12 +12,12 @@ import (
 
 func TestLoadRetryState(t *testing.T) {
 	tests := map[string]struct {
-		setupStore    func(t *testing.T, stateDir string)
-		specName      string
-		phase         string
-		maxRetries    int
-		wantCount     int
-		wantCanRetry  bool
+		setupStore   func(t *testing.T, stateDir string)
+		specName     string
+		phase        string
+		maxRetries   int
+		wantCount    int
+		wantCanRetry bool
 	}{
 		"new state when file doesn't exist": {
 			setupStore:   func(t *testing.T, stateDir string) {},
@@ -263,11 +263,11 @@ func TestRetryState_Reset(t *testing.T) {
 
 func TestIncrementRetryCount(t *testing.T) {
 	tests := map[string]struct {
-		initialState  *RetryState
-		maxRetries    int
-		wantCount     int
-		wantErr       bool
-		wantCanRetry  bool
+		initialState *RetryState
+		maxRetries   int
+		wantCount    int
+		wantErr      bool
+		wantCanRetry bool
 	}{
 		"increment new state": {
 			initialState: nil,

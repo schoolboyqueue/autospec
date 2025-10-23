@@ -7,7 +7,7 @@ import (
 )
 
 func TestValidateSpecFile(t *testing.T) {
-	tests := map[string]struct{
+	tests := map[string]struct {
 		setup   func(t *testing.T) string
 		wantErr bool
 	}{

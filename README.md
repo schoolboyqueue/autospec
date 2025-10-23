@@ -129,7 +129,14 @@ After initialization, you can use the `/speckit.*` commands in Claude Code.
 
 ### Basic Usage
 
-#### 1. First-Time Setup
+#### 1. Verify Dependencies
+
+```bash
+# Check that all required dependencies are installed
+autospec doctor
+```
+
+#### 2. First-Time Setup
 
 ```bash
 # Create project configuration
@@ -139,7 +146,7 @@ autospec init
 specify init . --ai claude --force
 ```
 
-#### 2. Run Complete Workflow
+#### 3. Run Complete Workflow
 
 The simplest way to generate a complete feature specification:
 
@@ -154,7 +161,7 @@ This automatically:
 - Validates each artifact before proceeding
 - Retries up to 3 times if any file is missing
 
-#### 3. Check Progress and Continue
+#### 4. Check Progress and Continue
 
 ```bash
 # Check current implementation status
@@ -164,7 +171,7 @@ autospec status
 autospec implement
 ```
 
-#### 4. Advanced Options
+#### 5. Advanced Options
 
 ```bash
 # Custom retry limit
@@ -180,7 +187,7 @@ autospec --debug workflow "feature"
 autospec config show
 ```
 
-#### 5. Hook-Based Automatic Validation
+#### 6. Hook-Based Automatic Validation
 
 Enable hooks to prevent Claude from stopping until artifacts are complete. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for details on hook configuration.
 
@@ -269,65 +276,33 @@ See [CONTRIBUTORS.md](CONTRIBUTORS.md) for detailed configuration options.
 
 ## Troubleshooting
 
-### "Command not found: specify" or "Command not found: jq"
+**First step: Check your dependencies**
 
-See [PREREQUISITES.md](PREREQUISITES.md) for installation instructions.
+```bash
+autospec doctor
+```
 
-### "Retry limit exhausted"
+This will verify that Claude CLI, Specify CLI, and Git are installed and available.
 
-The script attempted to validate 3 times but the required file was never created.
+**Common issues:**
 
-**Solutions:**
-1. Check Claude's output for errors
-2. Verify the spec directory exists
-3. Manually create the missing file
-4. Increase retry limit: `--max-retries 5`
+- **"Command not found: specify"** - Install SpecKit CLI: `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git`
+- **"Command not found: claude"** - Install Claude Code from https://claude.com/product/claude-code
+- **"Retry limit exhausted"** - Increase retries: `autospec workflow "feature" --max-retries 5`
+- **Build fails** - Install Go 1.21+: https://go.dev/doc/install
 
-### "Hook blocks Claude from stopping"
-
-This is expected behavior when artifacts are incomplete.
-
-**Solutions:**
-1. Review the hook's error message for specific issues
-2. Complete the required artifacts manually
-3. Check retry count: hooks stop blocking after 3 attempts
-4. Temporarily disable hook by removing it from settings
-
-### Build fails with "Go not found"
-
-Install Go 1.21+ from https://go.dev/doc/install
-
-Verify installation: `go version`
+See [PREREQUISITES.md](PREREQUISITES.md) for detailed installation instructions.
 
 ## Contributing
 
-Contributions welcome! Please:
-
-1. Run tests before submitting: `make test`
-2. Follow Go standards: `make lint`
-3. Add tests for new features (table-driven tests preferred)
-4. Add benchmarks for performance-critical code
-5. Update documentation (README.md and CLAUDE.md)
+Contributions welcome! See [CONTRIBUTORS.md](CONTRIBUTORS.md) for development guidelines.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Credits
+---
 
-Created as part of the SpecKit Validation Hooks feature for Claude Code.
+**Documentation:** Run `autospec --help` for CLI usage
 
-Built with:
-- Go 1.21+ (cross-platform binary)
-- Cobra CLI framework
-- Koanf configuration library
-- Claude Code hook system
-
-## Support
-
-Issues and questions: https://github.com/anthropics/auto-claude-speckit/issues
-
-Documentation:
-- See `CLAUDE.md` for development guide
-- See `Makefile` for available commands
-- Run `autospec --help` for CLI usage
+**Issues:** https://github.com/anthropics/auto-claude-speckit/issues

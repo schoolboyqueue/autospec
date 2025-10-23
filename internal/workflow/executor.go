@@ -9,9 +9,9 @@ import (
 
 // Executor handles command execution with retry logic
 type Executor struct {
-	Claude    *ClaudeExecutor
-	StateDir  string
-	SpecsDir  string
+	Claude     *ClaudeExecutor
+	StateDir   string
+	SpecsDir   string
 	MaxRetries int
 }
 

@@ -131,7 +131,7 @@ func TestClaudeExecutor_StreamCommand(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				// Verify output was captured
-				assert.NotEmpty(t, stdout.String() + stderr.String())
+				assert.NotEmpty(t, stdout.String()+stderr.String())
 			}
 		})
 	}

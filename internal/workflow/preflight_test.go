@@ -11,10 +11,10 @@ import (
 // TestRunPreflightChecks tests the pre-flight validation logic
 func TestRunPreflightChecks(t *testing.T) {
 	tests := map[string]struct {
-		setupFunc     func() func()
-		wantPassed    bool
-		wantMissing   int
-		wantFailed    int
+		setupFunc   func() func()
+		wantPassed  bool
+		wantMissing int
+		wantFailed  int
 	}{
 		"all checks pass": {
 			setupFunc: func() func() {
