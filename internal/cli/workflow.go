@@ -2,7 +2,6 @@ package cli
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/anthropics/auto-claude-speckit/internal/config"
 	"github.com/anthropics/auto-claude-speckit/internal/workflow"
