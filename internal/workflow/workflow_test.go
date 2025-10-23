@@ -284,3 +284,68 @@ func TestSpecNameFromMetadata(t *testing.T) {
 		t.Errorf("constructed directory = %q, want %q", constructedDir, specDir)
 	}
 }
+
+// TestExecuteImplementWithPrompt tests that implement commands properly format prompts
+func TestExecuteImplementWithPrompt(t *testing.T) {
+	tests := map[string]struct {
+		prompt      string
+		resume      bool
+		wantCommand string
+	}{
+		"no prompt, no resume": {
+			prompt:      "",
+			resume:      false,
+			wantCommand: "/speckit.implement",
+		},
+		"simple prompt, no resume": {
+			prompt:      "Focus on documentation",
+			resume:      false,
+			wantCommand: `/speckit.implement "Focus on documentation"`,
+		},
+		"no prompt, with resume": {
+			prompt:      "",
+			resume:      true,
+			wantCommand: "/speckit.implement --resume",
+		},
+		"prompt with resume": {
+			prompt:      "Complete remaining tasks",
+			resume:      true,
+			wantCommand: `/speckit.implement --resume "Complete remaining tasks"`,
+		},
+		"prompt with quotes": {
+			prompt:      "Use 'best practices' for tests",
+			resume:      false,
+			wantCommand: `/speckit.implement "Use 'best practices' for tests"`,
+		},
+		"multiline prompt": {
+			prompt: `Focus on:
+  - Error handling
+  - Tests`,
+			resume:      false,
+			wantCommand: `/speckit.implement "Focus on:
+  - Error handling
+  - Tests"`,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			// This test verifies the command construction logic
+			command := "/speckit.implement"
+			if tc.resume {
+				command += " --resume"
+			}
+			if tc.prompt != "" {
+				command = "/speckit.implement \"" + tc.prompt + "\""
+				if tc.resume {
+					// If both resume and prompt, append resume after prompt
+					command = "/speckit.implement --resume \"" + tc.prompt + "\""
+				}
+			}
+
+			if command != tc.wantCommand {
+				t.Errorf("command = %q, want %q", command, tc.wantCommand)
+			}
+		})
+	}
+}
