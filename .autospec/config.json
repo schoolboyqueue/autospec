@@ -1,14 +1,8 @@
 {
   "claude_cmd": "claude",
-  "claude_args": [
-    "-p",
-    "--dangerously-skip-permissions",
-    "--verbose",
-    "--output-format",
-    "stream-json"
-  ],
+  "claude_args": [],
   "use_api_key": false,
-  "custom_claude_cmd": "",
+  "custom_claude_cmd": "ANTHROPIC_API_KEY=\"\" claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | claude-clean",
   "specify_cmd": "specify",
   "max_retries": 3,
   "specs_dir": "./specs",
