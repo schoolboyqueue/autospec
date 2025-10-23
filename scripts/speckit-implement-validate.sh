@@ -11,7 +11,6 @@ source "$SCRIPT_DIR/lib/speckit-validation-lib.sh"
 # Configuration
 RETRY_LIMIT="${SPECKIT_RETRY_LIMIT:-2}"
 DRY_RUN="${SPECKIT_DRY_RUN:-false}"
-VERBOSE="${SPECKIT_DEBUG:-false}"
 OUTPUT_JSON=false
 OUTPUT_CONTINUATION=false
 RESET_RETRY=false
@@ -175,6 +174,101 @@ fi
 log_debug "Found spec directory: $SPEC_DIR"
 log_debug "Tasks file: $TASKS_FILE"
 
+# Get spec title from tasks.md if available
+SPEC_TITLE=$(basename "$SPEC_DIR")
+if [ -f "$TASKS_FILE" ]; then
+    # Try to extract title from first heading
+    EXTRACTED_TITLE=$(head -5 "$TASKS_FILE" | grep '^# ' | sed 's/^# //' | head -1)
+    if [ -n "$EXTRACTED_TITLE" ]; then
+        SPEC_TITLE="$EXTRACTED_TITLE"
+    fi
+fi
+
+# ------------------------------------------------------------------------------
+# Helper Functions
+# ------------------------------------------------------------------------------
+
+# Run /speckit.implement with validation and retry logic
+run_implement_with_validation() {
+    local spec_name="$1"
+    local spec_title="$2"
+    local tasks_file="$3"
+
+    log_debug "Running /speckit.implement for: $spec_title"
+    log_debug "Tasks file: $tasks_file"
+
+    # Dry run mode - check early to avoid retry limit checks
+    if [ "$DRY_RUN" = "true" ]; then
+        local total_unchecked
+        total_unchecked=$(count_unchecked_tasks "$tasks_file")
+        echo "[DRY RUN] Would execute: /speckit.implement"
+        echo "[DRY RUN] Current tasks remaining: $total_unchecked"
+        echo "[DRY RUN] Would validate: all tasks checked in $tasks_file"
+        return "$EXIT_SUCCESS"
+    fi
+
+    # IDEMPOTENCY CHECK: Skip if all tasks already complete
+    local total_unchecked
+    total_unchecked=$(count_unchecked_tasks "$tasks_file")
+
+    if [ "$total_unchecked" -eq 0 ]; then
+        log_info "✓ All tasks already complete, skipping execution"
+        reset_retry_count "$spec_name" "implement"
+        return "$EXIT_SUCCESS"
+    fi
+
+    # Get current retry count
+    local retry_count
+    retry_count=$(get_retry_count "$spec_name" "implement")
+
+    # Check if retry limit exceeded
+    if [ "$retry_count" -ge "$RETRY_LIMIT" ]; then
+        log_error "Retry limit ($RETRY_LIMIT) exceeded for implementation"
+        log_error "Cannot proceed with implementation"
+        return "$EXIT_RETRY_EXHAUSTED"
+    fi
+
+    # Execute Claude command
+    log_info "Executing /speckit.implement for '$spec_title'..."
+    log_info "Tasks remaining: $total_unchecked"
+
+    if ! ANTHROPIC_API_KEY="" claude -p "/speckit.implement" \
+        --dangerously-skip-permissions \
+        --verbose \
+        --output-format stream-json | claude-clean; then
+        log_error "Claude command failed: /speckit.implement"
+        return "$EXIT_VALIDATION_FAILED"
+    fi
+
+    # Re-count unchecked tasks after execution
+    total_unchecked=$(count_unchecked_tasks "$tasks_file")
+
+    log_debug "Tasks remaining after execution: $total_unchecked"
+
+    # Validate all tasks are complete
+    if [ "$total_unchecked" -eq 0 ]; then
+        log_info "✓ Implementation complete: all tasks checked"
+        reset_retry_count "$spec_name" "implement"
+        return "$EXIT_SUCCESS"
+    else
+        log_error "✗ Implementation incomplete: $total_unchecked tasks remaining (attempt $((retry_count + 1))/$RETRY_LIMIT)"
+
+        # Increment retry counter
+        local new_count
+        new_count=$(increment_retry_count "$spec_name" "implement")
+
+        if [ "$new_count" -ge "$RETRY_LIMIT" ]; then
+            log_error "Retry limit reached. Aborting implementation."
+            return "$EXIT_RETRY_EXHAUSTED"
+        fi
+
+        log_info "Retrying /speckit.implement..."
+        # Recursive retry
+        run_implement_with_validation "$spec_name" "$spec_title" "$tasks_file"
+        return $?
+    fi
+}
+
 # ------------------------------------------------------------------------------
 # Retry State Management
 # ------------------------------------------------------------------------------
@@ -192,7 +286,43 @@ log_debug "Current retry count: $RETRY_COUNT"
 log_debug "Retry limit: $RETRY_LIMIT"
 
 # ------------------------------------------------------------------------------
-# Phase Analysis
+# Main Execution
+# ------------------------------------------------------------------------------
+
+# Determine mode: execution or validation-only
+VALIDATION_ONLY=false
+if [ "$OUTPUT_JSON" = "true" ] || [ "$OUTPUT_CONTINUATION" = "true" ]; then
+    VALIDATION_ONLY=true
+fi
+
+if [ "$VALIDATION_ONLY" = "false" ]; then
+    # EXECUTION MODE: Run /speckit.implement with validation and retry
+    log_info "Running /speckit.implement with validation..."
+    log_info "Spec: $(basename "$SPEC_DIR")"
+    log_info "Retry limit: $RETRY_LIMIT"
+    echo ""
+
+    # Reset retry count for fresh execution (manual invocation)
+    # Retries are tracked within a single execution session, not across manual runs
+    reset_retry_count "$SPEC_NAME" "implement"
+
+    if ! run_implement_with_validation "$SPEC_NAME" "$SPEC_TITLE" "$TASKS_FILE"; then
+        EXIT_CODE=$?
+        if [ "$EXIT_CODE" -eq "$EXIT_RETRY_EXHAUSTED" ]; then
+            log_error "Implementation failed after $RETRY_LIMIT attempts"
+            log_error "Remaining tasks must be completed manually"
+        fi
+        exit "$EXIT_CODE"
+    fi
+
+    # Success
+    log_info "✓ Implementation completed successfully!"
+    exit "$EXIT_SUCCESS"
+fi
+
+# ------------------------------------------------------------------------------
+# VALIDATION-ONLY MODE
+# Phase Analysis and Reporting
 # ------------------------------------------------------------------------------
 
 # Get all incomplete phases
