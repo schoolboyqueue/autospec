@@ -189,8 +189,14 @@ func init() {
 - [ ] Implement pre-flight validation:
   - Check if `specify` CLI is available (system-level)
   - Verify `.claude/commands/` directory exists in current project
-  - Validate required SpecKit slash commands are present
+  - Verify `.specify/` directory exists in current project
   - Do NOT run `specify check` (that's system-level, not project-level)
+  - If directories missing:
+    - Detect git root directory
+    - Display warning with missing directories
+    - Show recommended `specify init .` command
+    - Prompt user: "Do you want to continue anyway? [y/N]"
+    - Allow user to proceed or cancel
 - [ ] Implement SpecKit initialization detection
 - [ ] Implement file existence validation
 - [ ] Implement markdown parsing (extract tasks, phases)
@@ -422,11 +428,19 @@ import (
     "github.com/yourusername/autospec/internal/validator"
 )
 
+var (
+    skipPreflight bool
+)
+
 var workflowCmd = &cobra.Command{
     Use:   "workflow <feature-description>",
     Short: "Run complete SpecKit workflow with validation",
     Args:  cobra.MinimumNArgs(1),
     RunE:  runWorkflow,
+}
+
+func init() {
+    workflowCmd.Flags().BoolVar(&skipPreflight, "skip-preflight", false, "Skip pre-flight validation checks")
 }
 
 func runWorkflow(cmd *cobra.Command, args []string) error {
@@ -441,17 +455,21 @@ func runWorkflow(cmd *cobra.Command, args []string) error {
     // Create validator
     v := validator.NewSpecValidator(cfg.SpecsDir)
 
-    // PRE-FLIGHT CHECK: Verify project is initialized with SpecKit
-    fmt.Println("Pre-flight check: Verifying project setup...")
-    continueExec, err := v.PreflightCheck()
-    if err != nil {
-        return fmt.Errorf("pre-flight check failed: %w", err)
+    // PRE-FLIGHT CHECK: Verify project is initialized with SpecKit (unless skipped)
+    if !skipPreflight {
+        fmt.Println("Pre-flight check: Verifying project setup...")
+        continueExec, err := v.PreflightCheck()
+        if err != nil {
+            return fmt.Errorf("pre-flight check failed: %w", err)
+        }
+        if !continueExec {
+            fmt.Println("\nOperation cancelled by user.")
+            return nil // User chose not to continue
+        }
+        fmt.Println("✓ Project is ready\n")
+    } else {
+        fmt.Println("⚠️  Skipping pre-flight check (--skip-preflight)\n")
     }
-    if !continueExec {
-        fmt.Println("\nOperation cancelled by user.")
-        return nil // User chose not to continue
-    }
-    fmt.Println("✓ Project is ready\n")
 
     // Create Claude client
     client := claude.NewClient(cfg)
@@ -1263,6 +1281,13 @@ Step 1/3: Creating specification...
 ...
 ```
 
+**Skip pre-flight check (for CI/CD or advanced users):**
+```
+$ autospec workflow "Add user authentication" --skip-preflight
+Step 1/3: Creating specification...
+...
+```
+
 **If project not initialized (with prompt):**
 ```
 $ autospec workflow "Add user authentication"
@@ -1315,6 +1340,34 @@ Step 1/3: Creating specification...
 ...
 ```
 
+## Pre-flight Check Philosophy
+
+The pre-flight check is designed to be **helpful but not obstructive**:
+
+1. **Checks performed** (< 100ms):
+   - `.claude/commands/` directory exists
+   - `.specify/` directory exists
+   - `specify` CLI is available in PATH
+
+2. **If directories are missing**:
+   - Warns user with clear message
+   - Shows git root directory for accurate setup instructions
+   - Lists missing directories
+   - Prompts: "Do you want to continue anyway? [y/N]"
+   - Default is **N** (safe option)
+
+3. **When to skip** (`--skip-preflight`):
+   - CI/CD pipelines where directories are guaranteed to exist
+   - Advanced users who know what they're doing
+   - Testing/development environments
+   - When you've already verified the setup manually
+
+4. **Why we check directories, not run `specify check`**:
+   - `specify check` validates **system-level** dependencies (commands in PATH)
+   - We need to validate the **current project directory** has SpecKit initialized
+   - File system checks are much faster (< 100ms vs potentially seconds)
+   - More accurate detection of `specify init .` being run in this project
+
 ## Configuration
 
 ### Simple Configuration (Most Users)
@@ -1355,13 +1408,23 @@ The `{{PROMPT}}` placeholder will be replaced with the actual prompt. The custom
 
 - `autospec init` - Initialize in current repo
 - `autospec workflow <feature>` - Run complete workflow
+  - `--skip-preflight` - Skip pre-flight validation checks
 - `autospec specify <feature>` - Create specification
+  - `--skip-preflight` - Skip pre-flight validation checks
 - `autospec plan` - Create implementation plan
+  - `--skip-preflight` - Skip pre-flight validation checks
 - `autospec tasks` - Generate tasks
+  - `--skip-preflight` - Skip pre-flight validation checks
 - `autospec implement` - Run implementation
+  - `--skip-preflight` - Skip pre-flight validation checks
 - `autospec status` - Check implementation status
 - `autospec config` - Show configuration
 - `autospec version` - Show version
+
+**Global Flags:**
+- `--skip-preflight` - Skip pre-flight checks (for CI/CD or advanced users)
+- `--help` - Show help for any command
+- `--version` - Show version information
 
 ## Development
 
@@ -1631,9 +1694,13 @@ func GetRepoRoot() (string, error) {
 - [ ] Works on Linux, macOS, Windows
 - [ ] Pre-flight check validates current project directory:
   - Verifies `.claude/commands/` exists
-  - Checks for required SpecKit slash commands
-  - Does NOT just run `specify check` (system-level only)
-- [ ] Clear error messages when SpecKit not initialized
+  - Verifies `.specify/` exists
+  - Detects git root for helpful error messages
+  - Prompts user with Y/n when directories missing
+  - Allows user to continue or cancel
+  - Does NOT run `specify check` (that's system-level only)
+- [ ] Clear, actionable warning messages when SpecKit not initialized
+- [ ] User-friendly prompts with default to safe option (N)
 - [ ] Minimal runtime dependencies (only `claude` and `specify` CLIs)
 - [ ] Backward compatible with existing configs
 
@@ -1725,7 +1792,8 @@ func GetRepoRoot() (string, error) {
 - ✅ Minimal runtime dependencies (only `claude` and `specify` CLIs)
 - ✅ Pre-flight validation checks current project directory:
   - Verifies `.claude/commands/` directory exists
-  - Validates SpecKit slash commands are present
+  - Verifies `.specify/` directory exists
+  - Detects git root for accurate setup instructions
   - Fast file system checks (not running external commands)
 - ✅ All 60+ tests passing
 - ✅ Install time < 30 seconds
@@ -1735,8 +1803,13 @@ func GetRepoRoot() (string, error) {
 ### User Experience
 - ✅ One-command installation
 - ✅ Automatic project validation before running commands
-- ✅ Clear error messages with actionable instructions
-- ✅ Guided setup when SpecKit not initialized
+- ✅ Clear warnings with actionable instructions
+- ✅ User-friendly prompts when SpecKit not initialized:
+  - Shows missing directories (.claude/commands/, .specify/)
+  - Displays git root path for proper setup
+  - Prompts "Do you want to continue anyway? [y/N]"
+  - Safe default (N) prevents accidental execution
+  - Allows experienced users to proceed if needed
 - ✅ `--help` provides useful info
 - ✅ Fast execution (< 5s for workflows)
 
