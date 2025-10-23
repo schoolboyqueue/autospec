@@ -77,11 +77,11 @@
   - [X] bug_report.md
   - [X] feature_request.md
   - [X] config.yml
-- [ ] Add pull request template (`.github/PULL_REQUEST_TEMPLATE.md`)
-- [ ] Add GitHub Actions workflows (`.github/workflows/`)
-  - [ ] ci.yml - Run tests and linting on every PR
-  - [ ] release.yml - Automated releases with goreleaser
-  - [ ] docs.yml - Deploy docs to GitHub Pages
+- [X] Add pull request template (`.github/PULL_REQUEST_TEMPLATE.md`)
+- [X] Add GitHub Actions workflows (`.github/workflows/`)
+  - [X] ci.yml - Run tests and linting on every PR
+  - [X] release.yml - Automated releases with goreleaser
+  - [X] docs.yml - Deploy docs to GitHub Pages
 
 ### Community & Governance
 - [ ] Add CHANGELOG.md for version tracking
@@ -108,11 +108,11 @@
 - [ ] Add installation scripts
   - [ ] install.sh for Unix-like systems (curl | sh installer)
   - [ ] install.ps1 for Windows (PowerShell installer)
-- [ ] Add `.goreleaser.yml` for automated releases
-  - [ ] Multi-platform builds
-  - [ ] GitHub releases with binaries
+- [X] Add `.goreleaser.yml` for automated releases
+  - [X] Multi-platform builds
+  - [X] GitHub releases with binaries
   - [ ] Homebrew tap integration
-  - [ ] Checksums and signatures
+  - [X] Checksums and signatures
 - [ ] Add badges to README.md
   - [ ] CI status badge
   - [ ] Go Report Card

@@ -1,0 +1,66 @@
+# Jekyll configuration for GitHub Pages
+title: Auto Claude SpecKit
+description: Automated SpecKit workflow validation for Claude Code
+theme: jekyll-theme-cayman
+baseurl: "/auto-claude-speckit"
+url: "https://anthropics.github.io"
+
+# Build settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Collections
+collections:
+  docs:
+    output: true
+    permalink: /:collection/:path/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "docs"
+    values:
+      layout: "default"
+
+# Navigation
+navigation:
+  - title: Home
+    url: /
+  - title: Overview
+    url: /overview
+  - title: Quickstart
+    url: /quickstart
+  - title: Reference
+    url: /reference
+  - title: Architecture
+    url: /architecture
+  - title: Timeout Configuration
+    url: /timeout
+  - title: Shell Completion
+    url: /shell-completion
+  - title: Troubleshooting
+    url: /troubleshooting
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+
+# Include
+include:
+  - _config.yml
+
+# GitHub settings
+github:
+  repository_url: https://github.com/anthropics/auto-claude-speckit
+  is_project_page: true
+
+# Show edit links
+show_downloads: false
+github_username: anthropics
