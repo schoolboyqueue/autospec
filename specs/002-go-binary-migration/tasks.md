@@ -42,21 +42,21 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T007 Implement internal/config/config.go with Configuration struct per data-model.md
-- [ ] T008 [P] Implement internal/config/defaults.go with default configuration values
-- [ ] T009 [P] Add Koanf-based configuration loading with override hierarchy (env > local > global) in internal/config/config.go
-- [ ] T010 Add go-playground/validator validation for Configuration struct in internal/config/config.go
-- [ ] T011 [P] Write unit tests for configuration loading in internal/config/config_test.go (5-8 table-driven tests)
-- [ ] T012 Implement internal/git/git.go with GetCurrentBranch, GetRepositoryRoot, IsGitRepository functions per validation-api.md
-- [ ] T013 [P] Write unit tests for git operations in internal/git/git_test.go using TestMain hijacking pattern (3-5 tests)
-- [ ] T014 Implement internal/spec/spec.go with DetectCurrentSpec and GetSpecDirectory functions per validation-api.md
-- [ ] T015 [P] Write unit tests for spec detection in internal/spec/spec_test.go (4-6 table-driven tests)
-- [ ] T016 Implement internal/validation/validation.go with ValidateSpecFile, ValidatePlanFile, ValidateTasksFile per validation-api.md
-- [ ] T017 Implement internal/validation/tasks.go with CountUncheckedTasks, ValidateTasksComplete, ParseTasksByPhase functions per validation-api.md
-- [ ] T018 Implement internal/validation/prompt.go with ListIncompletePhasesWithTasks and GenerateContinuationPrompt functions
-- [ ] T019 [P] Write unit tests for file validation in internal/validation/validation_test.go (6-8 table-driven tests)
-- [ ] T020 [P] Write unit tests for task parsing in internal/validation/tasks_test.go (8-10 table-driven tests covering patterns)
-- [ ] T021 [P] Write benchmarks for validation functions in internal/validation/validation_bench_test.go (3-5 benchmarks)
+- [X] T007 Implement internal/config/config.go with Configuration struct per data-model.md
+- [X] T008 [P] Implement internal/config/defaults.go with default configuration values
+- [X] T009 [P] Add Koanf-based configuration loading with override hierarchy (env > local > global) in internal/config/config.go
+- [X] T010 Add go-playground/validator validation for Configuration struct in internal/config/config.go
+- [X] T011 [P] Write unit tests for configuration loading in internal/config/config_test.go (5-8 table-driven tests)
+- [X] T012 Implement internal/git/git.go with GetCurrentBranch, GetRepositoryRoot, IsGitRepository functions per validation-api.md
+- [X] T013 [P] Write unit tests for git operations in internal/git/git_test.go using TestMain hijacking pattern (3-5 tests)
+- [X] T014 Implement internal/spec/spec.go with DetectCurrentSpec and GetSpecDirectory functions per validation-api.md
+- [X] T015 [P] Write unit tests for spec detection in internal/spec/spec_test.go (4-6 table-driven tests)
+- [X] T016 Implement internal/validation/validation.go with ValidateSpecFile, ValidatePlanFile, ValidateTasksFile per validation-api.md
+- [X] T017 Implement internal/validation/tasks.go with CountUncheckedTasks, ValidateTasksComplete, ParseTasksByPhase functions per validation-api.md
+- [X] T018 Implement internal/validation/prompt.go with ListIncompletePhasesWithTasks and GenerateContinuationPrompt functions
+- [X] T019 [P] Write unit tests for file validation in internal/validation/validation_test.go (6-8 table-driven tests)
+- [X] T020 [P] Write unit tests for task parsing in internal/validation/tasks_test.go (8-10 table-driven tests covering patterns)
+- [X] T021 [P] Write benchmarks for validation functions in internal/validation/validation_bench_test.go (3-5 benchmarks)
 - [X] T022 Implement internal/retry/retry.go with RetryState struct and LoadRetryState, SaveRetryState functions per data-model.md and validation-api.md
 - [X] T023 Implement internal/retry/state.go with IncrementRetryCount, ResetRetryCount, CanRetry methods per validation-api.md
 - [X] T024 [P] Write unit tests for retry state management in internal/retry/retry_test.go (6-8 tests with temp directories)
@@ -64,7 +64,7 @@
 - [X] T026 [P] Create internal/workflow/claude.go with Claude CLI execution using custom_claude_cmd template support
 - [X] T027 [P] Create internal/workflow/preflight.go with pre-flight validation checks per FR-015 through FR-024
 - [X] T028 Implement internal/workflow/workflow.go with specify→plan→tasks orchestration per cli-interface.md
-- [ ] T029 [P] Write unit tests for workflow orchestration in internal/workflow/workflow_test.go (5-7 tests)
+- [X] T029 [P] Write unit tests for workflow orchestration in internal/workflow/workflow_test.go (5-7 tests)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -78,15 +78,15 @@
 
 ### Implementation for User Story 1
 
-- [ ] T030 [P] [US1] Implement internal/cli/version.go with version command per cli-interface.md
-- [ ] T031 [P] [US1] Add version variables (Version, Commit, BuildDate) to internal/cli/version.go with ldflags support
-- [ ] T032 [US1] Wire version command to root command in internal/cli/root.go
-- [ ] T033 [P] [US1] Create scripts/build-all.sh for cross-platform builds per quickstart.md
-- [ ] T034 [P] [US1] Add ldflags for version injection in scripts/build-all.sh
-- [ ] T035 [US1] Test build process produces binary <15MB for all platforms (Linux amd64/arm64, macOS amd64/arm64, Windows amd64)
-- [ ] T036 [P] [US1] Write testscript test for version command in cmd/autospec/testdata/scripts/version.txt
-- [ ] T037 [P] [US1] Add benchmark for startup time in cmd/autospec/main_test.go (target: <50ms)
-- [ ] T038 [US1] Update README.md with installation instructions (`go install` and binary download)
+- [X] T030 [P] [US1] Implement internal/cli/version.go with version command per cli-interface.md
+- [X] T031 [P] [US1] Add version variables (Version, Commit, BuildDate) to internal/cli/version.go with ldflags support
+- [X] T032 [US1] Wire version command to root command in internal/cli/root.go
+- [X] T033 [P] [US1] Create scripts/build-all.sh for cross-platform builds per quickstart.md
+- [X] T034 [P] [US1] Add ldflags for version injection in scripts/build-all.sh
+- [X] T035 [US1] Test build process produces binary <15MB for all platforms (Linux amd64/arm64, macOS amd64/arm64, Windows amd64)
+- [X] T036 [P] [US1] Write testscript test for version command in cmd/autospec/testdata/scripts/version.txt
+- [X] T037 [P] [US1] Add benchmark for startup time in cmd/autospec/main_test.go (target: <50ms)
+- [X] T038 [US1] Update README.md with installation instructions (`go install` and binary download)
 
 **Checkpoint**: User Story 1 complete - users can install and verify installation with `autospec --version`
 

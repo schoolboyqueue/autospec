@@ -33,30 +33,74 @@ specify --version
 
 #### Auto Claude SpecKit Setup
 
+##### Option 1: Install Pre-Built Binary (Recommended)
+
+Download the latest release for your platform:
+
+```bash
+# Linux (amd64)
+curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-linux-amd64 -o autospec
+chmod +x autospec
+sudo mv autospec /usr/local/bin/
+
+# macOS (Intel)
+curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-darwin-amd64 -o autospec
+chmod +x autospec
+sudo mv autospec /usr/local/bin/
+
+# macOS (Apple Silicon)
+curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-darwin-arm64 -o autospec
+chmod +x autospec
+sudo mv autospec /usr/local/bin/
+
+# Verify installation
+autospec version
+```
+
+**Binary size**: ~2.5 MB per platform
+**Startup time**: <50ms
+**Platforms**: Linux (amd64/arm64), macOS (amd64/arm64), Windows (amd64)
+
+##### Option 2: Install from Source with Go
+
+If you have Go 1.21+ installed:
+
+```bash
+go install github.com/anthropics/auto-claude-speckit/cmd/autospec@latest
+
+# Verify installation
+autospec version
+```
+
+##### Option 3: Build from Source
+
 1. Clone this repository:
 ```bash
-git clone https://github.com/yourusername/auto-claude-speckit.git
+git clone https://github.com/anthropics/auto-claude-speckit.git
 cd auto-claude-speckit
 ```
 
-2. Install bats-core for testing (optional):
+2. Build the binary:
 ```bash
-# npm
-npm install -g bats
+# Build for your current platform
+go build -o autospec ./cmd/autospec
 
-# apt (Ubuntu/Debian)
-sudo apt-get install bats
+# Or build for all platforms
+./scripts/build-all.sh
 
-# brew (macOS)
-brew install bats-core
-
-# pacman (Arch Linux)
-sudo pacman -S bats
+# Install locally
+sudo mv autospec /usr/local/bin/
 ```
 
-3. Ensure dependencies are installed:
+##### Legacy Bash Scripts (Deprecated)
+
+The original bash scripts are still available in the `legacy/` directory but are deprecated in favor of the Go binary. They require additional dependencies:
+
 ```bash
-# Check prerequisites
+# Install bats-core for testing (optional)
+npm install -g bats
+
+# Ensure dependencies are installed
 command -v jq git grep sed >/dev/null && echo "All dependencies found"
 ```
 

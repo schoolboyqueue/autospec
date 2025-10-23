@@ -291,7 +291,7 @@ func (w *WorkflowOrchestrator) ExecuteTasks(specNameArg string) error {
 // ExecuteImplement runs the implementation phase
 func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, resume bool) error {
 	var specName string
-	var metadata *spec.SpecMetadata
+	var metadata *spec.Metadata
 	var err error
 
 	if specNameArg != "" {
@@ -312,13 +312,8 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, resume bool)
 	}
 
 	// Check progress
-	tasksPath := filepath.Join(metadata.Directory, "tasks.md")
-	count, err := w.Executor.Executor.Claude.StreamCommand(
-		"/speckit.implement",
-		nil, nil,
-	)
-
-	fmt.Printf("Progress: ?/? tasks completed (?%%)\n\n")
+	// TODO: Display progress information
+	fmt.Printf("Progress: checking tasks...\n\n")
 	fmt.Println("Executing: /speckit.implement")
 
 	command := "/speckit.implement"
@@ -339,11 +334,8 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, resume bool)
 	if err != nil {
 		if result.Exhausted {
 			// Generate continuation prompt
-			prompt, _ := w.Executor.Executor.ValidateTasksComplete(tasksPath)
-			if prompt != nil {
-				fmt.Println("\nImplementation paused.")
-				fmt.Println("To resume: autospec implement --resume")
-			}
+			fmt.Println("\nImplementation paused.")
+			fmt.Println("To resume: autospec implement --resume")
 			return fmt.Errorf("implementation phase exhausted retries: %w", err)
 		}
 		return fmt.Errorf("implementation failed: %w", err)

@@ -62,7 +62,7 @@ func CountUncheckedTasks(tasksPath string) (int, error) {
 	defer file.Close()
 
 	unchecked := 0
-	scanner := bufio.Scanner(file)
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		if match := taskPattern.FindStringSubmatch(line); match != nil {
@@ -102,7 +102,7 @@ func ParseTasksByPhase(tasksPath string) ([]Phase, error) {
 	var currentPhase *Phase
 	lineNum := 0
 
-	scanner := bufio.Scanner(file)
+	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
 		lineNum++
