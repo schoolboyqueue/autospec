@@ -12,17 +12,17 @@
 
 ## Feature Improvements
 
-- [ ] Implement timeout functionality for Claude CLI command execution
-  - [ ] Use `timeout` config setting to abort long-running commands
-  - [ ] Add context with deadline to command execution
-  - [ ] Update documentation when implemented
+- [X] Implement timeout functionality for Claude CLI command execution
+  - [X] Use `timeout` config setting to abort long-running commands
+  - [X] Add context with deadline to command execution
+  - [X] Update documentation when implemented
 
-- [ ] Add `autospec doctor` command for dependency checking
-  - [ ] Check for Claude CLI installation
-  - [ ] Check for Specify CLI installation
-  - [ ] Check for Git repository
-  - [ ] Verify config file locations
-  - [ ] Check specs directory exists
+- [X] Add `autospec doctor` command for dependency checking
+  - [X] Check for Claude CLI installation
+  - [X] Check for Specify CLI installation
+  - [X] Check for Git repository
+  - [X] Verify config file locations
+  - [X] Check specs directory exists
 
 - [ ] Improve `autospec setup` or enhance `init` command
   - [ ] Interactive setup wizard
