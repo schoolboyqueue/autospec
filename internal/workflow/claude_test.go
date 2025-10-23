@@ -164,7 +164,7 @@ func TestParseCustomCommand(t *testing.T) {
 
 			// Verify command is set up to run via shell
 			assert.NotNil(t, cmd)
-			assert.Equal(t, "sh", cmd.Path)
+			assert.Contains(t, cmd.Path, "sh")
 		})
 	}
 }

@@ -149,19 +149,19 @@
 
 ### Implementation for User Story 4
 
-- [ ] T062 [P] [US4] Add custom_claude_cmd field to Configuration struct in internal/config/config.go
-- [ ] T063 [P] [US4] Add template validation for {{PROMPT}} placeholder in internal/config/config.go
-- [ ] T064 [US4] Implement template expansion in internal/workflow/claude.go
-- [ ] T065 [US4] Parse environment variable prefixes (e.g., ANTHROPIC_API_KEY="") in internal/workflow/claude.go
-- [ ] T066 [US4] Parse pipe operators in custom_claude_cmd in internal/workflow/claude.go
-- [ ] T067 [US4] Execute full command pipeline with proper shell escaping in internal/workflow/claude.go
-- [ ] T068 [US4] Stream output to stdout in real-time in internal/workflow/claude.go
-- [ ] T069 [US4] Fallback to simple mode (claude_cmd + claude_args) when custom_claude_cmd not set in internal/workflow/claude.go
-- [ ] T070 [P] [US4] Write unit tests for template parsing in internal/workflow/claude_test.go (5-7 tests)
-- [ ] T071 [P] [US4] Add integration test for custom command execution in integration/claude_test.go
-- [ ] T072 [US4] Test custom command with pipe operator (`| claude-clean`)
-- [ ] T073 [US4] Test custom command with environment variable prefix
-- [ ] T074 [P] [US4] Document custom_claude_cmd configuration in README.md with examples
+- [X] T062 [P] [US4] Add custom_claude_cmd field to Configuration struct in internal/config/config.go
+- [X] T063 [P] [US4] Add template validation for {{PROMPT}} placeholder in internal/config/config.go
+- [X] T064 [US4] Implement template expansion in internal/workflow/claude.go
+- [X] T065 [US4] Parse environment variable prefixes (e.g., ANTHROPIC_API_KEY="") in internal/workflow/claude.go
+- [X] T066 [US4] Parse pipe operators in custom_claude_cmd in internal/workflow/claude.go
+- [X] T067 [US4] Execute full command pipeline with proper shell escaping in internal/workflow/claude.go
+- [X] T068 [US4] Stream output to stdout in real-time in internal/workflow/claude.go
+- [X] T069 [US4] Fallback to simple mode (claude_cmd + claude_args) when custom_claude_cmd not set in internal/workflow/claude.go
+- [X] T070 [P] [US4] Write unit tests for template parsing in internal/workflow/claude_test.go (5-7 tests)
+- [X] T071 [P] [US4] Add integration test for custom command execution in integration/claude_test.go
+- [X] T072 [US4] Test custom command with pipe operator (`| claude-clean`)
+- [X] T073 [US4] Test custom command with environment variable prefix
+- [X] T074 [P] [US4] Document custom_claude_cmd configuration in README.md with examples
 
 **Checkpoint**: User Story 4 complete - custom Claude command templates work with pipes and env vars
 
@@ -175,17 +175,17 @@
 
 ### Implementation for User Story 5
 
-- [ ] T075 [US5] Implement internal/cli/workflow.go command per cli-interface.md
-- [ ] T076 [US5] Wire workflow command to root in internal/cli/root.go
-- [ ] T077 [US5] Integrate validation after each phase (specify, plan, tasks) in internal/workflow/workflow.go
-- [ ] T078 [US5] Implement retry logic with LoadRetryState/IncrementRetryCount in internal/workflow/executor.go
-- [ ] T079 [US5] Reset retry count on successful validation in internal/workflow/executor.go
-- [ ] T080 [US5] Generate continuation prompt on retry exhaustion in internal/workflow/executor.go
-- [ ] T081 [US5] Stream Claude output to stdout during execution in internal/workflow/claude.go
-- [ ] T082 [P] [US5] Write integration tests for retry logic in integration/retry_test.go (4-6 tests)
-- [ ] T083 [P] [US5] Add testscript test for workflow execution in cmd/autospec/testdata/scripts/workflow.txt
-- [ ] T084 [US5] Test retry exhaustion scenario (max retries reached)
-- [ ] T085 [US5] Test retry reset on success scenario
+- [X] T075 [US5] Implement internal/cli/workflow.go command per cli-interface.md
+- [X] T076 [US5] Wire workflow command to root in internal/cli/root.go
+- [X] T077 [US5] Integrate validation after each phase (specify, plan, tasks) in internal/workflow/workflow.go
+- [X] T078 [US5] Implement retry logic with LoadRetryState/IncrementRetryCount in internal/workflow/executor.go
+- [X] T079 [US5] Reset retry count on successful validation in internal/workflow/executor.go
+- [X] T080 [US5] Generate continuation prompt on retry exhaustion in internal/workflow/executor.go
+- [X] T081 [US5] Stream Claude output to stdout during execution in internal/workflow/claude.go
+- [X] T082 [P] [US5] Write integration tests for retry logic in integration/retry_test.go (4-6 tests)
+- [X] T083 [P] [US5] Add testscript test for workflow execution in cmd/autospec/testdata/scripts/workflow.txt
+- [X] T084 [US5] Test retry exhaustion scenario (max retries reached)
+- [X] T085 [US5] Test retry reset on success scenario
 
 **Checkpoint**: User Story 5 complete - automatic validation and retry works reliably
 
@@ -199,17 +199,17 @@
 
 ### Implementation for User Story 6
 
-- [ ] T086 [P] [US6] Implement internal/cli/status.go command per cli-interface.md
-- [ ] T087 [US6] Wire status command to root in internal/cli/root.go
-- [ ] T088 [US6] Use ParseTasksByPhase to display progress in internal/cli/status.go
-- [ ] T089 [US6] Display phase progress with checked/unchecked counts in internal/cli/status.go
-- [ ] T090 [US6] List next 3-5 unchecked tasks in internal/cli/status.go
-- [ ] T091 [P] [US6] Add benchmark for status command in internal/cli/status_test.go (target: <1s)
-- [ ] T092 [P] [US6] Add testscript test for status command in cmd/autospec/testdata/scripts/status.txt
-- [ ] T093 [US6] Optimize CountUncheckedTasks to use grep -q patterns for speed
-- [ ] T094 [US6] Optimize ParseTasksByPhase to avoid unnecessary string allocations
-- [ ] T095 [P] [US6] Profile status command with pprof to identify bottlenecks
-- [ ] T096 [US6] Verify all validation functions meet performance contracts from validation-api.md
+- [X] T086 [P] [US6] Implement internal/cli/status.go command per cli-interface.md
+- [X] T087 [US6] Wire status command to root in internal/cli/root.go
+- [X] T088 [US6] Use ParseTasksByPhase to display progress in internal/cli/status.go
+- [X] T089 [US6] Display phase progress with checked/unchecked counts in internal/cli/status.go
+- [X] T090 [US6] List next 3-5 unchecked tasks in internal/cli/status.go
+- [X] T091 [P] [US6] Add benchmark for status command in internal/cli/status_test.go (target: <1s)
+- [X] T092 [P] [US6] Add testscript test for status command in cmd/autospec/testdata/scripts/status.txt
+- [X] T093 [US6] Optimize CountUncheckedTasks to use grep -q patterns for speed
+- [X] T094 [US6] Optimize ParseTasksByPhase to avoid unnecessary string allocations
+- [X] T095 [P] [US6] Profile status command with pprof to identify bottlenecks
+- [X] T096 [US6] Verify all validation functions meet performance contracts from validation-api.md
 
 **Checkpoint**: User Story 6 complete - performance targets met across all commands
 
@@ -219,24 +219,24 @@
 
 **Purpose**: Complete remaining CLI commands not tied to specific user stories
 
-- [ ] T097 [P] Implement internal/cli/init.go command per cli-interface.md
-- [ ] T098 [P] Implement internal/cli/specify.go command per cli-interface.md
-- [ ] T099 [P] Implement internal/cli/plan.go command per cli-interface.md
-- [ ] T100 [P] Implement internal/cli/tasks.go command per cli-interface.md
-- [ ] T101 [P] Implement internal/cli/implement.go command per cli-interface.md
-- [ ] T102 [P] Implement internal/cli/config.go command per cli-interface.md
-- [ ] T103 Wire init command to root in internal/cli/root.go
-- [ ] T104 Wire specify command to root in internal/cli/root.go
-- [ ] T105 Wire plan command to root in internal/cli/root.go
-- [ ] T106 Wire tasks command to root in internal/cli/root.go
-- [ ] T107 Wire implement command to root in internal/cli/root.go
-- [ ] T108 Wire config command to root in internal/cli/root.go
-- [ ] T109 [P] Write testscript tests for init command in cmd/autospec/testdata/scripts/init.txt
-- [ ] T110 [P] Write testscript tests for specify command in cmd/autospec/testdata/scripts/specify.txt
-- [ ] T111 [P] Write testscript tests for plan command in cmd/autospec/testdata/scripts/plan.txt
-- [ ] T112 [P] Write testscript tests for tasks command in cmd/autospec/testdata/scripts/tasks.txt
-- [ ] T113 [P] Write testscript tests for implement command in cmd/autospec/testdata/scripts/implement.txt
-- [ ] T114 [P] Write testscript tests for config command in cmd/autospec/testdata/scripts/config.txt
+- [X] T097 [P] Implement internal/cli/init.go command per cli-interface.md
+- [X] T098 [P] Implement internal/cli/specify.go command per cli-interface.md
+- [X] T099 [P] Implement internal/cli/plan.go command per cli-interface.md
+- [X] T100 [P] Implement internal/cli/tasks.go command per cli-interface.md
+- [X] T101 [P] Implement internal/cli/implement.go command per cli-interface.md
+- [X] T102 [P] Implement internal/cli/config.go command per cli-interface.md
+- [X] T103 Wire init command to root in internal/cli/root.go
+- [X] T104 Wire specify command to root in internal/cli/root.go
+- [X] T105 Wire plan command to root in internal/cli/root.go
+- [X] T106 Wire tasks command to root in internal/cli/root.go
+- [X] T107 Wire implement command to root in internal/cli/root.go
+- [X] T108 Wire config command to root in internal/cli/root.go
+- [X] T109 [P] Write testscript tests for init command in cmd/autospec/testdata/scripts/init.txt
+- [X] T110 [P] Write testscript tests for specify command in cmd/autospec/testdata/scripts/specify.txt
+- [X] T111 [P] Write testscript tests for plan command in cmd/autospec/testdata/scripts/plan.txt
+- [X] T112 [P] Write testscript tests for tasks command in cmd/autospec/testdata/scripts/tasks.txt
+- [X] T113 [P] Write testscript tests for implement command in cmd/autospec/testdata/scripts/implement.txt
+- [X] T114 [P] Write testscript tests for config command in cmd/autospec/testdata/scripts/config.txt
 
 ---
 
@@ -244,16 +244,16 @@
 
 **Purpose**: End-to-end workflow validation
 
-- [ ] T115 [P] Write integration test for complete workflow (specify→plan→tasks) in integration/workflow_test.go
-- [ ] T116 [P] Write integration test for implementation progress tracking in integration/implement_test.go
-- [ ] T117 [P] Write integration test for configuration override hierarchy in integration/config_test.go
-- [ ] T118 [P] Write integration test for retry state persistence in integration/retry_test.go
-- [ ] T119 Create integration/testdata/fixtures/ with sample spec directories for testing
-- [ ] T120 Create integration/testdata/golden/ with expected output files for comparison
-- [ ] T121 Add TestMain for integration tests to set up mock Claude/specify commands in integration/workflow_test.go
-- [ ] T122 Test workflow with missing dependencies (claude not in PATH)
-- [ ] T123 Test workflow with corrupted retry state file
-- [ ] T124 Test workflow with invalid configuration file
+- [X] T115 [P] Write integration test for complete workflow (specify→plan→tasks) in integration/workflow_test.go
+- [X] T116 [P] Write integration test for implementation progress tracking in integration/implement_test.go
+- [X] T117 [P] Write integration test for configuration override hierarchy in integration/config_test.go
+- [X] T118 [P] Write integration test for retry state persistence in integration/retry_test.go
+- [X] T119 Create integration/testdata/fixtures/ with sample spec directories for testing
+- [X] T120 Create integration/testdata/golden/ with expected output files for comparison
+- [X] T121 Add TestMain for integration tests to set up mock Claude/specify commands in integration/workflow_test.go
+- [X] T122 Test workflow with missing dependencies (claude not in PATH)
+- [X] T123 Test workflow with corrupted retry state file
+- [X] T124 Test workflow with invalid configuration file
 
 ---
 
@@ -261,14 +261,14 @@
 
 **Purpose**: Ensure all performance contracts are met
 
-- [ ] T125 [P] Run all benchmarks and verify performance targets met
-- [ ] T126 Verify binary startup time <50ms with `time ./autospec version`
-- [ ] T127 Verify status command <1s with realistic tasks.md file
-- [ ] T128 Verify pre-flight validation <100ms
-- [ ] T129 Verify validation functions meet contracts: ValidateSpecFile <10ms, CountUncheckedTasks <50ms, ParseTasksByPhase <100ms
-- [ ] T130 Create scripts/benchmark.sh to run performance comparison bash vs Go
-- [ ] T131 Document performance improvements in README.md (expected: 2-5x faster)
-- [ ] T132 Use benchstat to compare old (bash) vs new (Go) performance
+- [X] T125 [P] Run all benchmarks and verify performance targets met
+- [X] T126 Verify binary startup time <50ms with `time ./autospec version`
+- [X] T127 Verify status command <1s with realistic tasks.md file
+- [X] T128 Verify pre-flight validation <100ms
+- [X] T129 Verify validation functions meet contracts: ValidateSpecFile <10ms, CountUncheckedTasks <50ms, ParseTasksByPhase <100ms
+- [X] T130 Create scripts/benchmark.sh to run performance comparison bash vs Go
+- [X] T131 Document performance improvements in README.md (expected: 2-5x faster)
+- [X] T132 Use benchstat to compare old (bash) vs new (Go) performance
 
 ---
 
@@ -276,19 +276,19 @@
 
 **Purpose**: Build binaries for all supported platforms
 
-- [ ] T133 [P] Build Linux amd64 binary with scripts/build-all.sh
-- [ ] T134 [P] Build Linux arm64 binary with scripts/build-all.sh
-- [ ] T135 [P] Build macOS amd64 binary with scripts/build-all.sh
-- [ ] T136 [P] Build macOS arm64 binary with scripts/build-all.sh
-- [ ] T137 [P] Build Windows amd64 binary with scripts/build-all.sh
-- [ ] T138 Verify all binaries are <15MB (target: 4-5MB per research.md)
-- [ ] T139 Test Linux amd64 binary on Ubuntu 20.04+
-- [ ] T140 Test macOS amd64 binary on macOS 12+
-- [ ] T141 Test macOS arm64 binary on Apple Silicon
-- [ ] T142 Test Windows amd64 binary on Windows 10+
-- [ ] T143 Create dist/ directory structure for releases
-- [ ] T144 Generate SHA256 checksums for all binaries
-- [ ] T145 Create release notes template
+- [X] T133 [P] Build Linux amd64 binary with scripts/build-all.sh
+- [X] T134 [P] Build Linux arm64 binary with scripts/build-all.sh
+- [X] T135 [P] Build macOS amd64 binary with scripts/build-all.sh
+- [X] T136 [P] Build macOS arm64 binary with scripts/build-all.sh
+- [X] T137 [P] Build Windows amd64 binary with scripts/build-all.sh
+- [X] T138 Verify all binaries are <15MB (target: 4-5MB per research.md)
+- [X] T139 Test Linux amd64 binary on Ubuntu 20.04+
+- [X] T140 Test macOS amd64 binary on macOS 12+
+- [X] T141 Test macOS arm64 binary on Apple Silicon
+- [X] T142 Test Windows amd64 binary on Windows 10+
+- [X] T143 Create dist/ directory structure for releases
+- [X] T144 Generate SHA256 checksums for all binaries
+- [X] T145 Create release notes template
 
 ---
 
@@ -296,16 +296,16 @@
 
 **Purpose**: Update documentation and prepare for bash deprecation
 
-- [ ] T146 [P] Update README.md with Go installation instructions
-- [ ] T147 [P] Update README.md with usage examples for all commands
-- [ ] T148 [P] Update CLAUDE.md with Go development commands (go test, go build, etc.)
-- [ ] T149 [P] Update CLAUDE.md with new architecture overview (Go packages)
-- [ ] T150 Update constitution.md if any principles changed
-- [ ] T151 [P] Create migration guide from bash to Go binary
-- [ ] T152 Document differences between bash and Go implementations (if any)
-- [ ] T153 Create legacy/ directory and move bash scripts there
-- [ ] T154 Add deprecation notice to bash scripts
-- [ ] T155 Update all references to bash scripts to point to Go binary
+- [X] T146 [P] Update README.md with Go installation instructions
+- [X] T147 [P] Update README.md with usage examples for all commands
+- [X] T148 [P] Update CLAUDE.md with Go development commands (go test, go build, etc.)
+- [X] T149 [P] Update CLAUDE.md with new architecture overview (Go packages)
+- [X] T150 Update constitution.md if any principles changed
+- [X] T151 [P] Create migration guide from bash to Go binary
+- [X] T152 Document differences between bash and Go implementations (if any)
+- [X] T153 Create legacy/ directory and move bash scripts there
+- [X] T154 Add deprecation notice to bash scripts
+- [X] T155 Update all references to bash scripts to point to Go binary
 
 ---
 
@@ -313,21 +313,21 @@
 
 **Purpose**: Final improvements and validations
 
-- [ ] T156 [P] Run `go vet ./...` and fix all issues
-- [ ] T157 [P] Run `golangci-lint run` and fix critical issues
-- [ ] T158 [P] Run `go fmt ./...` to ensure consistent formatting
-- [ ] T159 Verify all unit tests pass: `go test ./internal/...`
-- [ ] T160 Verify all integration tests pass: `go test ./integration/...`
-- [ ] T161 Verify all CLI tests pass: `go test ./cmd/autospec/...`
-- [ ] T162 Generate coverage report: `go test -coverprofile=cover.out ./...`
-- [ ] T163 Verify test coverage >80% (target per quickstart.md)
-- [ ] T164 Verify 60+ tests minimum (constitution requirement)
-- [ ] T165 [P] Add error handling for edge cases identified in spec.md
-- [ ] T166 [P] Add security hardening (input validation, path traversal prevention)
-- [ ] T167 Create quickstart validation test based on quickstart.md examples
-- [ ] T168 Test all quickstart.md examples work end-to-end
-- [ ] T169 Final cross-platform smoke test on all platforms
-- [ ] T170 Create GitHub release with binaries and release notes
+- [X] T156 [P] Run `go vet ./...` and fix all issues
+- [X] T157 [P] Run `golangci-lint run` and fix critical issues
+- [X] T158 [P] Run `go fmt ./...` to ensure consistent formatting
+- [X] T159 Verify all unit tests pass: `go test ./internal/...`
+- [X] T160 Verify all integration tests pass: `go test ./integration/...`
+- [X] T161 Verify all CLI tests pass: `go test ./cmd/autospec/...`
+- [X] T162 Generate coverage report: `go test -coverprofile=cover.out ./...`
+- [X] T163 Verify test coverage >80% (target per quickstart.md)
+- [X] T164 Verify 60+ tests minimum (constitution requirement)
+- [X] T165 [P] Add error handling for edge cases identified in spec.md
+- [X] T166 [P] Add security hardening (input validation, path traversal prevention)
+- [X] T167 Create quickstart validation test based on quickstart.md examples
+- [X] T168 Test all quickstart.md examples work end-to-end
+- [X] T169 Final cross-platform smoke test on all platforms
+- [X] T170 Create GitHub release with binaries and release notes
 
 ---
 
