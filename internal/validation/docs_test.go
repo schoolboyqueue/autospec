@@ -129,10 +129,22 @@ func TestDocumentationHeaders(t *testing.T) {
 		h1Count := 0
 		lastHeaderLevel := 0
 		lineNum := 0
+		inCodeBlock := false
 
 		for scanner.Scan() {
 			lineNum++
 			line := scanner.Text()
+
+			// Track code block state
+			if strings.HasPrefix(strings.TrimSpace(line), "```") {
+				inCodeBlock = !inCodeBlock
+				continue
+			}
+
+			// Skip lines inside code blocks
+			if inCodeBlock {
+				continue
+			}
 
 			// Count H1 headers
 			if h1Pattern.MatchString(line) {
@@ -176,7 +188,13 @@ func TestInternalLinks(t *testing.T) {
 	// Pattern for markdown links: [text](path) or [text](path#anchor)
 	linkPattern := regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 
-	for _, path := range docFiles {
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("Failed to find repository root: %v", err)
+	}
+
+	for _, file := range docFiles {
+		path := filepath.Join(repoRoot, "docs", file)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			// File doesn't exist yet - will be caught by TestDocumentationFilesExist
@@ -235,7 +253,13 @@ func TestCodeReferences(t *testing.T) {
 	// Pattern for code references: path/to/file.go:123
 	codeRefPattern := regexp.MustCompile(`([a-zA-Z0-9_/.-]+\.(go|sh|md)):(\d+)`)
 
-	for _, path := range docFiles {
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("Failed to find repository root: %v", err)
+	}
+
+	for _, file := range docFiles {
+		path := filepath.Join(repoRoot, "docs", file)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			// File doesn't exist yet - will be caught by TestDocumentationFilesExist
@@ -272,7 +296,13 @@ func TestMermaidDiagrams(t *testing.T) {
 		"troubleshooting.md",
 	}
 
-	for _, path := range docFiles {
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("Failed to find repository root: %v", err)
+	}
+
+	for _, file := range docFiles {
+		path := filepath.Join(repoRoot, "docs", file)
 		content, err := os.ReadFile(path)
 		if err != nil {
 			// File doesn't exist yet - will be caught by TestDocumentationFilesExist
@@ -344,7 +374,12 @@ func TestCommandCompleteness(t *testing.T) {
 		"autospec version",
 	}
 
-	refPath := "docs/reference.md"
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("Failed to find repository root: %v", err)
+	}
+
+	refPath := filepath.Join(repoRoot, "docs", "reference.md")
 	content, err := os.ReadFile(refPath)
 	if err != nil {
 		// File doesn't exist yet - will be caught by TestDocumentationFilesExist
@@ -372,7 +407,12 @@ func TestConfigCompleteness(t *testing.T) {
 		"custom_claude_cmd",
 	}
 
-	refPath := "docs/reference.md"
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("Failed to find repository root: %v", err)
+	}
+
+	refPath := filepath.Join(repoRoot, "docs", "reference.md")
 	content, err := os.ReadFile(refPath)
 	if err != nil {
 		// File doesn't exist yet - will be caught by TestDocumentationFilesExist
