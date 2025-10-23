@@ -518,6 +518,8 @@ If needed, legacy bash scripts are still available:
 - Go 1.25.1 + Cobra CLI (v1.10.1), briandowns/spinner (v1.23.0+), golang.org/x/term (v0.25.0+) (004-workflow-progress-indicators)
 - N/A (progress state is ephemeral, displayed only during execution) (004-workflow-progress-indicators)
 - Go 1.25.1 + Cobra CLI (v1.10.1), koanf config (v2.1.2), go-playground/validator (v10.28.0), briandowns/spinner (v1.23.0) (005-high-level-docs)
+- Markdown with YAML frontmatter (GitHub-specific format) + None - static files interpreted by GitHub (006-github-issue-templates)
+- Repository files in `.github/ISSUE_TEMPLATE/` directory (006-github-issue-templates)
 
 ## Recent Changes
 - 003-command-timeout: Added Go 1.25.1
