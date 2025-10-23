@@ -75,57 +75,166 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
-
-tests/
-├── contract/
-├── integration/
-└── unit/
-
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
-
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
-
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
+auto-claude-speckit/
+├── cmd/
+│   └── autospec/
+│       ├── main.go                    # Entry point
+│       ├── main_test.go               # CLI integration tests
+│       └── testdata/
+│           └── scripts/               # testscript CLI tests
+│
+├── internal/                          # Private application code
+│   ├── cli/                          # Cobra CLI commands
+│   │   ├── root.go                   # Root command and global flags
+│   │   ├── init.go                   # autospec init command
+│   │   ├── workflow.go               # autospec workflow command
+│   │   ├── specify.go                # autospec specify command
+│   │   ├── plan.go                   # autospec plan command
+│   │   ├── tasks.go                  # autospec tasks command
+│   │   ├── implement.go              # autospec implement command
+│   │   ├── status.go                 # autospec status command
+│   │   ├── config.go                 # autospec config command
+│   │   └── version.go                # autospec version command
+│   │
+│   ├── config/                       # Configuration management
+│   │   ├── config.go                 # Koanf-based config loading
+│   │   ├── config_test.go            # Unit tests
+│   │   └── defaults.go               # Default configuration values
+│   │
+│   ├── validation/                   # Validation library (ported from bash)
+│   │   ├── validation.go             # File validation functions
+│   │   ├── validation_test.go        # Unit tests
+│   │   ├── validation_bench_test.go  # Benchmarks
+│   │   ├── tasks.go                  # Task parsing and counting
+│   │   ├── tasks_test.go             # Task parsing tests
+│   │   └── prompt.go                 # Continuation prompt generation
+│   │
+│   ├── retry/                        # Retry state management
+│   │   ├── retry.go                  # Load, save, increment, reset
+│   │   ├── retry_test.go             # Unit tests
+│   │   └── state.go                  # RetryState struct and methods
+│   │
+│   ├── git/                          # Git operations
+│   │   ├── git.go                    # Branch, root, repo check
+│   │   └── git_test.go               # Unit tests with mocking
+│   │
+│   ├── spec/                         # Spec detection and metadata
+│   │   ├── spec.go                   # DetectCurrentSpec, GetSpecDirectory
+│   │   └── spec_test.go              # Unit tests
+│   │
+│   └── workflow/                     # Workflow orchestration
+│       ├── workflow.go               # Specify→plan→tasks orchestration
+│       ├── workflow_test.go          # Unit tests
+│       ├── claude.go                 # Claude CLI execution
+│       ├── preflight.go              # Pre-flight validation checks
+│       └── executor.go               # Command execution with retry
+│
+├── integration/                       # Integration tests
+│   ├── workflow_test.go              # End-to-end workflow tests
+│   ├── retry_test.go                 # Retry logic integration tests
+│   └── testdata/
+│       ├── fixtures/                 # Test spec directories
+│       └── golden/                   # Golden file outputs
+│
+├── scripts/                          # Build and maintenance scripts
+│   ├── build-all.sh                  # Cross-platform build script
+│   ├── test-all.sh                   # Run all tests (unit + integration)
+│   └── benchmark.sh                  # Performance benchmarking
+│
+├── specs/                            # Feature specifications (existing)
+│   └── 002-go-binary-migration/
+│       ├── spec.md
+│       ├── plan.md                   # This file
+│       ├── research.md
+│       ├── data-model.md
+│       ├── quickstart.md
+│       └── contracts/
+│           ├── cli-interface.md
+│           └── validation-api.md
+│
+├── go.mod                            # Go module definition
+├── go.sum                            # Dependency checksums
+├── README.md                         # Updated with Go installation
+├── CLAUDE.md                         # Updated with Go commands
+└── .gitignore                        # Ignore dist/, *.test, coverage files
 ```
 
-**Structure Decision**: [Document the selected structure and reference the real
-directories captured above]
+**Structure Decision**:
+
+This project uses **Option 1: Single Project** structure, as it's a single CLI binary with no separate frontend/backend components.
+
+**Key Design Decisions:**
+1. **cmd/autospec/**: Single entry point for the binary, following Go conventions
+2. **internal/**: All application code is internal (not importable by other projects)
+3. **internal/cli/**: One file per Cobra command for clarity and maintainability
+4. **internal/validation/**: Direct port of bash validation library functionality
+5. **internal/retry/**: Persistent retry state management (replaces bash /tmp files)
+6. **integration/**: Separate from unit tests for clear test organization
+7. **testscript tests**: CLI-specific testing using Go's standard approach
+
+**Why internal/ over pkg/**:
+- This is a single binary, not a library
+- No code needs to be importable by external projects
+- `internal/` enforces encapsulation at compile time
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+No constitution violations identified. This design maintains simplicity while achieving all functional requirements.
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+**Complexity Assessment:**
+- Single binary architecture (no microservices)
+- Standard Go project layout (cmd/, internal/)
+- Minimal dependencies (4 primary: Cobra, Koanf, validator, testify)
+- Direct file system operations (no abstraction layers)
+- Simple JSON persistence (no database)
+- Standard library for most functionality
+
+---
+
+## Post-Design Constitution Re-evaluation
+
+After completing Phase 0 (Research) and Phase 1 (Design), re-evaluating constitution compliance:
+
+### I. Validation-First ✅ PASS
+- Design includes complete validation package at internal/validation/
+- All workflow transitions will validate artifacts before proceeding
+- Retry logic preserved and enhanced in internal/retry/ package
+- Exit codes standardized (0=success, 1=failed, 2=exhausted, 3=invalid, 4=missing deps)
+
+### II. Hook-Based Enforcement ✅ PASS (No Change)
+- Hooks remain in bash (out of scope for this migration)
+- Hooks will continue to call validation logic
+- Future migration of hooks is possible but not required
+
+### III. Test-First Development ✅ PASS
+- Test structure defined in quickstart.md
+- Target: 63-80 tests (exceeds 60+ baseline)
+- Unit tests: 35-40 tests across packages
+- CLI tests with testscript: 15-20 tests
+- Integration tests: 8-12 tests
+- Benchmarks: 5-8 tests for performance validation
+- All tests must pass before implementation
+
+### IV. Performance Standards ✅ PASS
+- Explicit performance contracts defined in validation-api.md
+- Targets: startup <50ms, validation <100ms, status <1s
+- Benchmarks planned for all performance-critical functions
+- Go compiled binaries typically faster than bash scripts
+
+### V. Idempotency & Retry Logic ✅ PASS
+- Retry state persists to ~/.autospec/state/retry.json (not /tmp)
+- All validation functions are idempotent (multiple calls safe)
+- Atomic file writes for state persistence (temp + rename)
+- Exit codes support programmatic composition
+
+**Final Gate Status**: ✅ PASS - All constitution principles maintained
+
+**Design Changes from Initial Assessment:**
+- Resolved "NEEDS CLARIFICATION" items through research
+- Selected battle-tested libraries (Cobra, Koanf) over lighter alternatives for reliability
+- Binary size impact: 4-5 MB total (well under 15 MB limit)
+- All performance targets achievable with selected architecture
+
+**No Complexity Justifications Required** - Design is simple and aligns with constitution principles.

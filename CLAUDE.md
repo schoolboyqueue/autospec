@@ -270,3 +270,10 @@ These templates use `[PLACEHOLDER]` tokens that SpecKit commands fill in. When m
 3. Manually run validation function from library
 4. Check artifact existence: `find specs -name "spec.md"`
 5. Verify git root detection: `git rev-parse --show-toplevel`
+
+## Active Technologies
+- Go 1.21+ (002-go-binary-migration)
+- File-based (JSON for config at ~/.autospec/config.json and .autospec/config.json, retry state at ~/.autospec/state/retry.json) (002-go-binary-migration)
+
+## Recent Changes
+- 002-go-binary-migration: Added Go 1.21+
