@@ -230,40 +230,72 @@ func NewSpecValidator(specsDir string) *SpecValidator {
 }
 
 // PreflightCheck verifies the current project directory is initialized with SpecKit
-func (v *SpecValidator) PreflightCheck() error {
+// Returns true if checks pass, false if user declined to continue
+func (v *SpecValidator) PreflightCheck() (bool, error) {
     // Check if specify CLI is available (system-level check)
     if _, err := exec.LookPath("specify"); err != nil {
-        return ErrSpecifyNotFound
+        return false, ErrSpecifyNotFound
     }
 
-    // Check if .claude/commands/ directory exists in current project
+    // Check for required directories in current project
+    var missingDirs []string
+
+    // Check .claude/commands/ directory
     if _, err := os.Stat(".claude/commands"); os.IsNotExist(err) {
-        return ErrSpecKitNotInitialized
+        missingDirs = append(missingDirs, ".claude/commands/")
     }
 
-    // Check if SpecKit slash commands are present
-    requiredCommands := []string{
-        ".claude/commands/speckit.specify.md",
-        ".claude/commands/speckit.plan.md",
-        ".claude/commands/speckit.tasks.md",
-        ".claude/commands/speckit.implement.md",
+    // Check .specify/ directory
+    if _, err := os.Stat(".specify"); os.IsNotExist(err) {
+        missingDirs = append(missingDirs, ".specify/")
     }
 
-    var missingCommands []string
-    for _, cmdFile := range requiredCommands {
-        if _, err := os.Stat(cmdFile); os.IsNotExist(err) {
-            missingCommands = append(missingCommands, cmdFile)
+    // If directories are missing, warn and prompt user
+    if len(missingDirs) > 0 {
+        fmt.Println("\n⚠️  WARNING: Project does not appear to be initialized with SpecKit")
+        fmt.Println("\nMissing directories:")
+        for _, dir := range missingDirs {
+            fmt.Printf("  - %s\n", dir)
         }
+
+        // Get git root to show proper command
+        gitRoot, err := getGitRoot()
+        if err != nil {
+            gitRoot = "."
+        }
+
+        fmt.Println("\nRecommended action:")
+        fmt.Printf("  cd %s\n", gitRoot)
+        fmt.Println("  specify init . --ai claude --force")
+        fmt.Println("\nThis will set up:")
+        fmt.Println("  - .claude/commands/speckit.*.md (slash commands)")
+        fmt.Println("  - .specify/ (SpecKit metadata)")
+
+        // Prompt to continue anyway
+        fmt.Print("\nDo you want to continue anyway? [y/N]: ")
+
+        var response string
+        fmt.Scanln(&response)
+
+        response = strings.ToLower(strings.TrimSpace(response))
+        if response != "y" && response != "yes" {
+            return false, nil // User declined
+        }
+
+        fmt.Println("⚠️  Continuing without proper initialization...\n")
     }
 
-    if len(missingCommands) > 0 {
-        return fmt.Errorf("%w: missing commands: %v", ErrSpecKitNotInitialized, missingCommands)
+    return true, nil
+}
+
+// getGitRoot returns the git repository root directory
+func getGitRoot() (string, error) {
+    cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+    output, err := cmd.Output()
+    if err != nil {
+        return "", err
     }
-
-    // Optionally: Check if specs/ directory exists (will be created on first use)
-    // This is not strictly required, so we don't fail if it's missing
-
-    return nil
+    return strings.TrimSpace(string(output)), nil
 }
 
 func (v *SpecValidator) ValidateSpecExists(specName, fileName string) error {
@@ -411,8 +443,13 @@ func runWorkflow(cmd *cobra.Command, args []string) error {
 
     // PRE-FLIGHT CHECK: Verify project is initialized with SpecKit
     fmt.Println("Pre-flight check: Verifying project setup...")
-    if err := v.PreflightCheck(); err != nil {
-        return fmt.Errorf("pre-flight check failed: %w\n\nPlease run:\n  specify init . --ai claude --force\n  specify check", err)
+    continueExec, err := v.PreflightCheck()
+    if err != nil {
+        return fmt.Errorf("pre-flight check failed: %w", err)
+    }
+    if !continueExec {
+        fmt.Println("\nOperation cancelled by user.")
+        return nil // User chose not to continue
     }
     fmt.Println("✓ Project is ready\n")
 
@@ -1200,12 +1237,11 @@ autospec workflow "Add user authentication"
 # autospec automatically runs these checks before any command:
 # - Verifies `specify` CLI is available (system-level)
 # - Checks if .claude/commands/ directory exists in current project
-# - Validates SpecKit slash commands are present:
-#   - .claude/commands/speckit.specify.md
-#   - .claude/commands/speckit.plan.md
-#   - .claude/commands/speckit.tasks.md
-#   - .claude/commands/speckit.implement.md
-# - Only proceeds if all checks pass
+# - Checks if .specify/ directory exists in current project
+# - If directories are missing:
+#   - Warns user and shows git root location
+#   - Prompts "Do you want to continue anyway? [y/N]"
+#   - User can choose to continue or cancel
 
 # Or run individual steps
 autospec specify "Add OAuth support"
@@ -1217,7 +1253,7 @@ autospec implement
 autospec status
 ```
 
-**Pre-flight Check Output:**
+**Pre-flight Check Output (initialized project):**
 ```
 $ autospec workflow "Add user authentication"
 Pre-flight check: Verifying project setup...
@@ -1227,26 +1263,56 @@ Step 1/3: Creating specification...
 ...
 ```
 
-**If project not initialized:**
+**If project not initialized (with prompt):**
 ```
 $ autospec workflow "Add user authentication"
 Pre-flight check: Verifying project setup...
-Error: pre-flight check failed: SpecKit not initialized - run: specify init . --ai claude --force
 
-Please run:
+⚠️  WARNING: Project does not appear to be initialized with SpecKit
+
+Missing directories:
+  - .claude/commands/
+  - .specify/
+
+Recommended action:
+  cd /home/user/my-project
   specify init . --ai claude --force
-  specify check
+
+This will set up:
+  - .claude/commands/speckit.*.md (slash commands)
+  - .specify/ (SpecKit metadata)
+
+Do you want to continue anyway? [y/N]: n
+
+Operation cancelled by user.
 ```
 
-**If SpecKit commands missing:**
+**User chooses to continue anyway:**
 ```
 $ autospec workflow "Add user authentication"
 Pre-flight check: Verifying project setup...
-Error: SpecKit not initialized: missing commands:
-  [.claude/commands/speckit.specify.md .claude/commands/speckit.plan.md]
 
-Please run:
+⚠️  WARNING: Project does not appear to be initialized with SpecKit
+
+Missing directories:
+  - .claude/commands/
+  - .specify/
+
+Recommended action:
+  cd /home/user/my-project
   specify init . --ai claude --force
+
+This will set up:
+  - .claude/commands/speckit.*.md (slash commands)
+  - .specify/ (SpecKit metadata)
+
+Do you want to continue anyway? [y/N]: y
+⚠️  Continuing without proper initialization...
+
+✓ Project is ready
+
+Step 1/3: Creating specification...
+...
 ```
 
 ## Configuration
