@@ -13,7 +13,7 @@ User-facing documentation for the autospec CLI tool.
   - Best practices
   - Troubleshooting
 
-- **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Solutions to common problems
+- **[Troubleshooting Guide](./troubleshooting.md)** - Solutions to common problems
   - Timeout issues
   - Configuration problems
   - Workflow execution errors
