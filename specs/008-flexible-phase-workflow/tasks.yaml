@@ -24,7 +24,7 @@ phases:
     tasks:
       - id: "T001"
         title: "Create internal/workflow/phase_config.go skeleton"
-        status: "Pending"
+        status: "Completed"
         type: "setup"
         parallel: false
         story_id: null
@@ -41,7 +41,7 @@ phases:
     tasks:
       - id: "T002"
         title: "Implement PhaseConfig struct in internal/workflow/phase_config.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: null
@@ -55,7 +55,7 @@ phases:
 
       - id: "T003"
         title: "Implement ArtifactDependency map in internal/workflow/phase_config.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: true
         story_id: null
@@ -71,7 +71,7 @@ phases:
 
       - id: "T004"
         title: "Implement canonical phase ordering in internal/workflow/phase_config.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: null
@@ -84,7 +84,7 @@ phases:
 
       - id: "T005"
         title: "Add skip_confirmations to config in internal/config/defaults.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: true
         story_id: null
@@ -95,7 +95,7 @@ phases:
 
       - id: "T006"
         title: "Add skip_confirmations field to Config struct in internal/config/config.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: null
@@ -107,7 +107,7 @@ phases:
 
       - id: "T007"
         title: "Write unit tests for phase_config in internal/workflow/phase_config_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: null
@@ -127,7 +127,7 @@ phases:
     tasks:
       - id: "T008"
         title: "Create internal/cli/run.go with Cobra command skeleton"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-001"
@@ -140,7 +140,7 @@ phases:
 
       - id: "T009"
         title: "Add phase flags (-s/-p/-t/-i) to run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-001"
@@ -155,7 +155,7 @@ phases:
 
       - id: "T010"
         title: "Implement phase flag parsing into PhaseConfig in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-001"
@@ -168,7 +168,7 @@ phases:
 
       - id: "T011"
         title: "Integrate phase execution with WorkflowOrchestrator in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-001"
@@ -181,7 +181,7 @@ phases:
 
       - id: "T012"
         title: "Write unit tests for run command in internal/cli/run_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: "US-001"
@@ -201,7 +201,7 @@ phases:
     tasks:
       - id: "T013"
         title: "Add -a/--all flag to run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-002"
@@ -214,7 +214,7 @@ phases:
 
       - id: "T014"
         title: "Rename internal/cli/full.go to internal/cli/all.go"
-        status: "Pending"
+        status: "Completed"
         type: "refactor"
         parallel: true
         story_id: "US-002"
@@ -227,7 +227,7 @@ phases:
 
       - id: "T015"
         title: "Add deprecated 'full' alias in internal/cli/all.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-002"
@@ -240,7 +240,7 @@ phases:
 
       - id: "T016"
         title: "Write tests for all command and full deprecation in internal/cli/all_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: "US-002"
@@ -259,7 +259,7 @@ phases:
     tasks:
       - id: "T017"
         title: "Extend PreflightResult struct in internal/workflow/preflight.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-003"
@@ -273,7 +273,7 @@ phases:
 
       - id: "T018"
         title: "Implement CheckArtifactDependencies() in internal/workflow/preflight.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-003"
@@ -287,7 +287,7 @@ phases:
 
       - id: "T019"
         title: "Implement GeneratePrerequisiteWarning() in internal/workflow/preflight.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-003"
@@ -300,7 +300,7 @@ phases:
 
       - id: "T020"
         title: "Integrate prerequisite checking in run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-003"
@@ -314,7 +314,7 @@ phases:
 
       - id: "T021"
         title: "Write tests for prerequisite checking in internal/workflow/preflight_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: "US-003"
@@ -334,7 +334,7 @@ phases:
     tasks:
       - id: "T022"
         title: "Add -y/--yes flag to run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-004"
@@ -346,7 +346,7 @@ phases:
 
       - id: "T023"
         title: "Implement skip confirmation resolution in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-004"
@@ -360,7 +360,7 @@ phases:
 
       - id: "T024"
         title: "Write tests for skip confirmation in internal/cli/run_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: "US-004"
@@ -380,7 +380,7 @@ phases:
     tasks:
       - id: "T025"
         title: "Add --spec flag to run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-005"
@@ -393,7 +393,7 @@ phases:
 
       - id: "T026"
         title: "Integrate spec detection with run command in internal/cli/run.go"
-        status: "Pending"
+        status: "Completed"
         type: "implementation"
         parallel: false
         story_id: "US-006"
@@ -406,7 +406,7 @@ phases:
 
       - id: "T027"
         title: "Write tests for spec detection in internal/cli/run_test.go"
-        status: "Pending"
+        status: "Completed"
         type: "test"
         parallel: false
         story_id: "US-006"
@@ -423,7 +423,7 @@ phases:
     tasks:
       - id: "T028"
         title: "Update README.md with new CLI usage"
-        status: "Pending"
+        status: "Completed"
         type: "documentation"
         parallel: true
         story_id: null
@@ -437,7 +437,7 @@ phases:
 
       - id: "T029"
         title: "Update CLAUDE.md architecture documentation"
-        status: "Pending"
+        status: "Completed"
         type: "documentation"
         parallel: true
         story_id: null
