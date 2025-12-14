@@ -7,6 +7,7 @@ import (
 	"github.com/anthropics/auto-claude-speckit/internal/config"
 	"github.com/anthropics/auto-claude-speckit/internal/progress"
 	"github.com/anthropics/auto-claude-speckit/internal/spec"
+	"github.com/anthropics/auto-claude-speckit/internal/validation"
 )
 
 // WorkflowOrchestrator manages the complete specify → plan → tasks workflow
@@ -80,7 +81,7 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 		return fmt.Errorf("specify phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/spec.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/spec.yaml\n\n", specName)
 
 	// Phase 2: Plan
 	fmt.Println("[Phase 2/3] Plan...")
@@ -90,8 +91,7 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 		return fmt.Errorf("plan phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/plan.md\n", specName)
-	fmt.Printf("✓ Created specs/%s/research.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/plan.yaml\n\n", specName)
 
 	// Phase 3: Tasks
 	fmt.Println("[Phase 3/3] Tasks...")
@@ -101,7 +101,7 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 		return fmt.Errorf("tasks phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/tasks.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/tasks.yaml\n\n", specName)
 
 	// Success!
 	fmt.Println("Workflow completed successfully!")
@@ -132,7 +132,7 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		return fmt.Errorf("specify phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/spec.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/spec.yaml\n\n", specName)
 
 	// Phase 2: Plan
 	fmt.Println("[Phase 2/4] Plan...")
@@ -142,8 +142,7 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		return fmt.Errorf("plan phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/plan.md\n", specName)
-	fmt.Printf("✓ Created specs/%s/research.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/plan.yaml\n\n", specName)
 
 	// Phase 3: Tasks
 	fmt.Println("[Phase 3/4] Tasks...")
@@ -153,7 +152,7 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		return fmt.Errorf("tasks phase failed: %w", err)
 	}
 
-	fmt.Printf("✓ Created specs/%s/tasks.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/tasks.yaml\n\n", specName)
 
 	// Phase 4: Implement
 	fmt.Println("[Phase 4/4] Implement...")
@@ -173,7 +172,7 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		command,
 		func(specDir string) error {
 			w.debugLog("Running validation function for spec dir: %s", specDir)
-			tasksPath := filepath.Join(specDir, "tasks.md")
+			tasksPath := validation.GetTasksFilePath(specDir)
 			w.debugLog("Validating tasks at: %s", tasksPath)
 			validationErr := w.Executor.ValidateTasksComplete(tasksPath)
 			w.debugLog("Validation result: %v", validationErr)
@@ -344,7 +343,7 @@ func (w *WorkflowOrchestrator) ExecuteSpecify(featureDescription string) (string
 		return "", err
 	}
 
-	fmt.Printf("✓ Created specs/%s/spec.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/spec.yaml\n\n", specName)
 	fmt.Println("Next: autospec plan")
 
 	return specName, nil
@@ -378,9 +377,7 @@ func (w *WorkflowOrchestrator) ExecutePlan(specNameArg string, prompt string) er
 		return err
 	}
 
-	fmt.Printf("✓ Created specs/%s/plan.md\n", specName)
-	fmt.Printf("✓ Created specs/%s/research.md\n", specName)
-	fmt.Printf("✓ Created specs/%s/data-model.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/plan.yaml\n\n", specName)
 	fmt.Println("Next: autospec tasks")
 
 	return nil
@@ -414,7 +411,7 @@ func (w *WorkflowOrchestrator) ExecuteTasks(specNameArg string, prompt string) e
 		return err
 	}
 
-	fmt.Printf("✓ Created specs/%s/tasks.md\n\n", specName)
+	fmt.Printf("✓ Created specs/%s/tasks.yaml\n\n", specName)
 	fmt.Println("Next: autospec implement")
 
 	return nil
@@ -472,7 +469,7 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt strin
 		PhaseImplement,
 		command,
 		func(specDir string) error {
-			tasksPath := filepath.Join(specDir, "tasks.md")
+			tasksPath := validation.GetTasksFilePath(specDir)
 			return w.Executor.ValidateTasksComplete(tasksPath)
 		},
 	)

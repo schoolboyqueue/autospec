@@ -167,7 +167,12 @@ func ParseTasksByPhase(tasksPath string) ([]Phase, error) {
 	return phases, nil
 }
 
-// GetTasksFilePath returns the path to tasks.md for a given spec directory
+// GetTasksFilePath returns the path to tasks file for a given spec directory
+// Checks for tasks.yaml first, falls back to tasks.md
 func GetTasksFilePath(specDir string) string {
+	yamlPath := filepath.Join(specDir, "tasks.yaml")
+	if _, err := os.Stat(yamlPath); err == nil {
+		return yamlPath
+	}
 	return filepath.Join(specDir, "tasks.md")
 }
