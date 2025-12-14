@@ -167,16 +167,31 @@ autospec run -p "Focus on security best practices"
 
 # Skip confirmation prompts for automation
 autospec run -ti -y
+
+# Include optional phases with core workflow
+autospec run -srp "Focus on edge cases"          # Specify + clarify + plan
+autospec run -a -l                                # All phases + checklist
+autospec run -tlzi                                # Tasks + checklist + analyze + implement
+
+# Run just optional phases
+autospec run -n "Emphasize security principles"   # Constitution only
+autospec run -z                                   # Analyze only
 ```
 
-**Phase Flags:**
+**Core Phase Flags:**
 - `-s, --specify` - Generate feature specification
 - `-p, --plan` - Generate implementation plan
 - `-t, --tasks` - Generate task breakdown
 - `-i, --implement` - Execute implementation
-- `-a, --all` - Run all phases (equivalent to `-spti`)
+- `-a, --all` - Run all core phases (equivalent to `-spti`)
 
-**Note:** Phases always execute in canonical order (specify → plan → tasks → implement) regardless of flag order.
+**Optional Phase Flags:**
+- `-n, --constitution` - Create/update project constitution
+- `-r, --clarify` - Refine spec with clarification questions
+- `-l, --checklist` - Generate validation checklist
+- `-z, --analyze` - Cross-artifact consistency analysis
+
+**Note:** Phases always execute in canonical order (constitution → specify → clarify → plan → tasks → checklist → analyze → implement) regardless of flag order.
 
 **Option B: Shortcut Commands**
 
@@ -191,6 +206,26 @@ autospec workflow "Add user authentication with OAuth support"
 
 # Run implementation phase only
 autospec implement
+```
+
+**Optional Phase Standalone Commands:**
+
+```bash
+# Create or update project constitution
+autospec constitution
+autospec constitution "Focus on security and performance"
+
+# Refine spec with clarification questions
+autospec clarify
+autospec clarify "Focus on error handling scenarios"
+
+# Generate validation checklist
+autospec checklist
+autospec checklist "Include accessibility checks"
+
+# Run cross-artifact consistency analysis
+autospec analyze
+autospec analyze "Focus on API contract consistency"
 ```
 
 This automatically:
@@ -266,7 +301,30 @@ autospec status
 autospec implement
 ```
 
-### 3. Hook-Enforced Completeness
+### 3. Comprehensive Quality Workflow
+
+```bash
+# Run full workflow with optional quality phases
+autospec run -a -rlz "Add payment processing"
+
+# This executes in canonical order:
+# 1. specify - Generate feature specification
+# 2. clarify (-r) - Refine spec with clarification questions
+# 3. plan - Generate implementation plan
+# 4. tasks - Generate task breakdown
+# 5. checklist (-l) - Generate validation checklist
+# 6. analyze (-z) - Cross-artifact consistency analysis
+# 7. implement - Execute implementation
+
+# Or run quality phases separately after planning
+autospec workflow "Add payment processing"
+autospec clarify "Focus on edge cases"
+autospec checklist "Include security validation"
+autospec analyze
+autospec implement
+```
+
+### 4. Hook-Enforced Completeness
 
 ```bash
 # Enable implementation hook
@@ -277,7 +335,7 @@ claude --settings .claude/implement-hook-settings.json
 # Provides clear feedback about remaining work
 ```
 
-### 4. CI/CD Integration
+### 5. CI/CD Integration
 
 ```bash
 # Validate feature completion in CI pipeline
@@ -292,7 +350,7 @@ else
 fi
 ```
 
-### 5. Working with Configuration
+### 6. Working with Configuration
 
 ```bash
 # Initialize project configuration

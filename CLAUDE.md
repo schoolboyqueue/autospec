@@ -60,13 +60,19 @@ shellcheck scripts/**/*.sh
 
 ### Using the CLI
 ```bash
-# Flexible phase selection with run command (NEW!)
-autospec run -a "Add user authentication feature"          # All phases
+# Flexible phase selection with run command
+autospec run -a "Add user authentication feature"          # All core phases
 autospec run -spti "Add user authentication feature"       # Same as -a
 autospec run -pi                                           # Plan + implement on current spec
 autospec run -ti --spec 007-yaml-output                    # Tasks + implement on specific spec
 autospec run -p "Focus on security best practices"         # Plan with prompt guidance
 autospec run -ti -y                                        # Skip confirmation prompts
+
+# Run with optional phases
+autospec run -sr "Add user auth"                           # Specify + clarify
+autospec run -al "Add user auth"                           # All core + checklist
+autospec run -tlzi                                         # Tasks + checklist + analyze + implement
+autospec run -ns "Create constitution"                     # Constitution + specify
 
 # Run complete workflow: specify → plan → tasks → implement
 autospec all "Add user authentication feature"             # Shortcut for run -a
@@ -74,7 +80,7 @@ autospec all "Add user authentication feature"             # Shortcut for run -a
 # Run workflow without implementation: specify → plan → tasks
 autospec workflow "Add user authentication feature"
 
-# Run individual phases
+# Run individual core phases
 autospec specify "feature description"
 autospec plan
 autospec plan "Focus on security best practices"           # With prompt guidance
@@ -84,6 +90,16 @@ autospec implement
 autospec implement "Focus on documentation tasks"          # With prompt guidance
 autospec implement 003-my-feature                          # Specific spec
 autospec implement 003-my-feature "Complete tests"         # Spec + prompt
+
+# Run individual optional phases
+autospec constitution                                      # Create/update project constitution
+autospec constitution "Focus on security principles"       # With prompt guidance
+autospec clarify                                           # Refine spec with clarification questions
+autospec clarify "Focus on edge cases"                     # With prompt guidance
+autospec checklist                                         # Generate custom checklist for feature
+autospec checklist "Focus on security requirements"        # With prompt guidance
+autospec analyze                                           # Cross-artifact consistency analysis
+autospec analyze "Verify API contracts"                    # With prompt guidance
 
 # Check dependencies
 autospec doctor
@@ -106,27 +122,44 @@ Auto Claude SpecKit is a **cross-platform Go binary** that automates SpecKit wor
 
 Cobra-based command structure providing user-facing commands:
 - **root.go**: Root command with global flags (`--config`, `--specs-dir`, `--debug`, etc.)
-- **run.go**: Flexible phase selection with `-s/-p/-t/-i/-a` flags (NEW!)
-- **all.go**: Orchestrates complete specify → plan → tasks → implement workflow (renamed from full.go)
+- **run.go**: Flexible phase selection with core and optional phase flags
+- **all.go**: Orchestrates complete specify → plan → tasks → implement workflow
 - **workflow.go**: Orchestrates specify → plan → tasks workflow (no implementation)
 - **specify.go**: Creates new feature specifications with optional prompt guidance
 - **plan.go**: Executes planning phase with optional prompt guidance
 - **tasks.go**: Generates tasks with optional prompt guidance
 - **implement.go**: Executes implementation with optional spec-name and prompt guidance
+- **constitution.go**: Creates/updates project constitution
+- **clarify.go**: Refines specification with clarification questions
+- **checklist.go**: Generates custom checklist for feature
+- **analyze.go**: Cross-artifact consistency and quality analysis
 - **doctor.go**: Health check command for dependencies
 - **status.go**: Reports current spec progress
 - **config.go**: Configuration management commands
 - **init.go**: Initializes configuration files
 - **version.go**: Version information
 
-**Phase Selection Flags (run command):**
+**Core Phase Selection Flags (run command):**
 - `-s, --specify`: Include specify phase (requires feature description)
 - `-p, --plan`: Include plan phase
 - `-t, --tasks`: Include tasks phase
 - `-i, --implement`: Include implement phase
-- `-a, --all`: Run all phases (equivalent to `-spti`)
+- `-a, --all`: Run all core phases (equivalent to `-spti`)
+
+**Optional Phase Selection Flags (run command):**
+- `-n, --constitution`: Include constitution phase
+- `-r, --clarify`: Include clarify phase
+- `-l, --checklist`: Include checklist phase (note: `-c` is used for `--config`)
+- `-z, --analyze`: Include analyze phase
+
+**Other Flags:**
 - `-y, --yes`: Skip confirmation prompts
 - `--spec`: Specify which spec to work with (overrides branch detection)
+- `--max-retries`: Override max retry attempts (long-only, no short flag)
+
+**Canonical Phase Order:**
+Phases always execute in this order, regardless of flag order:
+`constitution → specify → clarify → plan → tasks → checklist → analyze → implement`
 
 ### 2. Workflow Orchestration (`internal/workflow/`)
 

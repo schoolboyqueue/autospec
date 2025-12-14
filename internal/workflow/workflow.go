@@ -487,3 +487,196 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt strin
 	fmt.Println("\n✓ All tasks completed!")
 	return nil
 }
+
+// ExecuteConstitution runs the constitution phase with optional prompt
+// Constitution creates or updates the project constitution file
+func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
+	// Build command with optional prompt
+	command := "/autospec.constitution"
+	if prompt != "" {
+		command = fmt.Sprintf("/autospec.constitution \"%s\"", prompt)
+	}
+
+	if prompt != "" {
+		fmt.Printf("Executing: /autospec.constitution \"%s\"\n", prompt)
+	} else {
+		fmt.Println("Executing: /autospec.constitution")
+	}
+
+	// Constitution phase doesn't require spec detection - it works at project level
+	result, err := w.Executor.ExecutePhase(
+		"", // No spec name needed for constitution
+		PhaseConstitution,
+		command,
+		func(specDir string) error {
+			// Constitution doesn't produce tracked artifacts
+			// It modifies .specify/memory/constitution.md
+			return nil
+		},
+	)
+
+	if err != nil {
+		if result.Exhausted {
+			return fmt.Errorf("constitution phase exhausted retries: %w", err)
+		}
+		return fmt.Errorf("constitution failed: %w", err)
+	}
+
+	fmt.Println("\n✓ Constitution updated!")
+	return nil
+}
+
+// ExecuteClarify runs the clarify phase with optional prompt
+// Clarify refines the specification by asking targeted clarification questions
+func (w *WorkflowOrchestrator) ExecuteClarify(specNameArg string, prompt string) error {
+	var specName string
+	var err error
+
+	if specNameArg != "" {
+		specName = specNameArg
+	} else {
+		// Auto-detect current spec
+		metadata, err := spec.DetectCurrentSpec(w.SpecsDir)
+		if err != nil {
+			return fmt.Errorf("failed to detect current spec: %w", err)
+		}
+		specName = fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+		fmt.Printf("Detected spec: %s\n", specName)
+	}
+
+	// Build command with optional prompt
+	command := "/autospec.clarify"
+	if prompt != "" {
+		command = fmt.Sprintf("/autospec.clarify \"%s\"", prompt)
+	}
+
+	if prompt != "" {
+		fmt.Printf("Executing: /autospec.clarify \"%s\"\n", prompt)
+	} else {
+		fmt.Println("Executing: /autospec.clarify")
+	}
+
+	result, err := w.Executor.ExecutePhase(
+		specName,
+		PhaseClarify,
+		command,
+		func(specDir string) error {
+			// Clarify updates spec.yaml in place - just verify it still exists
+			return validation.ValidateSpecFile(specDir)
+		},
+	)
+
+	if err != nil {
+		if result.Exhausted {
+			return fmt.Errorf("clarify phase exhausted retries: %w", err)
+		}
+		return fmt.Errorf("clarify failed: %w", err)
+	}
+
+	fmt.Printf("\n✓ Clarification complete for specs/%s/\n", specName)
+	return nil
+}
+
+// ExecuteChecklist runs the checklist phase with optional prompt
+// Checklist generates a custom checklist for the current feature
+func (w *WorkflowOrchestrator) ExecuteChecklist(specNameArg string, prompt string) error {
+	var specName string
+	var err error
+
+	if specNameArg != "" {
+		specName = specNameArg
+	} else {
+		// Auto-detect current spec
+		metadata, err := spec.DetectCurrentSpec(w.SpecsDir)
+		if err != nil {
+			return fmt.Errorf("failed to detect current spec: %w", err)
+		}
+		specName = fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+		fmt.Printf("Detected spec: %s\n", specName)
+	}
+
+	// Build command with optional prompt
+	command := "/autospec.checklist"
+	if prompt != "" {
+		command = fmt.Sprintf("/autospec.checklist \"%s\"", prompt)
+	}
+
+	if prompt != "" {
+		fmt.Printf("Executing: /autospec.checklist \"%s\"\n", prompt)
+	} else {
+		fmt.Println("Executing: /autospec.checklist")
+	}
+
+	result, err := w.Executor.ExecutePhase(
+		specName,
+		PhaseChecklist,
+		command,
+		func(specDir string) error {
+			// Checklist creates files in checklists/ directory
+			// For now, just verify the command completed successfully
+			return nil
+		},
+	)
+
+	if err != nil {
+		if result.Exhausted {
+			return fmt.Errorf("checklist phase exhausted retries: %w", err)
+		}
+		return fmt.Errorf("checklist failed: %w", err)
+	}
+
+	fmt.Printf("\n✓ Checklist generated for specs/%s/\n", specName)
+	return nil
+}
+
+// ExecuteAnalyze runs the analyze phase with optional prompt
+// Analyze performs cross-artifact consistency and quality analysis
+func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string) error {
+	var specName string
+	var err error
+
+	if specNameArg != "" {
+		specName = specNameArg
+	} else {
+		// Auto-detect current spec
+		metadata, err := spec.DetectCurrentSpec(w.SpecsDir)
+		if err != nil {
+			return fmt.Errorf("failed to detect current spec: %w", err)
+		}
+		specName = fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+		fmt.Printf("Detected spec: %s\n", specName)
+	}
+
+	// Build command with optional prompt
+	command := "/autospec.analyze"
+	if prompt != "" {
+		command = fmt.Sprintf("/autospec.analyze \"%s\"", prompt)
+	}
+
+	if prompt != "" {
+		fmt.Printf("Executing: /autospec.analyze \"%s\"\n", prompt)
+	} else {
+		fmt.Println("Executing: /autospec.analyze")
+	}
+
+	result, err := w.Executor.ExecutePhase(
+		specName,
+		PhaseAnalyze,
+		command,
+		func(specDir string) error {
+			// Analyze outputs analysis report
+			// For now, just verify the command completed successfully
+			return nil
+		},
+	)
+
+	if err != nil {
+		if result.Exhausted {
+			return fmt.Errorf("analyze phase exhausted retries: %w", err)
+		}
+		return fmt.Errorf("analyze failed: %w", err)
+	}
+
+	fmt.Printf("\n✓ Analysis complete for specs/%s/\n", specName)
+	return nil
+}

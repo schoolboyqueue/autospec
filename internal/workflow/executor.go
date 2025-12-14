@@ -23,10 +23,17 @@ type Executor struct {
 type Phase string
 
 const (
+	// Core workflow phases
 	PhaseSpecify   Phase = "specify"
 	PhasePlan      Phase = "plan"
 	PhaseTasks     Phase = "tasks"
 	PhaseImplement Phase = "implement"
+
+	// Optional phases
+	PhaseConstitution Phase = "constitution"
+	PhaseClarify      Phase = "clarify"
+	PhaseChecklist    Phase = "checklist"
+	PhaseAnalyze      Phase = "analyze"
 )
 
 // debugLog prints a debug message if debug mode is enabled
@@ -37,16 +44,26 @@ func (e *Executor) debugLog(format string, args ...interface{}) {
 }
 
 // getPhaseNumber returns the sequential number for a phase (1-based)
+// For optional phases, this returns their position in the canonical order:
+// constitution(1) -> specify(2) -> clarify(3) -> plan(4) -> tasks(5) -> checklist(6) -> analyze(7) -> implement(8)
 func (e *Executor) getPhaseNumber(phase Phase) int {
 	switch phase {
-	case PhaseSpecify:
+	case PhaseConstitution:
 		return 1
-	case PhasePlan:
+	case PhaseSpecify:
 		return 2
-	case PhaseTasks:
+	case PhaseClarify:
 		return 3
-	case PhaseImplement:
+	case PhasePlan:
 		return 4
+	case PhaseTasks:
+		return 5
+	case PhaseChecklist:
+		return 6
+	case PhaseAnalyze:
+		return 7
+	case PhaseImplement:
+		return 8
 	default:
 		return 0
 	}

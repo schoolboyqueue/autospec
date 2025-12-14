@@ -1,0 +1,91 @@
+package cli
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/anthropics/auto-claude-speckit/internal/config"
+	"github.com/anthropics/auto-claude-speckit/internal/spec"
+	"github.com/anthropics/auto-claude-speckit/internal/workflow"
+	"github.com/spf13/cobra"
+)
+
+var clarifyCmd = &cobra.Command{
+	Use:   "clarify [optional-prompt]",
+	Short: "Refine the specification by asking clarification questions",
+	Long: `Execute the /autospec.clarify command for the current specification.
+
+The clarify command will:
+- Auto-detect the current spec from git branch or most recent spec
+- Identify underspecified areas in the spec
+- Ask up to 5 highly targeted clarification questions
+- Encode answers back into the spec
+
+Prerequisites:
+- spec.yaml must exist (run 'autospec specify' first)
+
+You can optionally provide a prompt to guide the clarification process:
+  autospec clarify "Focus on error handling scenarios"
+  autospec clarify "Clarify the authentication flow"
+
+Examples:
+  autospec clarify                          # Run clarification with no additional guidance
+  autospec clarify "Edge cases for inputs"  # Focus on specific area`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Get optional prompt from args
+		var prompt string
+		if len(args) > 0 {
+			prompt = strings.Join(args, " ")
+		}
+
+		// Get flags
+		configPath, _ := cmd.Flags().GetString("config")
+		skipPreflight, _ := cmd.Flags().GetBool("skip-preflight")
+		maxRetries, _ := cmd.Flags().GetInt("max-retries")
+
+		// Load configuration
+		cfg, err := config.Load(configPath)
+		if err != nil {
+			return fmt.Errorf("failed to load config: %w", err)
+		}
+
+		// Override skip-preflight from flag if set
+		if cmd.Flags().Changed("skip-preflight") {
+			cfg.SkipPreflight = skipPreflight
+		}
+
+		// Override max-retries from flag if set
+		if cmd.Flags().Changed("max-retries") {
+			cfg.MaxRetries = maxRetries
+		}
+
+		// Auto-detect current spec and verify spec.yaml exists
+		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
+		if err != nil {
+			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
+		}
+
+		// Check that spec.yaml exists
+		specFile := filepath.Join(metadata.Directory, "spec.yaml")
+		if _, err := os.Stat(specFile); os.IsNotExist(err) {
+			return fmt.Errorf("spec.yaml not found in %s\n\nRun 'autospec specify' to create a spec first", metadata.Directory)
+		}
+
+		// Create workflow orchestrator
+		orch := workflow.NewWorkflowOrchestrator(cfg)
+
+		// Execute clarify phase
+		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+		if err := orch.ExecuteClarify(specName, prompt); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(clarifyCmd)
+}

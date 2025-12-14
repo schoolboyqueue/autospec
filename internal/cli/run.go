@@ -16,20 +16,27 @@ var runCmd = &cobra.Command{
 	Short: "Run selected workflow phases with flexible phase selection",
 	Long: `Run selected workflow phases with flexible phase selection.
 
-Use individual phase flags to select which phases to execute:
+Core phase flags:
   -s, --specify    Include specify phase (requires feature description)
   -p, --plan       Include plan phase
   -t, --tasks      Include tasks phase
   -i, --implement  Include implement phase
-  -a, --all        Run all phases (equivalent to -spti)
+  -a, --all        Run all core phases (equivalent to -spti)
 
-Phases are always executed in canonical order: specify -> plan -> tasks -> implement
+Optional phase flags:
+  -n, --constitution  Include constitution phase
+  -r, --clarify       Include clarify phase
+  -l, --checklist     Include checklist phase (note: -c is used for --config)
+  -z, --analyze       Include analyze phase
+
+Phases are always executed in canonical order:
+  constitution -> specify -> clarify -> plan -> tasks -> checklist -> analyze -> implement
 
 Examples:
   # Run only plan and implement phases on current branch's spec
   autospec run -pi
 
-  # Run all phases for a new feature
+  # Run all core phases for a new feature
   autospec run -a "Add user authentication"
 
   # Run tasks and implement on a specific spec
@@ -38,15 +45,30 @@ Examples:
   # Run plan phase with custom prompt
   autospec run -p "Focus on security best practices"
 
+  # Run all core phases plus checklist
+  autospec run -al "Add user auth"
+
+  # Run specify with clarify for spec refinement
+  autospec run -sr "Add user auth"
+
+  # Run tasks, checklist, analyze, and implement
+  autospec run -tlzi
+
   # Skip confirmation prompts for automation
   autospec run -ti -y`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get phase flags
+		// Get core phase flags
 		specify, _ := cmd.Flags().GetBool("specify")
 		plan, _ := cmd.Flags().GetBool("plan")
 		tasks, _ := cmd.Flags().GetBool("tasks")
 		implement, _ := cmd.Flags().GetBool("implement")
 		all, _ := cmd.Flags().GetBool("all")
+
+		// Get optional phase flags
+		constitution, _ := cmd.Flags().GetBool("constitution")
+		clarify, _ := cmd.Flags().GetBool("clarify")
+		checklist, _ := cmd.Flags().GetBool("checklist")
+		analyze, _ := cmd.Flags().GetBool("analyze")
 
 		// Get other flags
 		specName, _ := cmd.Flags().GetString("spec")
@@ -61,13 +83,19 @@ Examples:
 		// Build PhaseConfig from flags
 		phaseConfig := workflow.NewPhaseConfig()
 		if all {
-			phaseConfig.SetAll()
+			phaseConfig.SetAll() // SetAll only sets core phases (specify, plan, tasks, implement)
 		} else {
+			// Core phases
 			phaseConfig.Specify = specify
 			phaseConfig.Plan = plan
 			phaseConfig.Tasks = tasks
 			phaseConfig.Implement = implement
 		}
+		// Optional phases are always set from flags (can be combined with -a)
+		phaseConfig.Constitution = constitution
+		phaseConfig.Clarify = clarify
+		phaseConfig.Checklist = checklist
+		phaseConfig.Analyze = analyze
 
 		// Validate at least one phase is selected
 		if !phaseConfig.HasAnyPhase() {
@@ -185,6 +213,7 @@ func executePhases(orchestrator *workflow.WorkflowOrchestrator, phaseConfig *wor
 		fmt.Printf("[Phase %d/%d] %s...\n", i+1, totalPhases, phase)
 
 		switch phase {
+		// Core phases
 		case workflow.PhaseSpecify:
 			name, err := orchestrator.ExecuteSpecify(featureDescription)
 			if err != nil {
@@ -211,6 +240,27 @@ func executePhases(orchestrator *workflow.WorkflowOrchestrator, phaseConfig *wor
 			if err := orchestrator.ExecuteImplement(specName, featureDescription, resume); err != nil {
 				return fmt.Errorf("implement phase failed: %w", err)
 			}
+
+		// Optional phases
+		case workflow.PhaseConstitution:
+			if err := orchestrator.ExecuteConstitution(featureDescription); err != nil {
+				return fmt.Errorf("constitution phase failed: %w", err)
+			}
+
+		case workflow.PhaseClarify:
+			if err := orchestrator.ExecuteClarify(specName, featureDescription); err != nil {
+				return fmt.Errorf("clarify phase failed: %w", err)
+			}
+
+		case workflow.PhaseChecklist:
+			if err := orchestrator.ExecuteChecklist(specName, featureDescription); err != nil {
+				return fmt.Errorf("checklist phase failed: %w", err)
+			}
+
+		case workflow.PhaseAnalyze:
+			if err := orchestrator.ExecuteAnalyze(specName, featureDescription); err != nil {
+				return fmt.Errorf("analyze phase failed: %w", err)
+			}
 		}
 	}
 
@@ -225,12 +275,19 @@ func executePhases(orchestrator *workflow.WorkflowOrchestrator, phaseConfig *wor
 func init() {
 	rootCmd.AddCommand(runCmd)
 
-	// Phase selection flags
+	// Core phase selection flags
 	runCmd.Flags().BoolP("specify", "s", false, "Include specify phase")
 	runCmd.Flags().BoolP("plan", "p", false, "Include plan phase")
 	runCmd.Flags().BoolP("tasks", "t", false, "Include tasks phase")
 	runCmd.Flags().BoolP("implement", "i", false, "Include implement phase")
-	runCmd.Flags().BoolP("all", "a", false, "Run all phases (equivalent to -spti)")
+	runCmd.Flags().BoolP("all", "a", false, "Run all core phases (equivalent to -spti)")
+
+	// Optional phase selection flags
+	// Note: -c is already used globally for --config, so checklist uses -l
+	runCmd.Flags().BoolP("constitution", "n", false, "Include constitution phase")
+	runCmd.Flags().BoolP("clarify", "r", false, "Include clarify phase")
+	runCmd.Flags().BoolP("checklist", "l", false, "Include checklist phase")
+	runCmd.Flags().BoolP("analyze", "z", false, "Include analyze phase")
 
 	// Spec selection
 	runCmd.Flags().String("spec", "", "Specify which spec to work with (overrides branch detection)")
@@ -238,8 +295,8 @@ func init() {
 	// Skip confirmation
 	runCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompts")
 
-	// Other flags
-	runCmd.Flags().IntP("max-retries", "r", 0, "Override max retry attempts (0 = use config)")
+	// Other flags (NOTE: max-retries is now long-only, -r is used for clarify)
+	runCmd.Flags().Int("max-retries", 0, "Override max retry attempts (0 = use config)")
 	runCmd.Flags().Bool("resume", false, "Resume implementation from where it left off")
 	runCmd.Flags().Bool("progress", false, "Show progress indicators (spinners) during execution")
 }
