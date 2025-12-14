@@ -147,23 +147,23 @@ if $REQUIRE_TASKS && [[ ! -f "$TASKS" ]]; then
     exit 1
 fi
 
-# Build list of available documents
+# Build list of available documents (YAML artifacts only)
 docs=()
 
-# Always check these optional docs
-[[ -f "$RESEARCH" ]] && docs+=("research.md")
-[[ -f "$DATA_MODEL" ]] && docs+=("data-model.md")
+# Include spec.yaml if it exists
+[[ -f "$FEATURE_SPEC" ]] && docs+=("$(basename "$FEATURE_SPEC")")
 
-# Check contracts directory (only if it exists and has files)
-if [[ -d "$CONTRACTS_DIR" ]] && [[ -n "$(ls -A "$CONTRACTS_DIR" 2>/dev/null)" ]]; then
-    docs+=("contracts/")
-fi
+# Include plan.yaml if it exists
+[[ -f "$IMPL_PLAN" ]] && docs+=("$(basename "$IMPL_PLAN")")
 
-[[ -f "$QUICKSTART" ]] && docs+=("quickstart.md")
-
-# Include tasks file if requested and it exists (use actual filename)
+# Include tasks.yaml if requested and it exists
 if $INCLUDE_TASKS && [[ -f "$TASKS" ]]; then
     docs+=("$(basename "$TASKS")")
+fi
+
+# Check for checklists directory
+if [[ -d "$FEATURE_DIR/checklists" ]] && [[ -n "$(ls -A "$FEATURE_DIR/checklists" 2>/dev/null)" ]]; then
+    docs+=("checklists/")
 fi
 
 # Output results
@@ -185,13 +185,13 @@ else
     echo "TASKS:$TASKS"
     echo "AVAILABLE_DOCS:"
 
-    # Show status of each potential document
-    check_file "$RESEARCH" "research.md"
-    check_file "$DATA_MODEL" "data-model.md"
-    check_dir "$CONTRACTS_DIR" "contracts/"
-    check_file "$QUICKSTART" "quickstart.md"
+    # Show status of YAML artifacts
+    check_file "$FEATURE_SPEC" "$(basename "$FEATURE_SPEC")"
+    check_file "$IMPL_PLAN" "$(basename "$IMPL_PLAN")"
 
     if $INCLUDE_TASKS; then
         check_file "$TASKS" "$(basename "$TASKS")"
     fi
+
+    check_dir "$FEATURE_DIR/checklists" "checklists/"
 fi

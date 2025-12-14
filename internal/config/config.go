@@ -25,7 +25,8 @@ type Configuration struct {
 	StateDir        string   `koanf:"state_dir" validate:"required"`
 	SkipPreflight   bool     `koanf:"skip_preflight"`
 	Timeout         int      `koanf:"timeout" validate:"omitempty,min=1,max=604800"`
-	ShowProgress    bool     `koanf:"show_progress"` // Show progress indicators (spinners) during execution
+	ShowProgress       bool `koanf:"show_progress"`       // Show progress indicators (spinners) during execution
+	SkipConfirmations  bool `koanf:"skip_confirmations"`  // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
 }
 
 // Load loads configuration from global, local, and environment sources
@@ -82,6 +83,11 @@ func Load(localConfigPath string) (*Configuration, error) {
 	// Expand home directory in paths
 	cfg.StateDir = expandHomePath(cfg.StateDir)
 	cfg.SpecsDir = expandHomePath(cfg.SpecsDir)
+
+	// Handle AUTOSPEC_YES as an alias for skip_confirmations
+	if os.Getenv("AUTOSPEC_YES") != "" {
+		cfg.SkipConfirmations = true
+	}
 
 	return &cfg, nil
 }

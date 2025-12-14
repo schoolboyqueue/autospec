@@ -156,6 +156,12 @@ get_feature_paths() {
     local plan_file=$(find_artifact "$feature_dir" "plan")
     local tasks_file=$(find_artifact "$feature_dir" "tasks")
 
+    # Note: research.md, data-model.md, quickstart.md, contracts/ are legacy files
+    # from speckit workflow. In autospec YAML workflow, these are embedded in plan.yaml:
+    #   - research.md -> plan.yaml research_findings
+    #   - data-model.md -> plan.yaml data_model
+    #   - contracts/ -> plan.yaml api_contracts
+    #   - quickstart.md -> plan.yaml implementation_strategy
     cat <<EOF
 REPO_ROOT='$repo_root'
 CURRENT_BRANCH='$current_branch'
@@ -164,10 +170,6 @@ FEATURE_DIR='$feature_dir'
 FEATURE_SPEC='$spec_file'
 IMPL_PLAN='$plan_file'
 TASKS='$tasks_file'
-RESEARCH='$feature_dir/research.md'
-DATA_MODEL='$feature_dir/data-model.md'
-QUICKSTART='$feature_dir/quickstart.md'
-CONTRACTS_DIR='$feature_dir/contracts'
 EOF
 }
 

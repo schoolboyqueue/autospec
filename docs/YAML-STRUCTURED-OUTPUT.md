@@ -306,6 +306,38 @@ implementation_strategy:
 
 The `autospec.*` commands read and write YAML; `speckit.*` commands use markdown.
 
+### Helper Scripts
+
+The helper scripts in `.autospec/scripts/` are designed for the YAML workflow:
+
+**check-prerequisites.sh**
+
+Returns YAML artifacts in `AVAILABLE_DOCS`:
+
+```bash
+# SpecKit (old) - checked for separate markdown files
+{"AVAILABLE_DOCS":["research.md","data-model.md","contracts/","tasks.md"]}
+
+# AutoSpec (new) - returns YAML artifacts only
+{"AVAILABLE_DOCS":["spec.yaml","plan.yaml","tasks.yaml","checklists/"]}
+```
+
+**common.sh**
+
+Provides path variables for YAML artifacts only:
+
+| Variable       | Value                          |
+|----------------|--------------------------------|
+| `FEATURE_SPEC` | `specs/<feature>/spec.yaml`    |
+| `IMPL_PLAN`    | `specs/<feature>/plan.yaml`    |
+| `TASKS`        | `specs/<feature>/tasks.yaml`   |
+
+Legacy variables removed (now embedded in plan.yaml):
+- `RESEARCH` → `plan.yaml` `research_findings`
+- `DATA_MODEL` → `plan.yaml` `data_model`
+- `CONTRACTS_DIR` → `plan.yaml` `api_contracts`
+- `QUICKSTART` → `plan.yaml` `implementation_strategy`
+
 ## Migration from Markdown
 
 To convert existing markdown artifacts to YAML:
