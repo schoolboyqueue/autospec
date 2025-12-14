@@ -1,4 +1,4 @@
-.PHONY: help build build-all install clean test test-go test-bash test-all lint lint-go lint-bash fmt vet run dev validate-workflow validate-implement deps h b i c t l f r d
+.PHONY: help build build-all install clean test test-go test-bash test-all lint lint-go lint-bash fmt vet run dev validate-workflow validate-implement deps snapshot release patch minor major h b i c t l f r d s p
 
 # Variables
 BINARY_NAME=autospec
@@ -14,6 +14,17 @@ LDFLAGS=-ldflags="-X ${MODULE_PATH}/internal/cli.Version=${VERSION} \
                    -X ${MODULE_PATH}/internal/cli.Commit=${COMMIT} \
                    -X ${MODULE_PATH}/internal/cli.BuildDate=${BUILD_DATE} \
                    -s -w"
+
+# Version management (for autobump)
+CURRENT_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+MAJOR := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f1)
+MINOR := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f2)
+PATCH := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f3)
+
+# Platform detection (override with PLATFORM=github or PLATFORM=gitlab)
+REMOTE_URL := $(shell git remote get-url origin 2>/dev/null)
+DETECTED_PLATFORM := $(shell echo $(REMOTE_URL) | grep -q github && echo github || (echo $(REMOTE_URL) | grep -q gitlab && echo gitlab || echo unknown))
+PLATFORM ?= $(DETECTED_PLATFORM)
 
 # Default target
 .DEFAULT_GOAL := help
@@ -121,7 +132,38 @@ clean-all: clean ## Clean everything including test artifacts
 
 ##@ Release
 
-release: test-all lint build-all ## Run tests, linting, and build all platforms
+snapshot: ## Build snapshot release locally (no publish)
+	goreleaser release --snapshot --clean
+
+release: ## Create a release (make release VERSION=v1.0.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make release VERSION=v1.0.0"; \
+		echo "  or use: make patch | make minor | make major"; \
+		echo "  override platform: PLATFORM=github or PLATFORM=gitlab"; \
+		exit 1; \
+	fi
+	@echo "Releasing $(VERSION) to $(PLATFORM)..."
+	git tag -a $(VERSION) -m "Release $(VERSION)"
+	git push origin $(VERSION)
+ifeq ($(PLATFORM),github)
+	unset GITLAB_TOKEN && GITHUB_TOKEN=$$(gh auth token) goreleaser release --clean
+else ifeq ($(PLATFORM),gitlab)
+	unset GITHUB_TOKEN && goreleaser release --clean
+else
+	@echo "Error: Unknown platform '$(PLATFORM)'. Use PLATFORM=github or PLATFORM=gitlab"
+	@exit 1
+endif
+
+patch: ## Bump patch version (v0.0.X)
+	@$(MAKE) release VERSION=v$(MAJOR).$(MINOR).$(shell echo $$(($(PATCH)+1)))
+
+minor: ## Bump minor version (v0.X.0)
+	@$(MAKE) release VERSION=v$(MAJOR).$(shell echo $$(($(MINOR)+1))).0
+
+major: ## Bump major version (vX.0.0)
+	@$(MAKE) release VERSION=v$(shell echo $$(($(MAJOR)+1))).0.0
+
+release-build: test-all lint build-all ## Run tests, linting, and build all platforms (no publish)
 	@echo "Release build complete. Binaries in ${DIST_DIR}/"
 
 ##@ Abbreviations
@@ -135,3 +177,5 @@ l: lint     ## lint
 f: fmt      ## fmt
 r: run      ## run
 d: dev      ## dev
+s: snapshot ## snapshot
+p: patch    ## patch release

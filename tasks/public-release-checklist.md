@@ -85,7 +85,7 @@ Current branches to consider removing before public release:
 
 ## Community Standards
 
-- [ ] **CODE_OF_CONDUCT.md** - Add if not present
+- [x] **CODE_OF_CONDUCT.md** - Added (Contributor Covenant v2.0)
 - [ ] Issue labels configured (bug, enhancement, good first issue, etc.)
 - [ ] Branch protection rules for main
 
@@ -148,11 +148,22 @@ Current branches to consider removing before public release:
 
 3. ~~**Run tests and verify build**~~ DONE - All tests passing
 
-4. **Add CODE_OF_CONDUCT.md**
+4. ~~**Add CODE_OF_CONDUCT.md**~~ DONE
 
 5. **Add dependabot.yml**
 
 6. **Final review of CLAUDE.md** - decide if public-appropriate
+
+7. ~~**Add .dev/docs/ with release documentation**~~ DONE
+   - releases.md - Release process for GitHub/GitLab
+   - autobump.md - Makefile version management
+   - install.md - Unified install script docs
+
+8. ~~**Add autobump Makefile commands**~~ DONE
+   - `make patch` / `make p` - Bump patch version
+   - `make minor` - Bump minor version
+   - `make major` - Bump major version
+   - `make snapshot` / `make s` - Local build (no publish)
 
 ### Notes
 
