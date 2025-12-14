@@ -18,7 +18,7 @@ Checklist for preparing Auto Claude SpecKit for public release.
 
 ## Code Quality
 
-- [ ] All tests passing (`make test`)
+- [x] All tests passing (`make test`)
 - [ ] Code formatted (`go fmt ./...`)
 - [ ] No linting issues (`go vet ./...`)
 - [ ] No TODO/FIXME comments that shouldn't be public
@@ -135,11 +135,7 @@ Current branches to consider removing before public release:
 
 ### Needs Attention (Priority Order)
 
-1. **Force push rewritten history to remote**
-   ```bash
-   git push origin --force --all
-   git push origin --force --tags
-   ```
+1. ~~**Force push rewritten history to remote**~~ DONE
 
 2. **Clean up feature branches**
    ```bash
@@ -150,12 +146,7 @@ Current branches to consider removing before public release:
    git push origin --delete 001-go-binary-migration ...
    ```
 
-3. **Run tests and verify build**
-   ```bash
-   make clean
-   make test
-   make build-all
-   ```
+3. ~~**Run tests and verify build**~~ DONE - All tests passing
 
 4. **Add CODE_OF_CONDUCT.md**
 
