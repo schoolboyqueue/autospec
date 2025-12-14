@@ -1,5 +1,10 @@
 # Auto Claude SpecKit
 
+[![CI](https://github.com/anthropics/auto-claude-speckit/actions/workflows/ci.yml/badge.svg)](https://github.com/anthropics/auto-claude-speckit/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/anthropics/auto-claude-speckit)](https://goreportcard.com/report/github.com/anthropics/auto-claude-speckit)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Release](https://img.shields.io/github/v/release/anthropics/auto-claude-speckit)](https://github.com/anthropics/auto-claude-speckit/releases/latest)
+
 Automated validation and workflow scripts for Claude Code's SpecKit feature development system.
 
 ## What is This?

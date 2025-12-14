@@ -112,18 +112,18 @@
 
 ### Installation & Distribution
 - [ ] Add installation scripts
-  - [ ] install.sh for Unix-like systems (curl | sh installer)
+  - [X] install.sh for Unix-like systems (curl | sh installer)
   - [ ] install.ps1 for Windows (PowerShell installer)
 - [X] Add `.goreleaser.yml` for automated releases
   - [X] Multi-platform builds
   - [X] GitHub releases with binaries
   - [ ] Homebrew tap integration
   - [X] Checksums and signatures
-- [ ] Add badges to README.md
-  - [ ] CI status badge
-  - [ ] Go Report Card
-  - [ ] License badge
-  - [ ] Release version badge
+- [X] Add badges to README.md
+  - [X] CI status badge
+  - [X] Go Report Card
+  - [X] License badge
+  - [X] Release version badge
 
 ### Development Tools
 - [ ] Add Docker support
