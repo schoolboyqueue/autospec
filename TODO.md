@@ -9,10 +9,6 @@
 
 ## Bugs/Issues
 
-- [ ] Setting ANTHROPIC_API_KEY="" is no longer relevant with the new claude
-      setup which CAN switch between API/vs max plan usage with or without api keys through web login auth 
-      so rm that and any config options for it.
-
 - Our spinner implementation doesnt fucking work because its a cli not a tui
 - also we will not build a tui
 - [X] Fix spinner scrollback pollution when Claude outputs interactively
