@@ -36,7 +36,7 @@ Given that feature description, do this:
 2. **Create feature branch and directory**: Run the script with your generated short-name:
 
    ```bash
-   scripts/autospec/create-new-feature.sh --json --short-name "<short-name>" "$ARGUMENTS"
+   .autospec/scripts/create-new-feature.sh --json --short-name "<short-name>" "$ARGUMENTS"
    ```
 
    Parse the JSON output for:

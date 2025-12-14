@@ -21,7 +21,7 @@ Install the YAML-based command templates into your project:
 autospec commands install
 ```
 
-This creates command templates in `.claude/commands/` and helper scripts in `scripts/autospec/`.
+This creates command templates in `.claude/commands/` and helper scripts in `.autospec/scripts/`.
 
 ### 2. Check Installation
 
@@ -55,7 +55,7 @@ autospec commands install [--target <dir>] [--scripts-target <dir>]
 
 **Options**:
 - `--target`: Directory for command templates (default: `.claude/commands`)
-- `--scripts-target`: Directory for helper scripts (default: `scripts/autospec`)
+- `--scripts-target`: Directory for helper scripts (default: `.autospec/scripts`)
 
 **Output**:
 - Creates 6 command templates: `autospec.specify.md`, `autospec.plan.md`, `autospec.tasks.md`, `autospec.checklist.md`, `autospec.analyze.md`, `autospec.constitution.md`

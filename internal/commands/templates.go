@@ -253,7 +253,7 @@ type ScriptInstallResult struct {
 }
 
 // InstallScripts installs all embedded scripts to the target directory.
-// The default target is scripts/autospec/ relative to the repo root.
+// The default target is .autospec/scripts/ relative to the repo root.
 func InstallScripts(targetDir string) ([]ScriptInstallResult, error) {
 	// Ensure target directory exists
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
@@ -296,7 +296,7 @@ func InstallScripts(targetDir string) ([]ScriptInstallResult, error) {
 
 // GetDefaultScriptsDir returns the default path for autospec scripts.
 func GetDefaultScriptsDir() string {
-	return filepath.Join("scripts", "autospec")
+	return filepath.Join(".autospec", "scripts")
 }
 
 // ListScripts returns the names of all embedded scripts.

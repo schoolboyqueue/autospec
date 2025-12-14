@@ -23,7 +23,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 1. **Setup**: Run the prerequisites script to get feature paths:
 
    ```bash
-   scripts/autospec/check-prerequisites.sh --json --require-spec
+   .autospec/scripts/check-prerequisites.sh --json --require-spec
    ```
 
    Parse the JSON output for:

@@ -14,7 +14,7 @@ var commandsInstallCmd = &cobra.Command{
 
 This installs:
   - Command templates (autospec.specify, autospec.plan, etc.) to .claude/commands/
-  - Helper scripts (common.sh, check-prerequisites.sh, etc.) to scripts/autospec/
+  - Helper scripts (common.sh, check-prerequisites.sh, etc.) to .autospec/scripts/
 
 Existing autospec files will be overwritten. Other files are preserved.
 
@@ -31,7 +31,7 @@ var installScriptsDir string
 func init() {
 	commandsCmd.AddCommand(commandsInstallCmd)
 	commandsInstallCmd.Flags().StringVar(&installTargetDir, "target", "", "Target directory for commands (default: .claude/commands)")
-	commandsInstallCmd.Flags().StringVar(&installScriptsDir, "scripts-target", "", "Target directory for scripts (default: scripts/autospec)")
+	commandsInstallCmd.Flags().StringVar(&installScriptsDir, "scripts-target", "", "Target directory for scripts (default: .autospec/scripts)")
 }
 
 func runCommandsInstall(cmd *cobra.Command, args []string) error {

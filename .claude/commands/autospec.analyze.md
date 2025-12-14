@@ -28,7 +28,7 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 Run the prerequisites script to get feature paths:
 
 ```bash
-scripts/autospec/check-prerequisites.sh --json --require-tasks --include-tasks
+.autospec/scripts/check-prerequisites.sh --json --require-tasks --include-tasks
 ```
 
 Parse the JSON output for:
