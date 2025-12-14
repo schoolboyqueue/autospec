@@ -90,15 +90,15 @@
   - [X] docs.yml - Deploy docs to GitHub Pages
 
 ### Community & Governance
-- [ ] Add CHANGELOG.md for version tracking
-- [ ] Create CONTRIBUTING.md (distinct from CONTRIBUTORS.md)
-  - [ ] How to submit issues/PRs
-  - [ ] Development setup
-  - [ ] Code style guidelines
-  - [ ] Commit message conventions
-  - [ ] Testing requirements
-- [ ] Add SECURITY.md with vulnerability reporting policy
-- [ ] Add CODE_OF_CONDUCT.md (Contributor Covenant or similar)
+- [X] Add CHANGELOG.md for version tracking
+- [X] Create CONTRIBUTING.md (distinct from CONTRIBUTORS.md)
+  - [X] How to submit issues/PRs
+  - [X] Development setup
+  - [X] Code style guidelines
+  - [X] Commit message conventions
+  - [X] Testing requirements
+- [X] Add SECURITY.md with vulnerability reporting policy
+- [ ] Add CODE_OF_CONDUCT.md (Contributor Covenant or similar) - blocked by content filter, add manually
 
 ### Examples & Demos
 - [ ] Create `examples/` directory
