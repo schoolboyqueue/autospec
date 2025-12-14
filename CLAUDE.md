@@ -101,6 +101,11 @@ autospec checklist "Focus on security requirements"        # With prompt guidanc
 autospec analyze                                           # Cross-artifact consistency analysis
 autospec analyze "Verify API contracts"                    # With prompt guidance
 
+# Update task status during implementation
+autospec update-task T001 InProgress                       # Mark task as in progress
+autospec update-task T001 Completed                        # Mark task as completed
+autospec update-task T001 Blocked                          # Mark task as blocked
+
 # Check dependencies
 autospec doctor
 
@@ -133,6 +138,7 @@ Cobra-based command structure providing user-facing commands:
 - **clarify.go**: Refines specification with clarification questions
 - **checklist.go**: Generates custom checklist for feature
 - **analyze.go**: Cross-artifact consistency and quality analysis
+- **update_task.go**: Updates individual task status in tasks.yaml during implementation
 - **doctor.go**: Health check command for dependencies
 - **status.go**: Reports current spec progress
 - **config.go**: Configuration management commands

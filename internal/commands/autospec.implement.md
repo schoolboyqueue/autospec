@@ -145,9 +145,38 @@ You **MUST** consider the user input before proceeding (if not empty).
    - **Polish last**: Cross-cutting concerns and refactoring at the end
 
 8. **Progress tracking and task status updates**:
-   - **CRITICAL**: Update task status in tasks.yaml as you work:
-     - Set `status: "InProgress"` when starting a task
-     - Set `status: "Completed"` when task is done
+
+   **CRITICAL**: You MUST update task status in tasks.yaml as you work. This is non-negotiable.
+
+   Use the `autospec update-task` command to update task status:
+   ```bash
+   autospec update-task <task_id> <status>
+   ```
+
+   **When starting a task**:
+   ```bash
+   autospec update-task T001 InProgress
+   ```
+
+   **When completing a task**:
+   ```bash
+   autospec update-task T001 Completed
+   ```
+
+   **If a task is blocked**:
+   ```bash
+   autospec update-task T001 Blocked
+   ```
+
+   Valid status values: `Pending`, `InProgress`, `Completed`, `Blocked`
+
+   **Implementation workflow for each task**:
+   1. Mark task as InProgress: `autospec update-task T00X InProgress`
+   2. Implement the task
+   3. Verify implementation meets acceptance criteria
+   4. Mark task as Completed: `autospec update-task T00X Completed`
+   5. Move to next task
+
    - Report progress after each completed task
    - Halt execution if any non-parallel task fails
    - For parallel tasks, continue with successful tasks, report failed ones

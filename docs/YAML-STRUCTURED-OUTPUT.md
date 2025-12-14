@@ -377,6 +377,29 @@ Legacy variables removed (now embedded in plan.yaml):
 - `CONTRACTS_DIR` → `plan.yaml` `api_contracts`
 - `QUICKSTART` → `plan.yaml` `implementation_strategy`
 
+## Updating Task Status
+
+Use the `autospec update-task` command to update individual task status during implementation:
+
+```bash
+# Mark task T001 as in progress
+autospec update-task T001 InProgress
+
+# Mark task T001 as completed
+autospec update-task T001 Completed
+
+# Mark task as blocked
+autospec update-task T015 Blocked
+```
+
+**Valid status values:**
+- `Pending` - Task not yet started
+- `InProgress` - Task currently being worked on
+- `Completed` - Task finished successfully
+- `Blocked` - Task blocked by dependency or issue
+
+This command auto-detects the current feature from the git branch and updates the corresponding `tasks.yaml` file.
+
 ## Migration from Markdown
 
 To convert existing markdown artifacts to YAML:
