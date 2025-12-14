@@ -20,15 +20,23 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Determine the current feature directory:
-   - Check current git branch name (e.g., `007-yaml-structured-output`)
-   - Set FEATURE_DIR to `specs/<branch-name>/`
-   - Verify plan.yaml (or plan.md) exists in FEATURE_DIR
-   - If no plan file exists: ERROR "No plan file found. Run /autospec.plan first."
+1. **Setup**: Run the prerequisites script to get feature paths:
+
+   ```bash
+   scripts/autospec/check-prerequisites.sh --json --require-plan
+   ```
+
+   Parse the JSON output for:
+   - `FEATURE_DIR`: The feature directory path
+   - `FEATURE_SPEC`: Path to the spec file
+   - `IMPL_PLAN`: Path to the plan file
+   - `AVAILABLE_DOCS`: List of optional documents found
+
+   If the script fails, it will output an error message instructing the user to run `/autospec.plan` first.
 
 2. **Load design documents**: Read from FEATURE_DIR:
-   - **Required**: plan.yaml (or plan.md) - tech stack, libraries, structure
-   - **Required**: spec.yaml (or spec.md) - user stories with priorities
+   - **Required**: `IMPL_PLAN` - tech stack, libraries, structure
+   - **Required**: `FEATURE_SPEC` - user stories with priorities
    - **Optional**: data-model.md (entities), contracts/ (API endpoints), research.md (decisions)
    - Note: Not all projects have all documents. Generate tasks based on what's available.
 

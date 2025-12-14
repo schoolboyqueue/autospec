@@ -25,34 +25,39 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 ### 1. Initialize Analysis Context
 
-Determine the current feature directory:
-- Check current git branch name (e.g., `007-yaml-structured-output`)
-- Set FEATURE_DIR to `specs/<branch-name>/`
-- Derive absolute paths:
-  - SPEC = FEATURE_DIR/spec.yaml (or spec.md)
-  - PLAN = FEATURE_DIR/plan.yaml (or plan.md)
-  - TASKS = FEATURE_DIR/tasks.yaml (or tasks.md)
+Run the prerequisites script to get feature paths:
 
-Abort with an error message if any required file is missing (instruct the user to run missing prerequisite command).
+```bash
+scripts/autospec/check-prerequisites.sh --json --require-tasks --include-tasks
+```
+
+Parse the JSON output for:
+- `FEATURE_DIR`: The feature directory path
+- `FEATURE_SPEC`: Path to the spec file (spec.yaml)
+- `IMPL_PLAN`: Path to the plan file (plan.yaml)
+- `TASKS`: Path to the tasks file (tasks.yaml)
+- `AVAILABLE_DOCS`: List of optional documents found
+
+If the script fails, it will output an error message instructing the user to run the missing prerequisite command.
 
 ### 2. Load Artifacts (Progressive Disclosure)
 
 Load only the minimal necessary context from each artifact:
 
-**From spec (yaml or md)**:
+**From spec.yaml**:
 - Overview/Context
 - Functional Requirements
 - Non-Functional Requirements
 - User Stories
 - Edge Cases (if present)
 
-**From plan (yaml or md)**:
+**From plan.yaml**:
 - Architecture/stack choices
 - Data Model references
 - Phases
 - Technical constraints
 
-**From tasks (yaml or md)**:
+**From tasks.yaml**:
 - Task IDs
 - Descriptions
 - Phase grouping
@@ -60,7 +65,7 @@ Load only the minimal necessary context from each artifact:
 - Referenced file paths
 
 **From constitution**:
-- Load `.specify/memory/constitution.md` or `CLAUDE.md` for principle validation
+- Load `.specify/memory/constitution.yaml` or `CLAUDE.md` for principle validation
 
 ### 3. Build Semantic Models
 

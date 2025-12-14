@@ -20,14 +20,20 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Determine the current feature directory:
-   - Check current git branch name (e.g., `007-yaml-structured-output`)
-   - Set FEATURE_DIR to `specs/<branch-name>/`
-   - Verify spec.yaml (or spec.md) exists in FEATURE_DIR
-   - If no spec file exists: ERROR "No spec file found. Run /autospec.specify first."
+1. **Setup**: Run the prerequisites script to get feature paths:
+
+   ```bash
+   scripts/autospec/check-prerequisites.sh --json --require-spec
+   ```
+
+   Parse the JSON output for:
+   - `FEATURE_DIR`: The feature directory path
+   - `FEATURE_SPEC`: Path to the spec file (spec.yaml or spec.md)
+
+   If the script fails, it will output an error message instructing the user to run `/autospec.specify` first.
 
 2. **Load context**:
-   - Read the spec file (FEATURE_DIR/spec.yaml preferred, fall back to spec.md)
+   - Read the spec file at `FEATURE_SPEC`
    - Read project constitution if exists (`.specify/memory/constitution.md` or `CLAUDE.md`)
    - Extract: feature description, user stories, requirements, constraints
 

@@ -34,11 +34,18 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Execution Steps
 
-1. **Setup**: Determine the current feature directory:
-   - Check current git branch name (e.g., `007-yaml-structured-output`)
-   - Set FEATURE_DIR to `specs/<branch-name>/`
-   - Verify spec.yaml (or spec.md) exists in FEATURE_DIR
-   - If no spec file exists: ERROR "No spec file found. Run /autospec.specify first."
+1. **Setup**: Run the prerequisites script to get feature paths:
+
+   ```bash
+   scripts/autospec/check-prerequisites.sh --json --require-spec
+   ```
+
+   Parse the JSON output for:
+   - `FEATURE_DIR`: The feature directory path
+   - `FEATURE_SPEC`: Path to the spec file
+   - `AVAILABLE_DOCS`: List of optional documents found
+
+   If the script fails, it will output an error message instructing the user to run `/autospec.specify` first.
 
 2. **Clarify intent (dynamic)**: Derive up to THREE initial contextual clarifying questions. They MUST:
    - Be generated from the user's phrasing + extracted signals from spec/plan/tasks

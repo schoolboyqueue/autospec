@@ -59,26 +59,26 @@ for arg in "$@"; do
             cat << 'EOF'
 Usage: check-prerequisites.sh [OPTIONS]
 
-Consolidated prerequisite checking for Spec-Driven Development workflow.
-Supports both YAML (.yaml) and Markdown (.md) formats (YAML preferred).
+Prerequisite checking for autospec YAML workflow.
+Works with YAML files only (.yaml).
 
 OPTIONS:
   --json              Output in JSON format
-  --require-spec      Require spec file to exist
-  --require-plan      Require plan file to exist (default)
-  --require-tasks     Require tasks file to exist (for implementation phase)
-  --include-tasks     Include tasks file in AVAILABLE_DOCS list
+  --require-spec      Require spec.yaml to exist
+  --require-plan      Require plan.yaml to exist (default)
+  --require-tasks     Require tasks.yaml to exist (for implementation phase)
+  --include-tasks     Include tasks.yaml in AVAILABLE_DOCS list
   --paths-only        Only output path variables (no prerequisite validation)
   --help, -h          Show this help message
 
 EXAMPLES:
-  # Check spec prerequisites (spec.yaml or spec.md required)
+  # Check spec prerequisites (spec.yaml required)
   ./check-prerequisites.sh --json --require-spec
 
-  # Check plan prerequisites (plan.yaml or plan.md required)
+  # Check plan prerequisites (plan.yaml required)
   ./check-prerequisites.sh --json
 
-  # Check implementation prerequisites (plan + tasks required)
+  # Check implementation prerequisites (plan.yaml + tasks.yaml required)
   ./check-prerequisites.sh --json --require-tasks --include-tasks
 
   # Get feature paths only (no validation)
@@ -126,27 +126,24 @@ if [[ ! -d "$FEATURE_DIR" ]]; then
     exit 1
 fi
 
-# Check for spec file if required
+# Check for spec file if required (YAML-only)
 if $REQUIRE_SPEC && [[ ! -f "$FEATURE_SPEC" ]]; then
-    echo "ERROR: No spec file found in $FEATURE_DIR" >&2
-    echo "Expected: spec.yaml or spec.md" >&2
-    echo "Run /autospec.specify or /speckit.specify first." >&2
+    echo "ERROR: No spec.yaml found in $FEATURE_DIR" >&2
+    echo "Run /autospec.specify first to create the spec." >&2
     exit 1
 fi
 
-# Check for plan file if required
+# Check for plan file if required (YAML-only)
 if $REQUIRE_PLAN && [[ ! -f "$IMPL_PLAN" ]]; then
-    echo "ERROR: No plan file found in $FEATURE_DIR" >&2
-    echo "Expected: plan.yaml or plan.md" >&2
-    echo "Run /autospec.plan or /speckit.plan first." >&2
+    echo "ERROR: No plan.yaml found in $FEATURE_DIR" >&2
+    echo "Run /autospec.plan first to create the plan." >&2
     exit 1
 fi
 
-# Check for tasks file if required
+# Check for tasks file if required (YAML-only)
 if $REQUIRE_TASKS && [[ ! -f "$TASKS" ]]; then
-    echo "ERROR: No tasks file found in $FEATURE_DIR" >&2
-    echo "Expected: tasks.yaml or tasks.md" >&2
-    echo "Run /autospec.tasks or /speckit.tasks first." >&2
+    echo "ERROR: No tasks.yaml found in $FEATURE_DIR" >&2
+    echo "Run /autospec.tasks first to create tasks." >&2
     exit 1
 fi
 

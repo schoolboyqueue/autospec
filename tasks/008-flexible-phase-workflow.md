@@ -24,98 +24,82 @@ Users cannot easily run custom combinations like:
 
 ## Recommended Command Structure
 
-### Option 1: Phase Flags (Recommended)
+### Root-Level Phase Flags
 
 ```bash
-# New 'run' command with phase flags
-autospec run -s -p -t -i "feature description"
+# Phase flags directly on root command (no subcommand needed)
+autospec -s -p -t -i "feature description"
 
 # Short flags can be combined (like tar -xzvf)
-autospec run -spi "feature description"    # specify → plan → implement
-autospec run -sp "feature description"     # specify → plan
-autospec run -pti                          # plan → tasks → implement (auto-detect spec)
+autospec -spi "feature description"    # specify → plan → implement
+autospec -sp "feature description"     # specify → plan
+autospec -pti                          # plan → tasks → implement (auto-detect spec)
 
 # Long flags available for clarity
-autospec run --specify --plan --tasks --implement "feature"
-```
+autospec --specify --plan --tasks --implement "feature"
 
-**Pros:**
-- Intuitive for Unix users (similar to tar, chmod flags)
-- Concise: `-spi` vs `--specify --plan --implement`
-- Easy to remember: s=specify, p=plan, t=tasks, i=implement
-- Flexible ordering in flags (execution always follows canonical order)
-
-**Cons:**
-- New command to learn (`run`)
-- Slightly more typing than current `full` for common case
-
-### Option 2: Comma-Separated Phases
-
-```bash
-autospec run specify,plan,implement "feature"
-autospec run s,p,i "feature"
-```
-
-**Pros:**
-- Explicit phase list
-- Could support arbitrary ordering
-
-**Cons:**
-- More typing
-- Parsing complexity
-- Less familiar pattern
-
-### Option 3: Root-Level Flags
-
-```bash
-autospec -spi "feature"
-autospec --specify --plan --implement "feature"
+# Shortcut for all phases
+autospec -a "feature description"      # same as -spti
+autospec --all "feature description"
 ```
 
 **Pros:**
 - Shortest possible command
-- No subcommand needed
-
-**Cons:**
-- Conflicts with existing subcommand structure
-- May confuse users expecting `autospec specify`
-
----
-
-## Recommendation: Option 1 (Phase Flags)
+- Intuitive for Unix users (similar to tar, chmod flags)
+- Concise: `-spi` vs `--specify --plan --implement`
+- Easy to remember: s=specify, p=plan, t=tasks, i=implement, a=all
+- `-a` / `--all` for the common "run everything" case
 
 ### Command Specification
 
 ```bash
-autospec run [flags] [feature-description]
+autospec [phase-flags] [feature-description]
 
-Flags:
+Phase Flags:
   -s, --specify     Include specify phase (requires feature description)
   -p, --plan        Include plan phase
   -t, --tasks       Include tasks phase
   -i, --implement   Include implement phase
+  -a, --all         Include all phases (equivalent to -spti)
+
+Other Flags:
   -r, --resume      Resume implementation from last checkpoint
+  -y, --yes         Skip confirmation prompts
+  --spec            Explicitly specify spec name (e.g., --spec 007-feature)
   --max-retries     Maximum retry attempts (default: 3)
 
 Examples:
-  autospec run -spti "Add authentication"   # Full workflow (same as 'full')
-  autospec run -spt "Add feature"           # Same as 'workflow'
-  autospec run -spi "Add feature"           # Skip tasks phase
-  autospec run -sp "Add feature"            # Just specify and plan
-  autospec run -pi                          # Plan and implement (existing spec)
-  autospec run -ti                          # Tasks and implement (existing spec)
-  autospec run -i                           # Just implement (same as 'implement')
+  autospec -a "Add authentication"      # All phases (full workflow)
+  autospec -spti "Add authentication"   # Same as above, explicit
+  autospec -spt "Add feature"           # Specify, plan, tasks (no implement)
+  autospec -spi "Add feature"           # Skip tasks phase
+  autospec -sp "Add feature"            # Just specify and plan
+  autospec -pi                          # Plan and implement (existing spec)
+  autospec -ti                          # Tasks and implement (existing spec)
+  autospec -i                           # Just implement
+  autospec -i --spec 007-feature        # Implement specific spec
 ```
 
 ### Execution Order
 
 Phases always execute in canonical order regardless of flag order:
-1. specify (if -s)
-2. plan (if -p)
-3. tasks (if -t)
-4. implement (if -i)
+1. specify (if -s or -a)
+2. plan (if -p or -a)
+3. tasks (if -t or -a)
+4. implement (if -i or -a)
 
 This prevents user confusion and ensures correct artifact dependencies.
+
+### Naming Discussion: `full` vs `all` vs `-a`
+
+| Option | Command | Pros | Cons |
+|--------|---------|------|------|
+| Current `full` | `autospec full "feature"` | Explicit subcommand | Longer, redundant with `-a` |
+| Rename to `all` | `autospec all "feature"` | Clearer meaning | Still a subcommand |
+| Flag only | `autospec -a "feature"` | Shortest, consistent | Less discoverable |
+| Both | `autospec -a` + `autospec all` | Flexibility | Redundancy |
+
+**Recommendation**: Keep `-a` flag as primary, deprecate `full` subcommand (or keep as alias for discoverability).
 
 ---
 

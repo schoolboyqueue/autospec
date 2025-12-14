@@ -124,8 +124,8 @@ find_feature_dir_by_prefix() {
     fi
 }
 
-# Find the actual file, preferring YAML over MD
-# Usage: find_artifact "$feature_dir" "spec" -> returns path to spec.yaml or spec.md
+# Find the YAML artifact file (YAML-only, no MD fallback)
+# Usage: find_artifact "$feature_dir" "spec" -> returns path to spec.yaml or empty if not found
 find_artifact() {
     local dir="$1"
     local name="$2"
@@ -134,7 +134,8 @@ find_artifact() {
     elif [[ -f "$dir/$name.yml" ]]; then
         echo "$dir/$name.yml"
     else
-        echo "$dir/$name.md"
+        # Return expected path (will fail validation later)
+        echo "$dir/$name.yaml"
     fi
 }
 
@@ -150,7 +151,7 @@ get_feature_paths() {
     # Use prefix-based lookup to support multiple branches per spec
     local feature_dir=$(find_feature_dir_by_prefix "$repo_root" "$current_branch")
 
-    # Find actual files (prefer YAML over MD)
+    # Find YAML files (YAML-only workflow)
     local spec_file=$(find_artifact "$feature_dir" "spec")
     local plan_file=$(find_artifact "$feature_dir" "plan")
     local tasks_file=$(find_artifact "$feature_dir" "tasks")
@@ -161,14 +162,8 @@ CURRENT_BRANCH='$current_branch'
 HAS_GIT='$has_git_repo'
 FEATURE_DIR='$feature_dir'
 FEATURE_SPEC='$spec_file'
-FEATURE_SPEC_YAML='$feature_dir/spec.yaml'
-FEATURE_SPEC_MD='$feature_dir/spec.md'
 IMPL_PLAN='$plan_file'
-IMPL_PLAN_YAML='$feature_dir/plan.yaml'
-IMPL_PLAN_MD='$feature_dir/plan.md'
 TASKS='$tasks_file'
-TASKS_YAML='$feature_dir/tasks.yaml'
-TASKS_MD='$feature_dir/tasks.md'
 RESEARCH='$feature_dir/research.md'
 DATA_MODEL='$feature_dir/data-model.md'
 QUICKSTART='$feature_dir/quickstart.md'

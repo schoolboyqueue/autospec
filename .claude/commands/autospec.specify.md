@@ -33,28 +33,18 @@ Given that feature description, do this:
      - "Create a dashboard for analytics" → "analytics-dashboard"
      - "Fix payment processing timeout bug" → "fix-payment-timeout"
 
-2. **Check for existing branches before creating new one**:
+2. **Create feature branch and directory**: Run the script with your generated short-name:
 
-   a. First, fetch all remote branches to ensure we have the latest information:
+   ```bash
+   scripts/autospec/create-new-feature.sh --json --short-name "<short-name>" "$ARGUMENTS"
+   ```
 
-      ```bash
-      git fetch --all --prune
-      ```
+   Parse the JSON output for:
+   - `BRANCH_NAME`: The full branch name (e.g., "008-user-auth")
+   - `SPEC_FILE`: Path to the spec file (ignore - we'll create spec.yaml instead)
+   - `FEATURE_NUM`: The feature number
 
-   b. Find the highest feature number across all sources for the short-name:
-      - Remote branches: `git ls-remote --heads origin | grep -E 'refs/heads/[0-9]+-<short-name>$'`
-      - Local branches: `git branch | grep -E '^[* ]*[0-9]+-<short-name>$'`
-      - Specs directories: Check for directories matching `specs/[0-9]+-<short-name>`
-
-   c. Determine the next available number:
-      - Extract all numbers from all three sources
-      - Find the highest number N
-      - Use N+1 for the new branch number
-
-   d. Create the feature directory and branch:
-      - Create `specs/<number>-<short-name>/` directory
-      - Create and checkout git branch `<number>-<short-name>`
-      - Set FEATURE_DIR to the absolute path of the created directory
+   Set `FEATURE_DIR` to `specs/<BRANCH_NAME>/`
 
 3. **Generate spec.yaml**: Create the YAML specification file with this structure:
 

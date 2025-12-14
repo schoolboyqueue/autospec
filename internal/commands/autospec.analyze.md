@@ -51,13 +51,13 @@ Load only the minimal necessary context from each artifact:
 - User Stories
 - Edge Cases (if present)
 
-**From plan (yaml or md)**:
+**From plan.yaml**:
 - Architecture/stack choices
 - Data Model references
 - Phases
 - Technical constraints
 
-**From tasks (yaml or md)**:
+**From tasks.yaml**:
 - Task IDs
 - Descriptions
 - Phase grouping
@@ -65,7 +65,7 @@ Load only the minimal necessary context from each artifact:
 - Referenced file paths
 
 **From constitution**:
-- Load `.specify/memory/constitution.md` or `CLAUDE.md` for principle validation
+- Load `.specify/memory/constitution.yaml` or `CLAUDE.md` for principle validation
 
 ### 3. Build Semantic Models
 
