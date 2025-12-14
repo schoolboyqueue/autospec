@@ -76,7 +76,7 @@ focus on those specific unchecked tasks.
 
 ### References
 
-- Analysis doc: `docs/claude-agent-sdk-evaluation.md`
+- Analysis doc: `docs/CLAUDE-AGENT-SDK-EVALUATION.md`
 
 ---
 
@@ -101,5 +101,5 @@ Enable running multiple specs in parallel using git worktrees for file isolation
 
 ### References
 
-- Research doc: `docs/claude-agent-sdk-evaluation.md`
+- Research doc: `docs/CLAUDE-AGENT-SDK-EVALUATION.md`
 - Sandbox runtime: https://github.com/anthropic-experimental/sandbox-runtime
