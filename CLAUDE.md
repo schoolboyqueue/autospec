@@ -520,6 +520,8 @@ If needed, legacy bash scripts are still available:
 - Go 1.25.1 + Cobra CLI (v1.10.1), koanf config (v2.1.2), go-playground/validator (v10.28.0), briandowns/spinner (v1.23.0) (005-high-level-docs)
 - Markdown with YAML frontmatter (GitHub-specific format) + None - static files interpreted by GitHub (006-github-issue-templates)
 - Repository files in `.github/ISSUE_TEMPLATE/` directory (006-github-issue-templates)
+- Go 1.25.1 + Cobra CLI (v1.10.1), gopkg.in/yaml.v3 (v3.0.1 - already indirect dep), koanf (v2.3.0) (007-yaml-structured-output)
+- File system (YAML artifacts in `specs/*/`, command templates embedded in binary) (007-yaml-structured-output)
 
 ## Recent Changes
 - 003-command-timeout: Added Go 1.25.1
