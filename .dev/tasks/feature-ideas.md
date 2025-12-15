@@ -1,0 +1,635 @@
+# Feature Ideas for autospec CLI
+
+Based on analysis of the codebase, common Go CLI patterns, and comparison with mature CLIs like kubectl, docker, and gh.
+
+---
+
+## Quick Start Commands
+
+Copy-paste any of these to start specifying a feature:
+
+### High Priority
+
+```bash
+# 0. Enhance Status Command (HIGH PRIORITY)
+autospec specify "Fix and enhance 'autospec status' command. BUGS to fix: (1) Line 55 hardcodes 'Status: In Progress' - never checks actual completion, (2) Line 58 looks for tasks.md but should be tasks.yaml, (3) Errors and exits if tasks.yaml missing instead of showing partial status. NEW BEHAVIOR: Show artifact table (spec.yaml, plan.yaml, tasks.yaml) with EXISTS (✓/✗) and LAST_MODIFIED columns. If tasks.yaml exists: show concise task stats like 'Tasks: 12 total | 8 completed | 3 in-progress | 1 pending' and calculate overall status (Pending/In Progress/Complete) from task counts. If tasks.yaml missing: show 'Recommendations:' section with specific autospec commands like 'Run: autospec tasks' or 'Run: autospec run -pti' based on which artifacts exist. Add --json flag for scripting. Add 'st' alias."
+
+# 1. Self-Update Command
+autospec specify "Add 'autospec update' command that checks GitHub releases for newer versions and self-updates the binary. Support flags: --check (check only, no update), --version v1.2.3 (specific version). Use go-github-selfupdate library. Show changelog summary after update. Handle permission errors gracefully with sudo hint."
+
+# 2. Output Format Flag
+autospec specify "Add global --output/-o flag supporting json, yaml, table, plain formats. Create shared output formatter in internal/output/. Retrofit status, doctor, config show, and list commands to use formatter. Default to table for interactive, json when piped."
+
+# 3. Command Aliases
+autospec specify "Add short aliases to all major commands: specify→spec/s, plan→p, tasks→t, implement→impl/i, status→st, doctor→doc, constitution→const, clarify→cl, checklist→chk, analyze→az. Use Cobra's Aliases field. Update help text to show aliases."
+
+# 4. Shell Completion Installer
+autospec specify "Add 'autospec completion install [bash|zsh|fish|powershell]' subcommand that auto-detects shell from \$SHELL, writes completion script to appropriate location (~/.bashrc, ~/.zshrc, fish config), creates backup before modifying rc files, and provides manual instructions as fallback."
+
+# 5. History/Audit Log
+autospec specify "Add 'autospec history' command that logs all command executions to ~/.autospec/history.json with timestamp, command, spec, exit code, duration. Support flags: --spec NAME (filter), --clear (clear history), --limit N (show last N). Limit storage to configurable max entries."
+
+# 6. Diff/Preview Mode
+autospec specify "Add --diff flag to plan/tasks commands showing changes from previous version. Add --preview flag to implement for dry-run showing expected changes. Store artifact snapshots before/after in .autospec/snapshots/. Use go-diff library for color-coded output."
+```
+
+### Medium Priority
+
+```bash
+# 7. Config Profiles
+autospec specify "Add config profile system: 'autospec config profiles' (list), 'autospec config use NAME' (switch), 'autospec config create NAME' (create from current). Store in ~/.config/autospec/profiles/. Add global --profile flag to use specific profile for single command."
+
+# 8. Spec Templates
+autospec specify "Add template system: 'autospec template list', 'autospec template use NAME', 'autospec template save NAME' (save current spec as template), 'autospec template import FILE'. Store in ~/.config/autospec/templates/. Include default templates for api-endpoint, bug-fix, refactor."
+
+# 9. Man Page Generation
+autospec specify "Add 'autospec docs man' command using Cobra's built-in doc.GenManTree() to generate man pages to ./man/ directory. Add 'autospec docs install' to copy to system man path. Add 'make docs' target to Makefile."
+
+# 10. Watch Mode
+autospec specify "Add 'autospec watch PHASE' command that monitors relevant files and re-runs phase on changes. Use fsnotify library. watch plan monitors spec.yaml, watch tasks monitors plan.yaml, watch implement monitors tasks.yaml. Include debounce for rapid changes and --interval flag."
+
+# 11. Spec List Command
+autospec specify "Add 'autospec list' command showing all specs in table format with columns: NUM, NAME, STATUS (planned/in-progress/complete), TASKS (done/total), LAST_MODIFIED. Support flags: --status (include status), --sort=date|name|status, --filter=PATTERN, --json."
+
+# 12. Enhanced Progress Bars
+autospec specify "Enhance progress display during implement phase using progressbar library. Show percentage, current task ID and description, elapsed time. Parse tasks.yaml completion status for real progress. Fall back to spinner when task count unknown."
+
+# 13. Interactive Mode
+autospec specify "Add 'autospec interactive' or 'autospec -i' for guided wizard mode using charmbracelet/huh library. Prompt for: action (specify/plan/tasks/implement), feature description, optional phases (clarify/checklist/analyze), confirmation before execution."
+```
+
+### Lower Priority
+
+```bash
+# 14. Plugin System
+autospec specify "Add plugin system: 'autospec plugin install NAME', 'autospec plugin list', 'autospec plugin remove NAME'. Plugins are Go binaries in ~/.config/autospec/plugins/ following naming convention autospec-PLUGINNAME. Auto-discover and register as subcommands."
+
+# 15. Context/Workspace Switching
+autospec specify "Add workspace context: 'autospec context set NAME PATH', 'autospec context use NAME', 'autospec context list', 'autospec context current'. Store in ~/.config/autospec/contexts.yaml. Context switches working directory and loads project config."
+
+# 16. Export/Import Specs
+autospec specify "Add 'autospec export SPEC-NAME --output FILE.tar.gz' to bundle spec directory with all artifacts. Add 'autospec import FILE.tar.gz' to extract into specs/. Support --all flag to export all specs. Preserve directory structure and metadata."
+
+# 17. Webhook/Event System
+autospec specify "Add hook system: 'autospec hook add EVENT COMMAND', 'autospec hook list', 'autospec hook remove EVENT'. Events: phase-start, phase-complete, workflow-complete, error. Store in config. Execute hooks with environment variables for spec, phase, status."
+
+# 18. Retry Resume Enhancement
+autospec specify "Enhance resume functionality: 'autospec resume' continues last failed workflow from exact failure point, 'autospec resume SPEC-NAME' for specific spec. Store workflow state in retry.json including completed phases. Show what will be resumed before executing."
+
+# 19. Timing/Performance Stats
+autospec specify "Add 'autospec stats' command showing phase execution timing. Track in ~/.autospec/stats.json: phase, spec, duration, timestamp, success/fail. Display table with columns: Phase, Runs, Avg Time, Last Run. Support --spec NAME filter."
+
+# 20. Spec Archive
+autospec specify "Add 'autospec archive SPEC-NAME' to move completed spec to specs/.archive/ preserving structure. Add 'autospec archive --list' to show archived specs. Add 'autospec unarchive SPEC-NAME' to restore. Update list command to exclude archived by default."
+```
+
+### Config Commands
+
+```bash
+# Config Get/Set
+autospec specify "Add 'autospec config get KEY' and 'autospec config set KEY VALUE' commands for individual config values. Support dot notation for nested keys. Validate values against schema. Add 'autospec config unset KEY' to remove override and fall back to default."
+
+# Config Edit
+autospec specify "Add 'autospec config edit' command that opens config file in \$EDITOR (default: vim). Support --project flag for .autospec/config.yml, --user for ~/.config/autospec/config.yml. Create file from defaults if doesn't exist. Validate after save."
+
+# Config Diff
+autospec specify "Add 'autospec config diff' command showing differences between project config, user config, and defaults. Use color-coded diff output. Show which values come from which source."
+```
+
+### Global Flags
+
+```bash
+# Quiet Flag
+autospec specify "Add global --quiet/-q flag that suppresses non-essential output (banners, progress, hints). Only show errors and final results. Useful for scripting. Implement via shared output package that checks quiet flag."
+
+# Log Level Flag
+autospec specify "Add global --log-level flag accepting debug, info, warn, error. Default to info. Debug shows internal state, timing, config resolution. Integrate with existing --debug flag (alias for --log-level=debug)."
+```
+
+---
+
+## High Priority (High Value, Reasonable Effort)
+
+### 0. Enhance Status Command (HIGH PRIORITY)
+**Why:** Current `status` command is broken and outdated. It should work at any workflow stage and guide users on next steps.
+
+**Bugs in `internal/cli/status.go`:**
+```go
+// Line 55 - HARDCODED! Never checks actual completion
+fmt.Printf("Status: In Progress\n\n")
+
+// Line 58 - WRONG EXTENSION! Should be tasks.yaml
+tasksPath := fmt.Sprintf("%s/tasks.md", metadata.Directory)
+```
+
+**Current problems:**
+- **BUG:** Status always says "In Progress" even when complete
+- **BUG:** Looks for `tasks.md` instead of `tasks.yaml`
+- **BUG:** Errors and exits if tasks file missing (should show partial status)
+- No recommendations on what to run next
+- No artifact existence check
+- No --json output flag
+
+```bash
+autospec status               # Current branch's spec
+autospec st 003-auth          # Specific spec (alias)
+autospec status --json        # For scripting
+```
+
+**New output (no spec yet):**
+```
+Spec: 014-new-feature
+Branch: 014-new-feature
+
+ARTIFACT      EXISTS    LAST MODIFIED
+spec.yaml     ✗         -
+plan.yaml     ✗         -
+tasks.yaml    ✗         -
+
+Recommendations:
+  → Run: autospec specify "your feature description"
+  → Or full workflow: autospec run -spti "your feature"
+```
+
+**New output (spec only):**
+```
+Spec: 014-new-feature
+
+ARTIFACT      EXISTS    LAST MODIFIED
+spec.yaml     ✓         2 hours ago
+plan.yaml     ✗         -
+tasks.yaml    ✗         -
+
+Recommendations:
+  → Run: autospec plan
+  → Or continue workflow: autospec run -pti
+```
+
+**New output (tasks exist, in progress):**
+```
+Spec: 003-user-authentication
+Status: In Progress
+
+ARTIFACT      EXISTS    LAST MODIFIED
+spec.yaml     ✓         2 hours ago
+plan.yaml     ✓         1 hour ago
+tasks.yaml    ✓         30 min ago
+
+Tasks: 15 total | 8 completed | 2 in-progress | 5 pending
+
+Recommendations:
+  → Continue: autospec implement
+```
+
+**New output (complete):**
+```
+Spec: 013-uninstall-command
+Status: Complete ✓
+
+ARTIFACT      EXISTS    LAST MODIFIED
+spec.yaml     ✓         Dec 15
+plan.yaml     ✓         Dec 15
+tasks.yaml    ✓         Dec 15
+
+Tasks: 12 total | 12 completed | 0 in-progress | 0 pending
+```
+
+**Implementation:**
+- Check file existence with `os.Stat()` before parsing
+- Update from `tasks.md` to `tasks.yaml`
+- Parse tasks.yaml to count by status (Pending/InProgress/Completed/Blocked)
+- Calculate overall status: Complete if all done, In Progress if any in-progress or some completed, Pending if none started
+- Decision tree for recommendations based on artifact presence
+- Add alias via Cobra's `Aliases: []string{"st"}`
+- Add `--json` flag
+
+**Effort:** Low-Medium (1-2 days)
+
+---
+
+### 1. Self-Update Command
+**Why:** Users shouldn't need to manually download new releases.
+
+```bash
+autospec update              # Check and update to latest
+autospec update --check      # Check for updates only
+autospec update v1.2.3       # Update to specific version
+```
+
+**Implementation:**
+- Use `github.com/rhysd/go-github-selfupdate` or similar
+- Check GitHub releases for new versions
+- Download and replace binary (with permission handling)
+- Show changelog summary
+
+**Effort:** Medium (2-3 days)
+
+---
+
+### 2. Output Format Flag (--output/-o)
+**Why:** Enable scripting and integration with other tools.
+
+```bash
+autospec status --output json
+autospec status -o yaml
+autospec config show -o table   # Default
+autospec doctor -o json
+```
+
+**Implementation:**
+- Add global `--output` flag (json, yaml, table, plain)
+- Create shared output formatter in `internal/output/`
+- Retrofit existing commands to use formatter
+
+**Effort:** Medium (2-3 days)
+
+---
+
+### 3. Command Aliases
+**Why:** Power users want shorter commands.
+
+```go
+// In each command definition
+var planCmd = &cobra.Command{
+    Use:     "plan",
+    Aliases: []string{"p"},
+    // ...
+}
+```
+
+**Suggested aliases:**
+| Command | Alias |
+|---------|-------|
+| specify | spec, s |
+| plan | p |
+| tasks | t |
+| implement | impl, i |
+| status | st |
+| doctor | doc |
+
+**Effort:** Low (1 day)
+
+---
+
+### 4. Shell Completion Installation Helper
+**Why:** Completion is generated but users don't know how to install it.
+
+```bash
+autospec completion install bash   # Add to ~/.bashrc
+autospec completion install zsh    # Add to ~/.zshrc
+autospec completion install fish   # Add to fish config
+```
+
+**Implementation:**
+- Detect shell from $SHELL
+- Write completion script to appropriate location
+- Add source line to rc file (with backup)
+- Provide manual instructions as fallback
+
+**Effort:** Low (1-2 days)
+
+---
+
+### 5. History/Audit Log
+**Why:** Track what commands were run and when for debugging.
+
+```bash
+autospec history                   # Show recent commands
+autospec history --spec 003-auth   # Filter by spec
+autospec history --clear           # Clear history
+```
+
+**Storage:** `~/.autospec/history.json`
+
+**Implementation:**
+- Log command, timestamp, spec, exit code
+- Limit to last N entries (configurable)
+- Optional: include command duration
+
+**Effort:** Medium (2 days)
+
+---
+
+### 6. Diff/Preview Mode
+**Why:** See what would change before committing to implementation.
+
+```bash
+autospec plan --diff              # Show diff from last plan
+autospec implement --preview      # Dry-run showing expected changes
+```
+
+**Implementation:**
+- Store artifact snapshots before/after
+- Use `github.com/sergi/go-diff` or similar
+- Color-coded diff output
+
+**Effort:** Medium-High (3-4 days)
+
+---
+
+## Medium Priority (Good Value, Moderate Effort)
+
+### 7. Config Profiles
+**Why:** Different settings for different contexts (work vs personal, fast vs thorough).
+
+```bash
+autospec config use fast           # Switch to "fast" profile
+autospec config profiles           # List available profiles
+autospec config create work        # Create new profile
+autospec --profile thorough run -a "feature"
+```
+
+**Storage:** `~/.config/autospec/profiles/`
+
+**Effort:** Medium (2-3 days)
+
+---
+
+### 8. Spec Templates
+**Why:** Reuse common spec patterns.
+
+```bash
+autospec template list                    # List available templates
+autospec template use api-endpoint        # Create spec from template
+autospec template save my-template        # Save current spec as template
+autospec template import ./template.yaml  # Import from file
+```
+
+**Storage:** `~/.config/autospec/templates/`
+
+**Effort:** Medium (2-3 days)
+
+---
+
+### 9. Man Page Generation
+**Why:** Unix convention for documentation.
+
+```bash
+autospec docs man           # Generate man pages to ./man/
+autospec docs install       # Install man pages to system
+```
+
+**Implementation:**
+- Cobra has built-in `doc.GenManTree()`
+- Add to Makefile: `make docs`
+
+**Effort:** Low (1 day)
+
+---
+
+### 10. Watch Mode
+**Why:** Automatically re-run on file changes during development.
+
+```bash
+autospec watch plan         # Re-run plan when spec.yaml changes
+autospec watch tasks        # Re-run tasks when plan.yaml changes
+```
+
+**Implementation:**
+- Use `github.com/fsnotify/fsnotify`
+- Watch relevant files based on phase
+- Debounce rapid changes
+
+**Effort:** Medium (2 days)
+
+---
+
+### 11. Spec List Command
+**Why:** Quick overview of all specs without leaving terminal.
+
+```bash
+autospec list                      # List all specs
+autospec list --status             # Include completion status
+autospec list --sort=date          # Sort options
+autospec list --filter="auth"      # Filter by name
+```
+
+**Output:**
+```
+NUM  NAME                  STATUS      TASKS  LAST MODIFIED
+001  initial-setup         complete    5/5    2024-01-15
+002  go-binary-migration   in-progress 8/12   2024-01-20
+003  auth-feature          planned     0/15   2024-01-22
+```
+
+**Effort:** Low-Medium (1-2 days)
+
+---
+
+### 12. Progress Bars (Enhanced)
+**Why:** Better UX for long-running operations.
+
+```bash
+autospec implement
+# Output:
+# [████████░░░░░░░░] 47% Implementing... (T008: Add validation)
+```
+
+**Implementation:**
+- Use `github.com/schollz/progressbar/v3` or enhance existing spinner
+- Parse task completion to show real progress
+- Show current task being worked on
+
+**Effort:** Medium (2 days)
+
+---
+
+### 13. Interactive Mode
+**Why:** Guided workflow for new users.
+
+```bash
+autospec interactive        # or `autospec -i`
+# Prompts:
+# ? What do you want to do? [specify/plan/tasks/implement]
+# ? Enter feature description:
+# ? Include clarify phase? [Y/n]
+```
+
+**Implementation:**
+- Use `github.com/AlecAivazis/survey/v2` or `github.com/charmbracelet/huh`
+- Wizard-style flow
+
+**Effort:** Medium (2-3 days)
+
+---
+
+## Lower Priority (Nice to Have)
+
+### 14. Plugin System
+**Why:** Extensibility for custom workflows.
+
+```bash
+autospec plugin install my-plugin
+autospec plugin list
+autospec my-custom-command    # From plugin
+```
+
+**Consideration:** High complexity, evaluate demand first.
+
+**Effort:** High (1-2 weeks)
+
+---
+
+### 15. Context/Workspace Switching
+**Why:** Work on multiple projects easily.
+
+```bash
+autospec context set project-a /path/to/project-a
+autospec context use project-a
+autospec context list
+```
+
+**Effort:** Medium (2-3 days)
+
+---
+
+### 16. Export/Import Specs
+**Why:** Share specs between projects or team members.
+
+```bash
+autospec export 003-auth --output auth-spec.tar.gz
+autospec import auth-spec.tar.gz
+autospec export --all --output backup.tar.gz
+```
+
+**Effort:** Medium (2 days)
+
+---
+
+### 17. Webhook/Event System
+**Why:** CI/CD integration and notifications.
+
+```bash
+autospec hook add on-complete "curl https://webhook.example.com"
+autospec hook list
+autospec hook remove on-complete
+```
+
+**Events:** phase-start, phase-complete, workflow-complete, error
+
+**Effort:** Medium-High (3-4 days)
+
+---
+
+### 18. Retry Resume
+**Why:** Continue from exact failure point after fixing issues.
+
+```bash
+autospec resume              # Resume last failed workflow
+autospec resume 003-auth     # Resume specific spec
+```
+
+**Note:** Partial support exists via retry state; this would enhance it.
+
+**Effort:** Medium (2 days)
+
+---
+
+### 19. Timing/Performance Stats
+**Why:** Track how long phases take for optimization.
+
+```bash
+autospec stats                     # Show timing stats
+autospec stats 003-auth            # For specific spec
+# Output:
+# Phase       Runs  Avg Time  Last Run
+# specify     3     45s       2024-01-20
+# plan        2     120s      2024-01-20
+# tasks       1     90s       2024-01-21
+```
+
+**Effort:** Low-Medium (1-2 days)
+
+---
+
+### 20. Spec Archive/Cleanup
+**Why:** Manage completed specs without deleting them.
+
+```bash
+autospec archive 001-initial-setup  # Move to specs/.archive/
+autospec archive --list             # List archived specs
+autospec unarchive 001-initial      # Restore from archive
+```
+
+**Effort:** Low (1 day)
+
+---
+
+## Config Commands to Add
+
+### Config Get/Set
+```bash
+autospec config get timeout
+autospec config set timeout 3600
+autospec config set max_retries 5
+autospec config unset custom_claude_cmd
+```
+
+### Config Edit
+```bash
+autospec config edit           # Open in $EDITOR
+autospec config edit --project # Edit project config
+```
+
+### Config Diff
+```bash
+autospec config diff           # Show diff between project and user config
+```
+
+---
+
+## Global Flags to Consider
+
+| Flag | Description |
+|------|-------------|
+| `--quiet/-q` | Suppress non-essential output |
+| `--no-color` | Disable colored output |
+| `--profile` | Use specific config profile |
+| `--log-level` | Set log level (debug, info, warn, error) |
+
+---
+
+## Implementation Notes
+
+### Recommended Libraries
+
+| Feature | Library |
+|---------|---------|
+| Self-update | `github.com/rhysd/go-github-selfupdate` |
+| Progress bars | `github.com/schollz/progressbar/v3` |
+| Interactive prompts | `github.com/charmbracelet/huh` |
+| File watching | `github.com/fsnotify/fsnotify` |
+| Diff | `github.com/sergi/go-diff` |
+| Man pages | `github.com/spf13/cobra/doc` |
+
+### Priority Matrix
+
+```
+                    High Value
+                        │
+    [Self-Update]       │    [Output Format]
+    [Aliases]           │    [Shell Install]
+                        │
+Low Effort ─────────────┼───────────────── High Effort
+                        │
+    [Man Pages]         │    [Plugin System]
+    [Spec List]         │    [Interactive Mode]
+                        │
+                    Low Value
+```
+
+### Quick Wins (< 1 day each)
+
+1. Command aliases
+2. Man page generation
+3. `--quiet` flag
+4. `config get/set` commands
+5. Spec archive command
+
+---
+
+## References
+
+- [Cobra CLI Best Practices](https://cobra.dev/)
+- [Go CLI Mastery](https://dev.to/tavernetech/go-cli-mastery-crafting-developer-tools-that-dont-suck-3p53)
+- [12-Factor CLI Apps](https://medium.com/@jdxcode/12-factor-cli-apps-dd3c227a0e46)
