@@ -1,6 +1,6 @@
-# Shell Completion for Auto Claude SpecKit
+# Shell Completion for autospec
 
-Auto Claude SpecKit provides built-in shell completion support for `bash`, `zsh`, `fish`, and `powershell` using Cobra's completion system.
+autospec provides built-in shell completion support for `bash`, `zsh`, `fish`, and `powershell` using Cobra's completion system.
 
 ## Features
 
@@ -249,7 +249,7 @@ autospec completion fish > ~/.config/fish/completions/autospec.fish
 
 ## How It Works
 
-Auto Claude SpecKit uses [Cobra's built-in completion system](https://github.com/spf13/cobra/blob/main/shell_completions.md), which automatically generates completion scripts from the command structure.
+autospec uses [Cobra's built-in completion system](https://github.com/spf13/cobra/blob/main/shell_completions.md), which automatically generates completion scripts from the command structure.
 
 When you run `autospec completion <shell>`, Cobra:
 

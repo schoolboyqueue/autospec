@@ -9,7 +9,7 @@ This document defines the command-line interface contract for the `autospec` bin
 
 ## Binary Name
 
-`autospec` - Cross-platform binary for Auto Claude SpecKit workflow automation
+`autospec` - Cross-platform binary for autospec workflow automation
 
 ---
 

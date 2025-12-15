@@ -13,7 +13,7 @@ overview:
   sections:
     what_is_it:
       required_content:
-        - "One-sentence description of Auto Claude SpecKit"
+        - "One-sentence description of autospec"
         - "Primary problem it solves"
         - "How it integrates with Claude and SpecKit workflows"
       tone: "Concise, benefit-focused"

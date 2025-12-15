@@ -1,4 +1,4 @@
-// Auto Claude SpecKit - Automated SpecKit workflow validation for Claude Code
+// autospec - Automated SpecKit workflow validation for Claude Code
 //
 // Dependency Size Summary (production binary):
 //   Runtime dependencies:  ~500 KB (koanf, cobra, spinner, color)

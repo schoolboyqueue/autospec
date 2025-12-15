@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-The following versions of Auto Claude SpecKit are currently supported with security updates:
+The following versions of autospec are currently supported with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -49,7 +49,7 @@ When reporting a vulnerability, please include:
 
 ## Security Best Practices
 
-When using Auto Claude SpecKit:
+When using autospec:
 
 ### Configuration Security
 
@@ -106,4 +106,4 @@ For security concerns that don't fit the vulnerability reporting process, contac
 
 ---
 
-Thank you for helping keep Auto Claude SpecKit secure!
+Thank you for helping keep autospec secure!

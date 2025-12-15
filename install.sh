@@ -192,7 +192,7 @@ check_path() {
 # Main installation function
 main() {
     echo ""
-    printf "${GREEN}Auto Claude SpecKit Installer${NC}\n"
+    printf "${GREEN}autospec Installer${NC}\n"
     echo "================================"
     echo ""
 

@@ -7,7 +7,7 @@
 
 ## Summary
 
-Transform the current bash-based Auto Claude SpecKit validation tool into a single, cross-platform Go binary that provides the same validation and workflow orchestration capabilities without requiring bash, jq, git, or other shell utilities. The Go binary will support all major platforms (Linux, macOS, Windows) and provide a simple installation experience via `go install` or pre-built binaries.
+Transform the current bash-based autospec validation tool into a single, cross-platform Go binary that provides the same validation and workflow orchestration capabilities without requiring bash, jq, git, or other shell utilities. The Go binary will support all major platforms (Linux, macOS, Windows) and provide a simple installation experience via `go install` or pre-built binaries.
 
 ## Technical Context
 

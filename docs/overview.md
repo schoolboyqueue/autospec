@@ -1,10 +1,10 @@
-# Auto Claude SpecKit
+# autospec
 
 **Automate your feature development workflow with AI-powered specification, planning, and implementation.**
 
-## What is Auto Claude SpecKit?
+## What is autospec?
 
-Auto Claude SpecKit is a command-line tool that orchestrates the complete software development lifecycle by integrating with Claude AI. It transforms natural language feature descriptions into fully-specified, planned, and implemented features through a structured workflow.
+autospec is a command-line tool that orchestrates the complete software development lifecycle by integrating with Claude AI. It transforms natural language feature descriptions into fully-specified, planned, and implemented features through a structured workflow.
 
 The tool automates the SpecKit methodology—a systematic approach to feature development that ensures thorough planning, clear task breakdown, and validated implementation before writing code.
 
@@ -72,7 +72,7 @@ Create comprehensive feature documentation automatically:
 
 ## How It Works
 
-Auto Claude SpecKit orchestrates interactions between you, Claude AI, and your codebase:
+autospec orchestrates interactions between you, Claude AI, and your codebase:
 
 1. **Specify**: Describe your feature in natural language → Claude generates a detailed specification
 2. **Plan**: Specification → Claude creates technical plan with architecture and design decisions
@@ -96,7 +96,7 @@ Ready to streamline your development workflow?
 
 ## Project Status
 
-Auto Claude SpecKit is actively developed and maintained. The project recently transitioned from bash scripts to a cross-platform Go binary, providing:
+autospec is actively developed and maintained. The project recently transitioned from bash scripts to a cross-platform Go binary, providing:
 
 - Faster execution and better error handling
 - Cross-platform support (Linux, macOS, Windows)
@@ -114,4 +114,4 @@ For contributors, see [CLAUDE.md](../CLAUDE.md) for detailed development guideli
 
 ## License
 
-Auto Claude SpecKit is open source software. See LICENSE file for details.
+autospec is open source software. See LICENSE file for details.

@@ -1,6 +1,6 @@
 # Contributors Guide
 
-This guide is for developers and contributors working on Auto Claude SpecKit.
+This guide is for developers and contributors working on autospec.
 
 ## Quick Start for Development
 

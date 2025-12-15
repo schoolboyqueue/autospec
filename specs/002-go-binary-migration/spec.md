@@ -9,7 +9,7 @@
 
 ### User Story 1 - Simple Installation (Priority: P1)
 
-As a developer new to Auto Claude SpecKit, I want to install the tool with a single command and start using it immediately, without needing to configure shell environments, install multiple dependencies, or understand bash scripting.
+As a developer new to autospec, I want to install the tool with a single command and start using it immediately, without needing to configure shell environments, install multiple dependencies, or understand bash scripting.
 
 **Why this priority**: This is the first interaction users have with the tool. A complex installation process creates friction and prevents adoption. This story delivers immediate value - a working tool in under 30 seconds.
 

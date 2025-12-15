@@ -6,7 +6,7 @@
 
 ## Summary
 
-Successfully migrated the Auto Claude SpecKit from bash scripts to a cross-platform Go binary (`autospec`). All 14 phases and 170 tasks have been completed.
+Successfully migrated the autospec from bash scripts to a cross-platform Go binary (`autospec`). All 14 phases and 170 tasks have been completed.
 
 ## What Was Implemented
 

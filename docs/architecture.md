@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Deep dive into Auto Claude SpecKit's system design, component structure, and execution patterns.
+Deep dive into autospec's system design, component structure, and execution patterns.
 
 ## Table of Contents
 
@@ -13,7 +13,7 @@ Deep dive into Auto Claude SpecKit's system design, component structure, and exe
 
 ## Component Overview
 
-Auto Claude SpecKit is built as a modular Go application with clear separation of concerns across several packages:
+autospec is built as a modular Go application with clear separation of concerns across several packages:
 
 ```mermaid
 graph TB

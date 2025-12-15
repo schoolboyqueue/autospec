@@ -9,7 +9,7 @@ This document describes the design and structure of the `docs/quickstart.md` fil
 
 ## Target Audience
 
-- **Primary**: New users who want to use Auto Claude SpecKit for the first time
+- **Primary**: New users who want to use autospec for the first time
 - **Secondary**: Developers evaluating the tool before adoption
 
 ## Design Goals

@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get started with Auto Claude SpecKit and complete your first workflow in 10 minutes.
+Get started with autospec and complete your first workflow in 10 minutes.
 
 ## Prerequisites
 
@@ -213,7 +213,7 @@ For complete command reference, see [REFERENCE.md](./reference.md).
 
 ## Understanding the Workflow
 
-Auto Claude SpecKit follows a four-phase workflow:
+autospec follows a four-phase workflow:
 
 ```mermaid
 graph LR
@@ -299,7 +299,7 @@ Quick solutions for common first-time issues:
 **Solution**: Install Claude CLI following the [official guide](https://docs.anthropic.com/claude/docs/claude-cli), then verify with `claude --version`
 
 ### "autospec: command not found"
-**Problem**: Auto Claude SpecKit binary is not in PATH
+**Problem**: autospec binary is not in PATH
 
 **Solution**: Run `sudo make install` to copy binary to `/usr/local/bin`, or add the binary directory to your PATH
 
@@ -343,4 +343,4 @@ Need assistance?
 - **Documentation**: Browse all docs in the `docs/` directory
 - **Claude AI Support**: [Contact Anthropic](https://support.anthropic.com)
 
-Happy building with Auto Claude SpecKit!
+Happy building with autospec!

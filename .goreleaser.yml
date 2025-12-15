@@ -1,4 +1,4 @@
-# GoReleaser configuration for Auto Claude SpecKit
+# GoReleaser configuration for autospec
 # Documentation: https://goreleaser.com
 
 version: 2
@@ -86,7 +86,7 @@ release:
   prerelease: auto
   mode: replace
   header: |
-    ## Auto Claude SpecKit {{ .Version }}
+    ## autospec {{ .Version }}
 
     **Release Date:** {{ .Date }}
 

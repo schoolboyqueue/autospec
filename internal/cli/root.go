@@ -6,8 +6,8 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "autospec",
-	Short: "Auto Claude SpecKit workflow automation",
-	Long: `Auto Claude SpecKit workflow automation
+	Short: "autospec workflow automation",
+	Long: `autospec workflow automation
 
 Cross-platform CLI tool for SpecKit workflow validation and orchestration.
 Replaces bash-based scripts with a single, performant Go binary.`,

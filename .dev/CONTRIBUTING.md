@@ -1,4 +1,4 @@
-# Contributing to Auto Claude SpecKit
+# Contributing to autospec
 
 ## Development Setup
 

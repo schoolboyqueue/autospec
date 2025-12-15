@@ -1,6 +1,6 @@
-# Contributing to Auto Claude SpecKit
+# Contributing to autospec
 
-Thank you for your interest in contributing to Auto Claude SpecKit! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to autospec! This document provides guidelines for contributing to the project.
 
 ## Table of Contents
 

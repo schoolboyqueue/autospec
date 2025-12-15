@@ -1,6 +1,6 @@
 # Command Reference
 
-Complete reference for Auto Claude SpecKit commands, configuration options, exit codes, and file locations.
+Complete reference for autospec commands, configuration options, exit codes, and file locations.
 
 ## CLI Commands
 
@@ -203,7 +203,7 @@ Display version information
 
 **Syntax**: `autospec version`
 
-**Description**: Show Auto Claude SpecKit version number and build info.
+**Description**: Show autospec version number and build info.
 
 **Examples**:
 ```bash

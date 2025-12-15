@@ -5,7 +5,7 @@
 
 ## Research Summary
 
-This document consolidates research findings for implementing YAML structured output in Auto Claude SpecKit.
+This document consolidates research findings for implementing YAML structured output in autospec.
 
 ---
 

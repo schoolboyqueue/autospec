@@ -3,7 +3,7 @@
 **Feature**: Go Binary Migration (002-go-binary-migration)
 **Date**: 2025-10-22
 
-This guide walks through the development process for migrating the bash-based Auto Claude SpecKit tool to a Go binary.
+This guide walks through the development process for migrating the bash-based autospec tool to a Go binary.
 
 ---
 
@@ -85,7 +85,7 @@ import "github.com/spf13/cobra"
 
 var rootCmd = &cobra.Command{
     Use:   "autospec",
-    Short: "Auto Claude SpecKit workflow automation",
+    Short: "autospec workflow automation",
     Long:  "Cross-platform CLI tool for SpecKit workflow validation and orchestration",
 }
 
@@ -113,7 +113,7 @@ go build -o autospec ./cmd/autospec
 ./autospec --help
 
 # Expected output:
-# Auto Claude SpecKit workflow automation
+# autospec workflow automation
 #
 # Usage:
 #   autospec [command]
@@ -579,7 +579,7 @@ EOF
 
 cat > cmd/autospec/testdata/scripts/help.txt <<'EOF'
 exec autospec --help
-stdout 'Auto Claude SpecKit'
+stdout 'autospec'
 ! stderr .
 EOF
 

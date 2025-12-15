@@ -12,7 +12,7 @@ documentation_files:
     purpose: "Project introduction and high-level overview"
     max_lines: 500
     required_sections:
-      - "What is Auto Claude SpecKit"
+      - "What is autospec"
       - "Key Features"
       - "Target Audience"
       - "Use Cases"

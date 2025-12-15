@@ -9,7 +9,7 @@
 
 ### User Story 1 - Quick Start Guide (Priority: P1)
 
-New users or contributors need to quickly understand what Auto Claude SpecKit is, how it works, and how to get started using it without diving into detailed implementation docs.
+New users or contributors need to quickly understand what autospec is, how it works, and how to get started using it without diving into detailed implementation docs.
 
 **Why this priority**: First impression matters - users abandon projects if they can't understand the basics within 5 minutes. This is the most critical documentation for adoption.
 

@@ -1,6 +1,6 @@
 # Public Release Checklist
 
-Checklist for preparing Auto Claude SpecKit for public release.
+Checklist for preparing autospec for public release.
 
 ## Documentation
 
