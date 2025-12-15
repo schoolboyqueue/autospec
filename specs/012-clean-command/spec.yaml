@@ -41,19 +41,19 @@ user_stories:
         then: "I am informed that no autospec files were found"
 
   - id: "US-003"
-    title: "Preserve specs directory"
+    title: "Preserve specs directory by default"
     priority: "P2"
     as_a: "developer"
-    i_want: "to optionally keep my specs/ directory when cleaning"
-    so_that: "I can remove autospec tooling while preserving my feature specifications"
-    why_this_priority: "Important for users who want to keep their work while removing the tool"
-    independent_test: "Run clean with --keep-specs and verify specs/ remains while other files are removed"
+    i_want: "my specs/ directory to be preserved by default when cleaning"
+    so_that: "I don't accidentally lose my feature specifications when removing autospec tooling"
+    why_this_priority: "Important safety feature to prevent accidental data loss"
+    independent_test: "Run clean and verify specs/ remains by default, only removed when user confirms"
     acceptance_scenarios:
       - given: "a project with specs/ directory containing feature specifications"
-        when: "I run the clean command with --keep-specs flag"
+        when: "I run the clean command and answer N (or press enter) to the specs removal prompt"
         then: "specs/ directory is preserved while other autospec files are removed"
       - given: "a project with specs/ directory"
-        when: "I run the clean command without --keep-specs flag"
+        when: "I run the clean command and answer Y to the specs removal prompt"
         then: "specs/ directory is removed along with other autospec files"
 
 requirements:
@@ -141,7 +141,7 @@ key_entities:
       - "Target file list"
       - "Dry-run mode"
       - "Confirmation status"
-      - "Keep-specs option"
+      - "Specs removal prompt (default N)"
 
 edge_cases:
   - scenario: "Project has no autospec files"

@@ -15,53 +15,61 @@ var cleanCmd = &cobra.Command{
 This command removes:
   - .autospec/ directory (configuration, scripts, and state)
   - .claude/commands/autospec*.md files (slash commands)
-  - specs/ directory (feature specifications, unless --keep-specs is used)
+
+By default, specs/ directory is PRESERVED. You will be prompted separately
+if you also want to remove specs/ (default: No).
 
 The command will prompt for confirmation before removing files.
 Use --dry-run to preview what would be removed without making changes.
-Use --yes to skip the confirmation prompt.
+Use --yes to skip the confirmation prompt (specs/ will NOT be removed with --yes).
+Use --keep-specs to skip the specs prompt and preserve specs/.
+Use --remove-specs to skip the specs prompt and remove specs/.
 
 Note: This does not remove user-level config (~/.config/autospec/) or
 global state (~/.autospec/). Use 'rm -rf' manually if needed.`,
 	Example: `  # Preview what would be removed
   autospec clean --dry-run
 
-  # Remove all autospec files (with confirmation)
+  # Remove autospec files (with confirmation, prompted about specs/)
   autospec clean
 
-  # Remove all autospec files without confirmation
+  # Remove autospec files without confirmation (specs/ preserved)
   autospec clean --yes
 
-  # Remove autospec files but keep specs/ directory
-  autospec clean --keep-specs
+  # Remove everything including specs/ without any prompts
+  autospec clean --yes --remove-specs
 
-  # Combine flags
-  autospec clean --keep-specs --yes`,
+  # Remove autospec files, explicitly preserve specs/
+  autospec clean --keep-specs`,
 	RunE: runClean,
 }
 
 func init() {
 	rootCmd.AddCommand(cleanCmd)
 	cleanCmd.Flags().BoolP("dry-run", "n", false, "Show what would be removed without removing")
-	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
-	cleanCmd.Flags().BoolP("keep-specs", "k", false, "Preserve specs/ directory")
+	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt (specs/ will be preserved)")
+	cleanCmd.Flags().BoolP("keep-specs", "k", false, "Skip specs prompt and preserve specs/")
+	cleanCmd.Flags().BoolP("remove-specs", "r", false, "Skip specs prompt and remove specs/")
+	cleanCmd.MarkFlagsMutuallyExclusive("keep-specs", "remove-specs")
 }
 
 func runClean(cmd *cobra.Command, args []string) error {
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
-	keepSpecs, _ := cmd.Flags().GetBool("keep-specs")
 
 	out := cmd.OutOrStdout()
 
-	// Find autospec files
-	targets, err := clean.FindAutospecFiles(keepSpecs)
+	// Find autospec files (keep specs by default)
+	targets, err := clean.FindAutospecFiles(true)
 	if err != nil {
 		return fmt.Errorf("failed to find autospec files: %w", err)
 	}
 
+	// Check if specs/ directory exists for potential removal
+	specsTarget, specsExists := clean.GetSpecsTarget()
+
 	// Handle case when no files found
-	if len(targets) == 0 {
+	if len(targets) == 0 && !specsExists {
 		fmt.Fprintln(out, "No autospec files found.")
 		return nil
 	}
@@ -81,8 +89,29 @@ func runClean(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(out, "  [%s] %s (%s)\n", typeStr, target.Path, target.Description)
 	}
 
-	if keepSpecs {
-		fmt.Fprintln(out, "\n  (specs/ directory will be preserved)")
+	// Note about specs/ being preserved by default
+	if specsExists {
+		fmt.Fprintln(out, "\n  (specs/ directory will be preserved by default)")
+	}
+
+	// Handle case when only specs/ exists but nothing else
+	if len(targets) == 0 {
+		fmt.Fprintln(out, "\nNo autospec files to remove (only specs/ exists).")
+		if !dryRun && !yes {
+			if promptYesNo(cmd, "Remove specs/ directory?") {
+				results := clean.RemoveFiles([]clean.CleanTarget{specsTarget})
+				if results[0].Success {
+					fmt.Fprintf(out, "✓ Removed: %s\n", specsTarget.Path)
+					fmt.Fprintln(out, "\nSummary: 1 removed")
+				} else {
+					fmt.Fprintf(out, "✗ Failed: %s (%v)\n", specsTarget.Path, results[0].Error)
+					return fmt.Errorf("failed to remove specs/")
+				}
+			} else {
+				fmt.Fprintln(out, "Aborted.")
+			}
+		}
+		return nil
 	}
 
 	// In dry-run mode, exit after displaying
@@ -111,6 +140,21 @@ func runClean(cmd *cobra.Command, args []string) error {
 		} else {
 			failCount++
 			fmt.Fprintf(out, "✗ Failed: %s (%v)\n", result.Target.Path, result.Error)
+		}
+	}
+
+	// Prompt for specs/ removal if it exists (only in interactive mode)
+	if specsExists && !yes {
+		fmt.Fprintln(out)
+		if promptYesNo(cmd, "Also remove specs/ directory?") {
+			specsResults := clean.RemoveFiles([]clean.CleanTarget{specsTarget})
+			if specsResults[0].Success {
+				successCount++
+				fmt.Fprintf(out, "✓ Removed: %s\n", specsTarget.Path)
+			} else {
+				failCount++
+				fmt.Fprintf(out, "✗ Failed: %s (%v)\n", specsTarget.Path, specsResults[0].Error)
+			}
 		}
 	}
 

@@ -119,24 +119,26 @@ phases:
             - "Shows summary with count of removed/failed items"
             - "Returns exit code 0 on success, appropriate error codes on failure"
     - number: 4
-      title: "User Story 3 - Preserve specs directory"
-      purpose: "Allow users to keep specs/ while removing other autospec files"
+      title: "User Story 3 - Preserve specs directory by default"
+      purpose: "Preserve specs/ by default, prompt user to confirm removal with default N"
       story_reference: "US-003"
-      independent_test: "Run clean with --keep-specs and verify specs/ remains while .autospec/ is removed"
+      independent_test: "Run clean and verify specs/ remains by default, only removed when user confirms Y"
       tasks:
         - id: "T008"
-          title: "Add --keep-specs flag to clean command"
-          status: "Completed"
+          title: "Add specs removal prompt with default N to clean command"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-003"
           file_path: "internal/cli/clean.go"
           dependencies: ["T007"]
           acceptance_criteria:
-            - "--keep-specs flag (-k) preserves specs/ directory"
-            - "Flag is passed to FindAutospecFiles() function"
-            - "When set, specs/ is not included in removal targets"
-            - "Output indicates specs/ will be preserved when flag is used"
+            - "specs/ directory is preserved by default"
+            - "User is prompted 'Also remove specs/ directory? (y/N)' after main confirmation"
+            - "Default answer is N (pressing enter keeps specs/)"
+            - "Only when user answers Y is specs/ included in removal targets"
+            - "In --yes mode, specs/ is NOT removed (safe default)"
+            - "--dry-run shows specs/ would NOT be removed by default"
     - number: 5
       title: "Polish & Integration"
       purpose: "Register command, update documentation, and verify cross-platform behavior"

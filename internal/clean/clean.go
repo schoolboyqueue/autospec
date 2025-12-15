@@ -30,6 +30,19 @@ type CleanResult struct {
 	Error   error       // Error if removal failed
 }
 
+// GetSpecsTarget returns the specs/ directory target if it exists.
+// Returns the target and a boolean indicating if specs/ exists.
+func GetSpecsTarget() (CleanTarget, bool) {
+	if info, err := os.Stat("specs"); err == nil && info.IsDir() {
+		return CleanTarget{
+			Path:        "specs",
+			Type:        TypeDirectory,
+			Description: "Feature specifications directory",
+		}, true
+	}
+	return CleanTarget{}, false
+}
+
 // FindAutospecFiles detects all autospec-related files and directories in the current directory.
 // If keepSpecs is true, the specs/ directory will not be included in the results.
 func FindAutospecFiles(keepSpecs bool) ([]CleanTarget, error) {
