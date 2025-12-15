@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -27,18 +26,18 @@ const (
 
 // Configuration represents the autospec CLI tool configuration
 type Configuration struct {
-	ClaudeCmd       string   `koanf:"claude_cmd" validate:"required"`
-	ClaudeArgs      []string `koanf:"claude_args"`
-	UseAPIKey       bool     `koanf:"use_api_key"`
-	CustomClaudeCmd string   `koanf:"custom_claude_cmd"`
-	SpecifyCmd      string   `koanf:"specify_cmd" validate:"required"`
-	MaxRetries      int      `koanf:"max_retries" validate:"min=1,max=10"`
-	SpecsDir        string   `koanf:"specs_dir" validate:"required"`
-	StateDir        string   `koanf:"state_dir" validate:"required"`
-	SkipPreflight   bool     `koanf:"skip_preflight"`
-	Timeout         int      `koanf:"timeout" validate:"omitempty,min=1,max=604800"`
-	ShowProgress       bool `koanf:"show_progress"`       // Show progress indicators (spinners) during execution
-	SkipConfirmations  bool `koanf:"skip_confirmations"`  // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
+	ClaudeCmd         string   `koanf:"claude_cmd"`
+	ClaudeArgs        []string `koanf:"claude_args"`
+	UseAPIKey         bool     `koanf:"use_api_key"`
+	CustomClaudeCmd   string   `koanf:"custom_claude_cmd"`
+	SpecifyCmd        string   `koanf:"specify_cmd"`
+	MaxRetries        int      `koanf:"max_retries"`
+	SpecsDir          string   `koanf:"specs_dir"`
+	StateDir          string   `koanf:"state_dir"`
+	SkipPreflight     bool     `koanf:"skip_preflight"`
+	Timeout           int      `koanf:"timeout"`
+	ShowProgress      bool     `koanf:"show_progress"`      // Show progress indicators (spinners) during execution
+	SkipConfirmations bool     `koanf:"skip_confirmations"` // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
 }
 
 // LoadOptions configures how configuration is loaded
@@ -155,15 +154,9 @@ func LoadWithOptions(opts LoadOptions) (*Configuration, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	// Validate configuration
-	validate := validator.New()
-	if err := validate.Struct(cfg); err != nil {
+	// Validate configuration values
+	if err := ValidateConfigValues(&cfg, "config"); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
-	}
-
-	// Validate custom_claude_cmd if specified
-	if cfg.CustomClaudeCmd != "" && !strings.Contains(cfg.CustomClaudeCmd, "{{PROMPT}}") {
-		return nil, fmt.Errorf("custom_claude_cmd must contain {{PROMPT}} placeholder")
 	}
 
 	// Expand home directory in paths

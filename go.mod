@@ -1,28 +1,18 @@
 // Auto Claude SpecKit - Automated SpecKit workflow validation for Claude Code
 //
 // Dependency Size Summary (production binary):
-//   Runtime dependencies:  ~900 KB (validator, koanf, cobra)
-//   Indirect dependencies: ~11 MB (mostly golang.org/x/sys at 9.0M)
-//   Total binary size:     ~9.7 MB
+//   Runtime dependencies:  ~500 KB (koanf, cobra, spinner, color)
+//   Indirect dependencies: ~9 MB (mostly golang.org/x/sys)
+//   Total binary size:     ~7.2 MB
 //
 // Note: testify (400K) is test-only and NOT included in the production binary.
 // Go automatically excludes dependencies only used in *_test.go files.
-//
-// The large binary size is primarily due to golang.org/x/sys (9.0M) which provides
-// cross-platform OS primitives needed for file operations, process management, etc.
 
 module github.com/anthropics/auto-claude-speckit
 
 go 1.25.1
 
 require (
-	// ============================================================================
-	// PRODUCTION DEPENDENCIES (included in binary)
-	// ============================================================================
-
-	// Struct field validation with tag-based rules (396K)
-	// Used for validating configuration struct fields
-	github.com/go-playground/validator/v10 v10.28.0
 
 	// Koanf configuration management library (224K total for all koanf packages)
 	// Provides flexible config loading from multiple sources with priority ordering
@@ -60,28 +50,18 @@ require (
 
 	// Configuration and file system utilities
 	github.com/fsnotify/fsnotify v1.9.0 // indirect; indirect - Cross-platform file system notifications (232K)
-
-	// Validation support libraries
-	github.com/gabriel-vasile/mimetype v1.4.10 // indirect; indirect - MIME type detection (236K)
-	github.com/go-playground/locales v0.14.1 // indirect; indirect - Locale/translation support (84K)
-	github.com/go-playground/universal-translator v0.18.1 // indirect; indirect - i18n translator (84K)
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect; indirect - Decode generic maps into structs (152K)
 
 	// CLI framework dependencies
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect; indirect - Windows console handling (28K)
 	github.com/knadh/koanf/maps v0.1.2 // indirect; indirect - Map manipulation utilities (included in koanf)
-	github.com/leodido/go-urn v1.4.0 // indirect; indirect - URN parser
 
 	// Reflection and struct utilities
 	github.com/mitchellh/copystructure v1.2.0 // indirect; indirect - Deep copying of Go structures (32K)
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect; indirect - Reflection-based struct walking (36K)
 	github.com/pmezard/go-difflib v1.0.0 // indirect; indirect - Diff library (36K source, 0 KB in binary)
 	github.com/spf13/pflag v1.0.9 // indirect; indirect - POSIX/GNU-style flags (312K)
-
-	// Go standard library extensions
-	golang.org/x/crypto v0.42.0 // indirect; indirect - Cryptographic functions (156K)
 	golang.org/x/sys v0.37.0 // indirect; indirect - Low-level OS primitives (9.0M) ⚠️ LARGEST DEPENDENCY
-	golang.org/x/text v0.29.0 // indirect; indirect - Text processing/encoding (428K)
 )
 
 require (

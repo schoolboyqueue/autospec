@@ -188,29 +188,3 @@ func cleanYAMLError(errMsg string) string {
 	}
 	return errMsg
 }
-
-// formatValidationError formats a validation error for a specific field.
-func formatValidationError(fieldErr validator.FieldError) string {
-	switch fieldErr.Tag() {
-	case "required":
-		return "is required"
-	case "min":
-		return fmt.Sprintf("must be at least %s", fieldErr.Param())
-	case "max":
-		return fmt.Sprintf("must be at most %s", fieldErr.Param())
-	default:
-		return fmt.Sprintf("failed validation: %s", fieldErr.Tag())
-	}
-}
-
-// toSnakeCase converts a CamelCase field name to snake_case.
-func toSnakeCase(s string) string {
-	var result strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			result.WriteRune('_')
-		}
-		result.WriteRune(r)
-	}
-	return strings.ToLower(result.String())
-}

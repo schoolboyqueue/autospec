@@ -325,26 +325,3 @@ func TestValidationError_Error(t *testing.T) {
 		})
 	}
 }
-
-func TestToSnakeCase(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"ClaudeCmd", "claude_cmd"},
-		{"MaxRetries", "max_retries"},
-		{"SpecsDir", "specs_dir"},
-		{"CustomClaudeCmd", "custom_claude_cmd"},
-		{"simple", "simple"},
-		{"ID", "i_d"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := toSnakeCase(tt.input)
-			if got != tt.want {
-				t.Errorf("toSnakeCase(%q) = %q, want %q", tt.input, got, tt.want)
-			}
-		})
-	}
-}
