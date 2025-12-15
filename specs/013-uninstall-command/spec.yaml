@@ -120,9 +120,9 @@ requirements:
       testable: true
       acceptance_criteria: "If binary is in system directory, prompts for sudo; if in user directory, no sudo needed"
     - id: "FR-010"
-      description: "MUST NOT remove project-level files (.autospec/ in projects)"
+      description: "MUST NOT remove project-level files (.autospec/ in projects); SHOULD hint to user to run 'autospec clean' in project directories first"
       testable: true
-      acceptance_criteria: "Running uninstall does not touch .autospec/ directories in projects"
+      acceptance_criteria: "Running uninstall does not touch .autospec/ directories in projects and displays hint about using 'autospec clean' for project-level cleanup"
   non_functional:
     - id: "NFR-001"
       category: "usability"
