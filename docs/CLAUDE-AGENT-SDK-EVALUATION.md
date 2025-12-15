@@ -66,7 +66,7 @@ These are thin CLI wrappers that execute `claude` commands via subprocess. They 
 srt "<your-command>"
 
 # With custom settings
-srt --settings .srt-settings.json "claude /speckit.implement"
+srt --settings .srt-settings.json "claude /autospec.implement"
 ```
 
 **Platform Support:**
@@ -113,7 +113,7 @@ srt --settings .srt-settings.json "claude /speckit.implement"
 1. Keep current Go CLI architecture
 2. Add git worktree management (custom Go code)
 3. Execute specs in parallel goroutines
-4. Each goroutine runs `srt "claude /speckit.implement"` in its worktree
+4. Each goroutine runs `srt "claude /autospec.implement"` in its worktree
 5. Aggregate results
 
 **Pros:**
@@ -276,7 +276,7 @@ srt --settings .srt-settings.json "claude /speckit.implement"
                defer wg.Done()
                wt := CreateWorktree(s)
                defer wt.Remove()
-               result := ExecuteInSandbox("claude /speckit.implement", wt.Path)
+               result := ExecuteInSandbox("claude /autospec.implement", wt.Path)
                results <- result
            }(spec)
        }

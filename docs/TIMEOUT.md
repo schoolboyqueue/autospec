@@ -174,11 +174,11 @@ exit 1
 ### Example Timeout Output
 
 ```
-Error: command timed out after 5m0s: claude /speckit.implement (hint: increase timeout in config)
+Error: command timed out after 5m0s: claude /autospec.implement (hint: increase timeout in config)
 
-To increase the timeout, set AUTOSPEC_TIMEOUT environment variable or update config.json:
+To increase the timeout, set AUTOSPEC_TIMEOUT environment variable or update config.yml:
   export AUTOSPEC_TIMEOUT=600  # 10 minutes
-  or edit .autospec/config.json and set "timeout": 600
+  or edit .autospec/config.yml and set "timeout: 600"
 ```
 
 ## Verification and Testing

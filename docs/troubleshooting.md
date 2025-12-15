@@ -9,7 +9,7 @@
 **Problem**: Commands fail with exit code 5 and timeout error message.
 
 ```
-Error: command timed out after 5m0s: claude /speckit.workflow ...
+Error: command timed out after 5m0s: claude /autospec.workflow ...
 ```
 
 **Causes**:

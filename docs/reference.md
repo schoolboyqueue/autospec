@@ -185,7 +185,7 @@ Initialize configuration files and directories
 
 **Syntax**: `autospec init [flags]`
 
-**Description**: Create `~/.autospec/config.json` with default settings.
+**Description**: Create `~/.config/autospec/config.yml` with default settings.
 
 **Flags**: `--force`: Overwrite existing configuration
 
@@ -223,10 +223,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Command to invoke Claude CLI
 
 **Example**:
-```json
-{
-  "claude_cmd": "/usr/local/bin/claude"
-}
+```yaml
+claude_cmd: /usr/local/bin/claude
 ```
 
 **Environment**: `AUTOSPEC_CLAUDE_CMD`
@@ -239,10 +237,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Maximum retry attempts on validation failure
 
 **Example**:
-```json
-{
-  "max_retries": 5
-}
+```yaml
+max_retries: 5
 ```
 
 **Environment**: `AUTOSPEC_MAX_RETRIES`
@@ -254,10 +250,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Directory for feature specifications
 
 **Example**:
-```json
-{
-  "specs_dir": "/path/to/specs"
-}
+```yaml
+specs_dir: /path/to/specs
 ```
 
 **Environment**: `AUTOSPEC_SPECS_DIR`
@@ -269,10 +263,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Directory for persistent state (retry tracking)
 
 **Example**:
-```json
-{
-  "state_dir": "~/.autospec/state"
-}
+```yaml
+state_dir: ~/.autospec/state
 ```
 
 **Environment**: `AUTOSPEC_STATE_DIR`
@@ -285,10 +277,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Command execution timeout in seconds
 
 **Example**:
-```json
-{
-  "timeout": 600
-}
+```yaml
+timeout: 600
 ```
 
 **Environment**: `AUTOSPEC_TIMEOUT`
@@ -305,10 +295,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Skip pre-flight dependency checks
 
 **Example**:
-```json
-{
-  "skip_preflight": true
-}
+```yaml
+skip_preflight: true
 ```
 
 **Environment**: `AUTOSPEC_SKIP_PREFLIGHT`
@@ -320,10 +308,8 @@ Configuration sources (priority order): Environment variables > Local config > G
 **Description**: Custom command template with `{{PROMPT}}` placeholder
 
 **Example**:
-```json
-{
-  "custom_claude_cmd": "claude -p {{PROMPT}} | process-output"
-}
+```yaml
+custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
 ```
 
 **Environment**: `AUTOSPEC_CUSTOM_CLAUDE_CMD`
@@ -362,8 +348,8 @@ autospec full "feature" || exit 1
 
 | File | Purpose | Priority |
 |------|---------|----------|
-| `~/.autospec/config.json` | Global configuration | 3 (after env, local) |
-| `.autospec/config.json` | Local project configuration | 2 (after env) |
+| `~/.config/autospec/config.yml` | Global configuration (XDG compliant) | 3 (after env, local) |
+| `.autospec/config.yml` | Local project configuration | 2 (after env) |
 
 ### State Files
 
@@ -377,9 +363,9 @@ autospec full "feature" || exit 1
 |-----------|---------|
 | `./specs/` | Feature specifications (default) |
 | `./specs/NNN-feature-name/` | Individual feature directory |
-| `./specs/NNN-feature-name/spec.md` | Feature specification |
-| `./specs/NNN-feature-name/plan.md` | Technical plan |
-| `./specs/NNN-feature-name/tasks.md` | Task breakdown |
+| `./specs/NNN-feature-name/spec.yaml` | Feature specification |
+| `./specs/NNN-feature-name/plan.yaml` | Technical plan |
+| `./specs/NNN-feature-name/tasks.yaml` | Task breakdown |
 
 **Naming Convention**: `NNN-feature-name` where NNN is a 3-digit number (e.g., `001-dark-mode`, `042-api-auth`)
 
@@ -410,14 +396,12 @@ autospec implement 003-feature "Document all public APIs"
 
 Use `custom_claude_cmd` for complex pipelines:
 
-```json
-{
-  "custom_claude_cmd": "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
-}
+```yaml
+custom_claude_cmd: "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
 ```
 
 **Placeholders**:
-- `{{PROMPT}}`: Replaced with actual prompt (e.g., `/speckit.plan "focus on security"`)
+- `{{PROMPT}}`: Replaced with actual prompt (e.g., `/autospec.plan "focus on security"`)
 
 ### Retry State Management
 
@@ -440,7 +424,7 @@ Use exit codes for automated workflows:
 
 ```yaml
 # GitHub Actions example
-- name: Run SpecKit workflow
+- name: Run autospec workflow
   run: |
     autospec workflow "feature" || exit 1
 
