@@ -199,15 +199,15 @@ func TestAllCmdConstitutionCheck(t *testing.T) {
 	t.Run("constitution missing shows error", func(t *testing.T) {
 		// When constitution doesn't exist, the command should fail
 		// This is a behavior test - we can't run the full command
-		// but we can verify the constitution.md check is in place
-		constPath := filepath.Join(specifyDir, "constitution.md")
+		// but we can verify the constitution.yaml check is in place
+		constPath := filepath.Join(specifyDir, "constitution.yaml")
 		_, err := os.Stat(constPath)
 		assert.True(t, os.IsNotExist(err))
 	})
 
 	t.Run("constitution exists", func(t *testing.T) {
-		constPath := filepath.Join(specifyDir, "constitution.md")
-		require.NoError(t, os.WriteFile(constPath, []byte("# Constitution"), 0644))
+		constPath := filepath.Join(specifyDir, "constitution.yaml")
+		require.NoError(t, os.WriteFile(constPath, []byte("project_name: Test"), 0644))
 
 		_, err := os.Stat(constPath)
 		assert.NoError(t, err)
