@@ -27,7 +27,7 @@ Before starting implementation:
 
 3. **Set up development environment**:
    ```bash
-   cd /home/ari/repos/auto-claude-speckit
+   cd /home/ari/repos/autospec
    go mod download
    make test  # Ensure all existing tests pass
    ```
@@ -69,7 +69,7 @@ package progress_test
 
 import (
     "testing"
-    "github.com/anthropics/auto-claude-speckit/internal/progress"
+    "github.com/ariel-frischer/autospec/internal/progress"
 )
 
 func TestPhaseInfo_Validate(t *testing.T) {

@@ -24,9 +24,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/anthropics/auto-claude-speckit/internal/cli.Version={{.Version}}
-      - -X github.com/anthropics/auto-claude-speckit/internal/cli.Commit={{.ShortCommit}}
-      - -X github.com/anthropics/auto-claude-speckit/internal/cli.BuildDate={{.Date}}
+      - -X github.com/ariel-frischer/autospec/internal/cli.Version={{.Version}}
+      - -X github.com/ariel-frischer/autospec/internal/cli.Commit={{.ShortCommit}}
+      - -X github.com/ariel-frischer/autospec/internal/cli.BuildDate={{.Date}}
 
 archives:
   - id: autospec-archive
@@ -80,8 +80,8 @@ changelog:
 
 release:
   github:
-    owner: anthropics
-    name: auto-claude-speckit
+    owner: ariel-frischer
+    name: autospec
   draft: false
   prerelease: auto
   mode: replace
@@ -94,7 +94,7 @@ release:
 
     #### Using install script (recommended):
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/anthropics/auto-claude-speckit/main/install.sh | bash
+    curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | bash
     ```
 
     #### Manual installation:
@@ -105,19 +105,19 @@ release:
 
   footer: |
     ---
-    **Full Changelog**: https://github.com/anthropics/auto-claude-speckit/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/ariel-frischer/autospec/compare/{{ .PreviousTag }}...{{ .Tag }}
 
     ### Reporting Issues
-    Found a bug or have a feature request? Please [open an issue](https://github.com/anthropics/auto-claude-speckit/issues/new/choose).
+    Found a bug or have a feature request? Please [open an issue](https://github.com/ariel-frischer/autospec/issues/new/choose).
 
 # Homebrew tap (optional - uncomment when ready to publish to Homebrew)
 # brews:
 #   - name: autospec
-#     homepage: https://github.com/anthropics/auto-claude-speckit
+#     homepage: https://github.com/ariel-frischer/autospec
 #     description: "Automated SpecKit workflow validation for Claude Code"
 #     license: Apache-2.0
 #     repository:
-#       owner: anthropics
+#       owner: ariel-frischer
 #       name: homebrew-tap
 #     commit_author:
 #       name: goreleaser
@@ -129,8 +129,8 @@ release:
 # Docker images (optional - uncomment when ready)
 # dockers:
 #   - image_templates:
-#       - "ghcr.io/anthropics/autospec:{{ .Version }}-amd64"
-#       - "ghcr.io/anthropics/autospec:latest-amd64"
+#       - "ghcr.io/ariel-frischer/autospec:{{ .Version }}-amd64"
+#       - "ghcr.io/ariel-frischer/autospec:latest-amd64"
 #     use: buildx
 #     build_flag_templates:
 #       - "--platform=linux/amd64"

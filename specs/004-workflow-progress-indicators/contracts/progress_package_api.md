@@ -519,8 +519,8 @@ import (
 package main
 
 import (
-    "github.com/anthropics/auto-claude-speckit/internal/progress"
-    "github.com/anthropics/auto-claude-speckit/internal/workflow"
+    "github.com/ariel-frischer/autospec/internal/progress"
+    "github.com/ariel-frischer/autospec/internal/workflow"
 )
 
 func main() {

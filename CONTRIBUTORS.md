@@ -6,8 +6,8 @@ This guide is for developers and contributors working on Auto Claude SpecKit.
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/auto-claude-speckit.git
-cd auto-claude-speckit
+git clone https://github.com/ariel-frischer/autospec.git
+cd autospec
 
 # Build the binary
 make build
@@ -382,4 +382,4 @@ Built with:
 - **Development guide**: [CLAUDE.md](CLAUDE.md)
 - **User guide**: [README.md](README.md)
 - **Prerequisites**: [PREREQUISITES.md](PREREQUISITES.md)
-- **Issue tracker**: https://github.com/anthropics/auto-claude-speckit/issues
+- **Issue tracker**: https://github.com/ariel-frischer/autospec/issues

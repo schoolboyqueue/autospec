@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
 // BenchmarkProgressDisplay_StartPhase verifies StartPhase meets <10ms performance contract

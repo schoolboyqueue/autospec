@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/anthropics/auto-claude-speckit/internal/commands"
+	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/spf13/cobra"
 )
 

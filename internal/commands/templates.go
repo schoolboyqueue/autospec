@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/auto-claude-speckit/internal/scripts"
+	"github.com/ariel-frischer/autospec/internal/scripts"
 	"gopkg.in/yaml.v3"
 )
 

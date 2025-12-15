@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/workflow"
+	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/commands"
-	"github.com/anthropics/auto-claude-speckit/internal/yaml"
+	"github.com/ariel-frischer/autospec/internal/commands"
+	"github.com/ariel-frischer/autospec/internal/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Auto Claude SpecKit Installer
+# AutoSpec Installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
 #
 # Environment variables:
@@ -96,7 +96,7 @@ download_and_verify() {
     local tmp_dir="$4"
 
     # Construct archive name (matches goreleaser template)
-    local archive_name="auto-claude-speckit_${version#v}_${os}_${arch}.tar.gz"
+    local archive_name="autospec_${version#v}_${os}_${arch}.tar.gz"
     local download_url="https://github.com/${GITHUB_REPO}/releases/download/${version}/${archive_name}"
     local checksum_url="https://github.com/${GITHUB_REPO}/releases/download/${version}/checksums.txt"
 

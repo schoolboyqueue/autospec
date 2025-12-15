@@ -5,7 +5,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/anthropics/auto-claude-speckit/internal/yaml"
+	"github.com/ariel-frischer/autospec/internal/yaml"
 	"github.com/spf13/cobra"
 )
 

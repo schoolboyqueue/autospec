@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/auto-claude-speckit/internal/yaml"
+	"github.com/ariel-frischer/autospec/internal/yaml"
 )
 
 // ValidateSpecFile checks if spec.md or spec.yaml exists in the given spec directory

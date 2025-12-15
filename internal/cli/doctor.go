@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anthropics/auto-claude-speckit/internal/health"
+	"github.com/ariel-frischer/autospec/internal/health"
 	"github.com/spf13/cobra"
 )
 

@@ -26,8 +26,8 @@ If you see `command not found`, visit the [troubleshooting guide](./troubleshoot
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/auto-claude-speckit.git
-cd auto-claude-speckit
+git clone https://github.com/ariel-frischer/autospec.git
+cd autospec
 
 # Build the binary
 make build
@@ -38,7 +38,7 @@ sudo make install
 
 ### Option 2: Download Binary (Recommended for Users)
 
-Visit the [releases page](https://github.com/anthropics/auto-claude-speckit/releases) and download the binary for your platform:
+Visit the [releases page](https://github.com/ariel-frischer/autospec/releases) and download the binary for your platform:
 
 - **Linux**: `autospec-linux-amd64`
 - **macOS**: `autospec-darwin-amd64`
@@ -339,7 +339,7 @@ Now that you've completed your first workflow, explore these resources:
 
 Need assistance?
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/anthropics/auto-claude-speckit/issues)
+- **GitHub Issues**: [Report bugs or request features](https://github.com/ariel-frischer/autospec/issues)
 - **Documentation**: Browse all docs in the `docs/` directory
 - **Claude AI Support**: [Contact Anthropic](https://support.anthropic.com)
 

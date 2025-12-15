@@ -136,10 +136,10 @@ assignees: ''
 blank_issues_enabled: false
 contact_links:
   - name: Community Support
-    url: https://github.com/anthropics/auto-claude-speckit/discussions
+    url: https://github.com/ariel-frischer/autospec/discussions
     about: For questions, help, and general discussion
   - name: Documentation
-    url: https://github.com/anthropics/auto-claude-speckit/blob/main/README.md
+    url: https://github.com/ariel-frischer/autospec/blob/main/README.md
     about: Read the documentation for usage guides
 ```
 

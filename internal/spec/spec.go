@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/anthropics/auto-claude-speckit/internal/git"
+	"github.com/ariel-frischer/autospec/internal/git"
 )
 
 var (

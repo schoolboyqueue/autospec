@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/config"
-	"github.com/anthropics/auto-claude-speckit/internal/spec"
+	"github.com/ariel-frischer/autospec/internal/config"
+	"github.com/ariel-frischer/autospec/internal/spec"
 )
 
 func TestNewWorkflowOrchestrator(t *testing.T) {

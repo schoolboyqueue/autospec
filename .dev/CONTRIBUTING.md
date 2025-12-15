@@ -5,7 +5,7 @@
 1. Clone the repo and checkout `dev` branch:
    ```bash
    git clone git@github.com:ariel-frischer/auto-claude-speckit.git
-   cd auto-claude-speckit
+   cd autospec
    git checkout dev
    ```
 

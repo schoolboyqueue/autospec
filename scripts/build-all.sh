@@ -9,7 +9,7 @@ COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Module path
-MODULE_PATH="github.com/anthropics/auto-claude-speckit"
+MODULE_PATH="github.com/ariel-frischer/autospec"
 
 LDFLAGS="-X ${MODULE_PATH}/internal/cli.Version=${VERSION} \
          -X ${MODULE_PATH}/internal/cli.Commit=${COMMIT} \

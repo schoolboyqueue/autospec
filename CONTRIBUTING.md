@@ -22,7 +22,7 @@ This project adheres to the [Contributor Covenant Code of Conduct](CODE_OF_CONDU
 
 Before submitting a bug report:
 
-1. Search [existing issues](https://github.com/anthropics/auto-claude-speckit/issues) to avoid duplicates
+1. Search [existing issues](https://github.com/ariel-frischer/autospec/issues) to avoid duplicates
 2. Update to the latest version to see if the issue persists
 3. Collect relevant information:
    - Version (`autospec version`)
@@ -101,8 +101,8 @@ Use the [feature request template](.github/ISSUE_TEMPLATE/feature_request.md) wh
 
 ```bash
 # Clone the repository
-git clone https://github.com/anthropics/auto-claude-speckit.git
-cd auto-claude-speckit
+git clone https://github.com/ariel-frischer/autospec.git
+cd autospec
 
 # Install dependencies
 go mod download
@@ -306,8 +306,8 @@ func BenchmarkValidateSpecFile(b *testing.B) {
 
 ## Questions?
 
-- Open a [discussion](https://github.com/anthropics/auto-claude-speckit/discussions) for general questions
-- Check existing [issues](https://github.com/anthropics/auto-claude-speckit/issues) for known problems
+- Open a [discussion](https://github.com/ariel-frischer/autospec/discussions) for general questions
+- Check existing [issues](https://github.com/ariel-frischer/autospec/issues) for known problems
 - Review [documentation](docs/) for usage information
 
 Thank you for contributing!

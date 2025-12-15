@@ -5,12 +5,12 @@ The `install.sh` script provides a single-command installation that works across
 ## One-Line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/anthropics/auto-claude-speckit/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
 ```
 
 Or with wget:
 ```bash
-wget -qO- https://raw.githubusercontent.com/anthropics/auto-claude-speckit/main/install.sh | sh
+wget -qO- https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
 ```
 
 ## How It Works
@@ -58,7 +58,7 @@ BINARY_FILE="autospec-${OS}-${ARCH}.exe"
 
 Final URL:
 ```
-https://github.com/anthropics/auto-claude-speckit/releases/latest/download/${BINARY_FILE}
+https://github.com/ariel-frischer/autospec/releases/latest/download/${BINARY_FILE}
 ```
 
 ### Install Location Selection

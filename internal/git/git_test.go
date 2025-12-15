@@ -44,7 +44,7 @@ func TestGetRepositoryRoot_Real(t *testing.T) {
 	root, err := GetRepositoryRoot()
 	require.NoError(t, err)
 	assert.NotEmpty(t, root)
-	assert.Contains(t, root, "auto-claude-speckit")
+	assert.Contains(t, root, "autospec")
 }
 
 // TestIsGitRepository tests checking if we're in a git repository

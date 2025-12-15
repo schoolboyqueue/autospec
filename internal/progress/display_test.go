@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
 // captureOutput captures stdout during function execution

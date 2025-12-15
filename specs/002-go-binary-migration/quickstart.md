@@ -39,7 +39,7 @@ git --version
 
 ```bash
 # Create project directory structure
-cd /home/ari/repos/auto-claude-speckit
+cd /home/ari/repos/autospec
 mkdir -p cmd/autospec
 mkdir -p internal/{validation,retry,config,git,spec,workflow,cli}
 mkdir -p integration/testdata

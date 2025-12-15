@@ -107,8 +107,8 @@ For contributors, see [CLAUDE.md](../CLAUDE.md) for detailed development guideli
 
 ## Links
 
-- **GitHub Repository**: [anthropics/auto-claude-speckit](https://github.com/anthropics/auto-claude-speckit)
-- **Issue Tracker**: [Report bugs or request features](https://github.com/anthropics/auto-claude-speckit/issues)
+- **GitHub Repository**: [ariel-frischer/autospec](https://github.com/ariel-frischer/autospec)
+- **Issue Tracker**: [Report bugs or request features](https://github.com/ariel-frischer/autospec/issues)
 - **Claude AI**: [Learn more about Claude](https://www.anthropic.com/claude)
 - **SpecKit Methodology**: Documentation coming soon
 

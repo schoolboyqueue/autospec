@@ -3,9 +3,9 @@ package workflow
 import (
 	"fmt"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
-	"github.com/anthropics/auto-claude-speckit/internal/retry"
-	"github.com/anthropics/auto-claude-speckit/internal/validation"
+	"github.com/ariel-frischer/autospec/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/retry"
+	"github.com/ariel-frischer/autospec/internal/validation"
 )
 
 // Executor handles command execution with retry logic

@@ -3,7 +3,7 @@ package progress_test
 import (
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
 // BenchmarkDetectTerminalCapabilities verifies terminal detection meets <10ms performance contract

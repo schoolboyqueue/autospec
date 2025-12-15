@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/anthropics/auto-claude-speckit/internal/config"
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
-	"github.com/anthropics/auto-claude-speckit/internal/spec"
-	"github.com/anthropics/auto-claude-speckit/internal/validation"
+	"github.com/ariel-frischer/autospec/internal/config"
+	"github.com/ariel-frischer/autospec/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/spec"
+	"github.com/ariel-frischer/autospec/internal/validation"
 )
 
 // WorkflowOrchestrator manages the complete specify → plan → tasks workflow

@@ -14,7 +14,7 @@ func TestDetectCurrentSpec_FromBranch(t *testing.T) {
 	// This test runs against the real git repository
 	// It verifies that DetectCurrentSpec returns valid metadata
 	// without hardcoding a specific branch (which changes during development)
-	specsDir := "/home/ari/repos/auto-claude-speckit/specs"
+	specsDir := "/home/ari/repos/autospec/specs"
 	meta, err := DetectCurrentSpec(specsDir)
 	require.NoError(t, err)
 	// Verify we got valid metadata structure

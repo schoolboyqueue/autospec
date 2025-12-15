@@ -8,7 +8,7 @@ DIST_DIR=dist
 VERSION?=dev
 COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
-MODULE_PATH=github.com/anthropics/auto-claude-speckit
+MODULE_PATH=github.com/ariel-frischer/autospec
 
 # Build flags
 LDFLAGS=-ldflags="-X ${MODULE_PATH}/internal/cli.Version=${VERSION} \

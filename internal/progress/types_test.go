@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
 // TestPhaseStatus_String tests the String() method of PhaseStatus enum

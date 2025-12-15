@@ -1,9 +1,9 @@
 # Auto Claude SpecKit
 
-[![CI](https://github.com/anthropics/auto-claude-speckit/actions/workflows/ci.yml/badge.svg)](https://github.com/anthropics/auto-claude-speckit/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/anthropics/auto-claude-speckit)](https://goreportcard.com/report/github.com/anthropics/auto-claude-speckit)
+[![CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ariel-frischer/autospec)](https://goreportcard.com/report/github.com/ariel-frischer/autospec)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/v/release/anthropics/auto-claude-speckit)](https://github.com/anthropics/auto-claude-speckit/releases/latest)
+[![Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 
 Automated validation and workflow scripts for Claude Code's SpecKit feature development system.
 
@@ -47,17 +47,17 @@ Download the latest release for your platform:
 
 ```bash
 # Linux (amd64)
-curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-linux-amd64 -o autospec
+curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-linux-amd64 -o autospec
 chmod +x autospec
 sudo mv autospec /usr/local/bin/
 
 # macOS (Intel)
-curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-darwin-amd64 -o autospec
+curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-darwin-amd64 -o autospec
 chmod +x autospec
 sudo mv autospec /usr/local/bin/
 
 # macOS (Apple Silicon)
-curl -L https://github.com/anthropics/auto-claude-speckit/releases/latest/download/autospec-darwin-arm64 -o autospec
+curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-darwin-arm64 -o autospec
 chmod +x autospec
 sudo mv autospec /usr/local/bin/
 
@@ -74,7 +74,7 @@ autospec version
 If you have Go 1.21+ installed:
 
 ```bash
-go install github.com/anthropics/auto-claude-speckit/cmd/autospec@latest
+go install github.com/ariel-frischer/autospec/cmd/autospec@latest
 
 # Verify installation
 autospec version
@@ -84,8 +84,8 @@ autospec version
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/anthropics/auto-claude-speckit.git
-cd auto-claude-speckit
+git clone https://github.com/ariel-frischer/autospec.git
+cd autospec
 ```
 
 2. Build the binary:
@@ -501,4 +501,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 **Documentation:** Run `autospec --help` for CLI usage
 
-**Issues:** https://github.com/anthropics/auto-claude-speckit/issues
+**Issues:** https://github.com/ariel-frischer/autospec/issues

@@ -1,9 +1,9 @@
 # Jekyll configuration for GitHub Pages
-title: Auto Claude SpecKit
+title: AutoSpec
 description: Automated SpecKit workflow validation for Claude Code
 theme: jekyll-theme-cayman
-baseurl: "/auto-claude-speckit"
-url: "https://anthropics.github.io"
+baseurl: "/autospec"
+url: "https://ariel-frischer.github.io"
 
 # Build settings
 markdown: kramdown
@@ -58,9 +58,9 @@ include:
 
 # GitHub settings
 github:
-  repository_url: https://github.com/anthropics/auto-claude-speckit
+  repository_url: https://github.com/ariel-frischer/autospec
   is_project_page: true
 
 # Show edit links
 show_downloads: false
-github_username: anthropics
+github_username: ariel-frischer

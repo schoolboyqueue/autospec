@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/anthropics/auto-claude-speckit/internal/config"
+	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )

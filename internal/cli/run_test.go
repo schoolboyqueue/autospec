@@ -3,7 +3,7 @@ package cli
 import (
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/workflow"
+	"github.com/ariel-frischer/autospec/internal/workflow"
 )
 
 func TestPhaseConfigFromFlags(t *testing.T) {

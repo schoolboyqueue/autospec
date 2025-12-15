@@ -20,7 +20,7 @@ We take security vulnerabilities seriously. If you discover a security issue, pl
 
 Instead, please report security vulnerabilities by emailing the maintainers directly or using GitHub's private vulnerability reporting feature:
 
-1. Go to the [Security tab](https://github.com/anthropics/auto-claude-speckit/security) of this repository
+1. Go to the [Security tab](https://github.com/ariel-frischer/autospec/security) of this repository
 2. Click "Report a vulnerability"
 3. Provide details about the vulnerability
 

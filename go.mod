@@ -8,7 +8,7 @@
 // Note: testify (400K) is test-only and NOT included in the production binary.
 // Go automatically excludes dependencies only used in *_test.go files.
 
-module github.com/anthropics/auto-claude-speckit
+module github.com/ariel-frischer/autospec
 
 go 1.25.1
 

@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/anthropics/auto-claude-speckit/internal/config"
-	clierrors "github.com/anthropics/auto-claude-speckit/internal/errors"
-	"github.com/anthropics/auto-claude-speckit/internal/spec"
-	"github.com/anthropics/auto-claude-speckit/internal/validation"
-	"github.com/anthropics/auto-claude-speckit/internal/workflow"
+	"github.com/ariel-frischer/autospec/internal/config"
+	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/spec"
+	"github.com/ariel-frischer/autospec/internal/validation"
+	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 

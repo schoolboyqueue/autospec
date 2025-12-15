@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/config"
+	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

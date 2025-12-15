@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anthropics/auto-claude-speckit/internal/progress"
+	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
 // TestDetectTerminalCapabilities tests terminal capability detection
