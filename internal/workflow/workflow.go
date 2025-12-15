@@ -248,7 +248,7 @@ func (w *WorkflowOrchestrator) runPreflightChecks() error {
 		fmt.Println("✓ claude CLI found")
 		fmt.Println("✓ specify CLI found")
 		fmt.Println("✓ .claude/commands/ directory exists")
-		fmt.Println("✓ .specify/ directory exists")
+		fmt.Println("✓ .autospec/ directory exists")
 	}
 
 	fmt.Println()
@@ -531,7 +531,7 @@ func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
 		command,
 		func(specDir string) error {
 			// Constitution doesn't produce tracked artifacts
-			// It modifies .specify/memory/constitution.md
+			// It modifies .autospec/memory/constitution.yaml
 			return nil
 		},
 	)

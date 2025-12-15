@@ -41,13 +41,6 @@ Follow this execution flow:
 3. **Generate constitution.yaml**:
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "constitution"
-
    constitution:
      project_name: "<project name>"
      version: "1.0.0"
@@ -160,6 +153,13 @@ Follow this execution flow:
      removed_sections: []
      templates_requiring_updates: []
      follow_up_todos: []
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "constitution"
    ```
 
 4. **Write the constitution** to `.autospec/memory/constitution.yaml`

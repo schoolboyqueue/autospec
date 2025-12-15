@@ -49,13 +49,6 @@ Given that feature description, do this:
 3. **Generate spec.yaml**: Create the YAML specification file with this structure:
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "spec"
-
    feature:
      branch: "<branch name from step 2>"
      created: "<today's date YYYY-MM-DD>"
@@ -117,6 +110,13 @@ Given that feature description, do this:
    out_of_scope:
      - "<explicitly excluded item 1>"
      - "<explicitly excluded item 2>"
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "spec"
    ```
 
 4. **Follow this execution flow**:

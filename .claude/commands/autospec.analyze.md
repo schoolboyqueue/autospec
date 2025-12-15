@@ -19,7 +19,7 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 **STRICTLY READ-ONLY**: Do **not** modify any files. Output a structured analysis YAML file. Offer an optional remediation plan (user must explicitly approve before any follow-up editing commands would be invoked manually).
 
-**Constitution Authority**: The project constitution (`.specify/memory/constitution.md` or `CLAUDE.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks.
+**Constitution Authority**: The project constitution (`.autospec/memory/constitution.yaml` or `CLAUDE.md`) is **non-negotiable** within this analysis scope. Constitution conflicts are automatically CRITICAL and require adjustment of the spec, plan, or tasks.
 
 ## Execution Steps
 
@@ -65,7 +65,7 @@ Load only the minimal necessary context from each artifact:
 - Referenced file paths
 
 **From constitution**:
-- Load `.specify/memory/constitution.yaml` or `CLAUDE.md` for principle validation
+- Load `.autospec/memory/constitution.yaml` or `CLAUDE.md` for principle validation
 
 ### 3. Build Semantic Models
 
@@ -118,13 +118,6 @@ Use this heuristic to prioritize findings:
 ### 6. Generate analysis.yaml
 
 ```yaml
-_meta:
-  version: "1.0.0"
-  generator: "autospec"
-  generator_version: "<run autospec version to get this>"
-  created: "<ISO 8601 timestamp>"
-  artifact_type: "analysis"
-
 analysis:
   branch: "<current git branch>"
   timestamp: "<ISO 8601 timestamp>"
@@ -221,6 +214,13 @@ summary:
   blocking_issues: <number of CRITICAL issues>
   actionable_improvements: <number of HIGH/MEDIUM issues>
   ready_for_implementation: <true|false>
+
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "<run autospec version to get this>"
+  created: "<ISO 8601 timestamp>"
+  artifact_type: "analysis"
 ```
 
 ### 7. Write the analysis to `FEATURE_DIR/analysis.yaml`

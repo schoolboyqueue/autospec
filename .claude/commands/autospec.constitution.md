@@ -22,8 +22,8 @@ You are creating or updating the project constitution. This file defines the non
 Follow this execution flow:
 
 1. **Load existing context**:
-   - Check if `.specify/memory/constitution.yaml` exists
-   - Check if `.specify/memory/constitution.md` exists (for migration)
+   - Check if `.autospec/memory/constitution.yaml` exists
+   - Check if `.autospec/memory/constitution.md` exists (for migration)
    - Check if `CLAUDE.md` exists at project root
    - Extract any existing principles, governance rules, or project guidelines
 
@@ -41,13 +41,6 @@ Follow this execution flow:
 3. **Generate constitution.yaml**:
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "constitution"
-
    constitution:
      project_name: "<project name>"
      version: "1.0.0"
@@ -160,14 +153,21 @@ Follow this execution flow:
      removed_sections: []
      templates_requiring_updates: []
      follow_up_todos: []
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "constitution"
    ```
 
-4. **Write the constitution** to `.specify/memory/constitution.yaml`
-   - Create `.specify/memory/` directory if it doesn't exist
+4. **Write the constitution** to `.autospec/memory/constitution.yaml`
+   - Create `.autospec/memory/` directory if it doesn't exist
 
 5. **Validate the YAML**:
    ```bash
-   autospec yaml check .specify/memory/constitution.yaml
+   autospec yaml check .autospec/memory/constitution.yaml
    ```
    - If validation fails: fix YAML syntax errors and retry
    - If validation passes: proceed to report

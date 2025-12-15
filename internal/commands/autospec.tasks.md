@@ -60,13 +60,6 @@ You **MUST** consider the user input before proceeding (if not empty).
 4. **Generate tasks.yaml**: Create the YAML task file with this structure:
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "tasks"
-
    tasks:
      branch: "<current git branch>"
      created: "<today's date YYYY-MM-DD>"
@@ -192,6 +185,13 @@ You **MUST** consider the user input before proceeding (if not empty).
        - milestone: "MVP Complete"
          phases: [1, 2, 3]
          deliverable: "<what's usable>"
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "tasks"
    ```
 
 5. **Write the tasks** to `FEATURE_DIR/tasks.yaml`

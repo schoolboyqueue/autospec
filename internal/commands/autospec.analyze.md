@@ -118,13 +118,6 @@ Use this heuristic to prioritize findings:
 ### 6. Generate analysis.yaml
 
 ```yaml
-_meta:
-  version: "1.0.0"
-  generator: "autospec"
-  generator_version: "<run autospec version to get this>"
-  created: "<ISO 8601 timestamp>"
-  artifact_type: "analysis"
-
 analysis:
   branch: "<current git branch>"
   timestamp: "<ISO 8601 timestamp>"
@@ -221,6 +214,13 @@ summary:
   blocking_issues: <number of CRITICAL issues>
   actionable_improvements: <number of HIGH/MEDIUM issues>
   ready_for_implementation: <true|false>
+
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "<run autospec version to get this>"
+  created: "<ISO 8601 timestamp>"
+  artifact_type: "analysis"
 ```
 
 ### 7. Write the analysis to `FEATURE_DIR/analysis.yaml`

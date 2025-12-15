@@ -156,7 +156,7 @@ var artifactDependencies = map[Phase]ArtifactDependency{
 	PhaseConstitution: {
 		Phase:    PhaseConstitution,
 		Requires: []string{}, // Constitution has no prerequisites
-		Produces: []string{}, // Constitution modifies .specify/memory/constitution.md
+		Produces: []string{}, // Constitution modifies .autospec/memory/constitution.yaml
 	},
 	PhaseClarify: {
 		Phase:    PhaseClarify,

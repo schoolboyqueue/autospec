@@ -82,13 +82,6 @@ You **MUST** consider the user input before proceeding (if not empty).
 5. **Generate checklist.yaml** - Create "Unit Tests for Requirements":
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "checklist"
-
    checklist:
      feature: "<feature name from spec>"
      branch: "<current git branch>"
@@ -171,6 +164,13 @@ You **MUST** consider the user input before proceeding (if not empty).
      failed: <number>
      pending: <number>
      pass_rate: "<percentage>"
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "checklist"
    ```
 
 6. **Write the checklist** to `FEATURE_DIR/checklists/<domain>.yaml`

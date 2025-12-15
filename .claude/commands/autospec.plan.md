@@ -34,7 +34,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 2. **Load context**:
    - Read the spec file at `FEATURE_SPEC`
-   - Read project constitution if exists (`.specify/memory/constitution.md` or `CLAUDE.md`)
+   - Read project constitution if exists (`.autospec/memory/constitution.yaml` or `CLAUDE.md`)
    - Extract: feature description, user stories, requirements, constraints
 
 3. **Execute plan workflow**:
@@ -74,13 +74,6 @@ You **MUST** consider the user input before proceeding (if not empty).
 4. **Generate plan.yaml**: Create the YAML plan file with this structure:
 
    ```yaml
-   _meta:
-     version: "1.0.0"
-     generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
-     artifact_type: "plan"
-
    plan:
      branch: "<current git branch>"
      created: "<today's date YYYY-MM-DD>"
@@ -189,6 +182,13 @@ You **MUST** consider the user input before proceeding (if not empty).
      - question: "<unresolved question>"
        context: "<why it matters>"
        proposed_resolution: "<suggested approach>"
+
+   _meta:
+     version: "1.0.0"
+     generator: "autospec"
+     generator_version: "<run autospec version to get this>"
+     created: "<ISO 8601 timestamp>"
+     artifact_type: "plan"
    ```
 
 5. **Write the plan** to `FEATURE_DIR/plan.yaml`
