@@ -215,11 +215,12 @@ Key settings:
 - `max_retries`: Maximum retry attempts (default: 3)
 - `specs_dir`: Directory for feature specs (default: "./specs")
 - `state_dir`: Retry state storage (default: "~/.autospec/state")
-- `timeout`: Command execution timeout in seconds (default: 0 = no timeout, valid range: 0 or 1-604800 (7 days))
+- `timeout`: Command execution timeout in seconds (default: 2400 = 40 minutes, valid range: 0 or 1-604800 (7 days))
 - `skip_confirmations`: Skip confirmation prompts (default: false, can also be set via AUTOSPEC_YES env var)
 
 **Timeout Behavior**:
-- `0` or missing: No timeout (infinite wait) - backward compatible default
+- `0`: No timeout (infinite wait)
+- Default: 2400 seconds (40 minutes)
 - `1-3600`: Timeout in seconds (1 second to 1 hour)
 - Commands exceeding timeout are terminated with SIGKILL
 - Timeout errors return exit code 5
@@ -338,12 +339,12 @@ All SpecKit phase commands (`specify`, `plan`, `tasks`, `implement`) support opt
 ```bash
 # Simple prompt injection
 autospec plan "Focus on security best practices"
-# Executes: claude -p "/speckit.plan \"Focus on security best practices\""
+# Executes: claude -p "/autospec.plan \"Focus on security best practices\""
 
 # Custom command with prompt
 # Config: custom_claude_cmd = "claude -p {{PROMPT}} | claude-clean"
 autospec tasks "Break into small steps"
-# Executes: claude -p '/speckit.tasks "Break into small steps"' | claude-clean
+# Executes: claude -p '/autospec.tasks "Break into small steps"' | claude-clean
 
 # Implement command with spec-name and prompt
 autospec implement 003-my-feature "Complete the tests"
@@ -353,7 +354,7 @@ autospec implement 003-my-feature "Complete the tests"
 **Command Display:**
 Before each phase execution, the full resolved command is displayed:
 ```
-→ Executing: claude -p "/speckit.plan \"Focus on security\""
+→ Executing: claude -p "/autospec.plan \"Focus on security\""
 ```
 
 This transparency helps with:
@@ -374,9 +375,9 @@ Configuration uses a layered approach (see `config/config.go`):
 ```
 Defaults (in-memory)
   ↓ overridden by
-Global config (~/.autospec/config.json)
+Global config (~/.config/autospec/config.yml)
   ↓ overridden by
-Local config (.autospec/config.json)
+Local config (.autospec/config.yml)
   ↓ overridden by
 Environment variables (AUTOSPEC_*)
 ```
@@ -403,13 +404,12 @@ Atomic writes via temp file + rename ensure consistency.
 
 ## Constitution Principles
 
-Development follows `.autospec/memory/constitution.md`:
+Development follows `.autospec/memory/constitution.yaml`:
 
 1. **Validation-First**: All workflow transitions validated before proceeding
-2. **Hook-Based Enforcement**: Quality gates via Claude Code hooks (legacy bash scripts in `scripts/hooks/`)
-3. **Test-First Development** (NON-NEGOTIABLE): Tests written before implementation
-4. **Performance Standards**: Sub-second validation (<1s); validation functions <10ms
-5. **Idempotency & Retry Logic**: All operations idempotent; configurable retry limits
+2. **Test-First Development** (NON-NEGOTIABLE): Tests written before implementation
+3. **Performance Standards**: Sub-second validation (<1s); validation functions <10ms
+4. **Idempotency & Retry Logic**: All operations idempotent; configurable retry limits
 
 ## Testing Architecture
 
@@ -445,10 +445,10 @@ Example:
 ```bash
 autospec workflow "feature" && echo "Success" || echo "Failed with code $?"
 # If timeout occurs:
-# Error: command timed out after 5m0s: claude /speckit.workflow ... (hint: increase timeout in config)
-# To increase the timeout, set AUTOSPEC_TIMEOUT environment variable or update config.json:
+# Error: command timed out after 5m0s: claude /autospec.workflow ... (hint: increase timeout in config)
+# To increase the timeout, set AUTOSPEC_TIMEOUT environment variable or update config.yml:
 #   export AUTOSPEC_TIMEOUT=600  # 10 minutes
-#   or edit .autospec/config.json and set "timeout": 600
+#   or edit .autospec/config.yml and set "timeout: 600"
 # Failed with code 5
 ```
 
@@ -468,7 +468,7 @@ The tool supports multiple ways to execute Claude commands:
 2. **API mode**: Direct API calls using API key (set `use_api_key: true`)
 3. **Custom mode**: Custom command with `{{PROMPT}}` placeholder
 
-Configure in config.json or via environment variables.
+Configure in config.yml or via environment variables.
 
 ### Spec Detection Logic
 
@@ -541,8 +541,8 @@ autospec --verbose workflow "feature"
 
 # Timeout-specific debugging
 echo $AUTOSPEC_TIMEOUT           # Check environment variable
-cat .autospec/config.json | jq .timeout  # Check local config
-cat ~/.autospec/config.json | jq .timeout  # Check global config
+cat .autospec/config.yml         # Check local config
+cat ~/.config/autospec/config.yml  # Check global config
 
 # Test timeout behavior with short timeout
 AUTOSPEC_TIMEOUT=5 autospec specify "test"  # Should timeout quickly
@@ -580,15 +580,13 @@ Fully migrated Go binary with:
 - `~/.autospec/config.json`: Legacy user config (use `autospec config migrate --user`)
 
 ## Active Technologies
-- Go 1.25.1 (003-command-timeout)
-- File system (JSON config files in ~/.autospec/config.json and .autospec/config.json, state in ~/.autospec/state/retry.json) (003-command-timeout)
-- Go 1.25.1 + Cobra CLI (v1.10.1), briandowns/spinner (v1.23.0+), golang.org/x/term (v0.25.0+) (004-workflow-progress-indicators)
-- N/A (progress state is ephemeral, displayed only during execution) (004-workflow-progress-indicators)
-- Go 1.25.1 + Cobra CLI (v1.10.1), koanf config (v2.1.2), go-playground/validator (v10.28.0), briandowns/spinner (v1.23.0) (005-high-level-docs)
-- Markdown with YAML frontmatter (GitHub-specific format) + None - static files interpreted by GitHub (006-github-issue-templates)
-- Repository files in `.github/ISSUE_TEMPLATE/` directory (006-github-issue-templates)
-- Go 1.25.1 + Cobra CLI (v1.10.1), gopkg.in/yaml.v3 (v3.0.1 - already indirect dep), koanf (v2.3.0) (007-yaml-structured-output)
-- File system (YAML artifacts in `specs/*/`, command templates embedded in binary) (007-yaml-structured-output)
+- Go 1.25.1 + Cobra CLI (v1.10.1)
+- koanf config (v2.3.0) with YAML format
+- go-playground/validator (v10.28.0)
+- briandowns/spinner (v1.23.0+)
+- gopkg.in/yaml.v3 (v3.0.1)
+- File system (YAML config in ~/.config/autospec/config.yml and .autospec/config.yml, state in ~/.autospec/state/retry.json)
+- YAML artifacts in `specs/*/` (spec.yaml, plan.yaml, tasks.yaml)
 
 ## Recent Changes
 - 003-command-timeout: Added Go 1.25.1

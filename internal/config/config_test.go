@@ -168,7 +168,7 @@ func TestLoad_TimeoutDefaults(t *testing.T) {
 
 	cfg, err := Load("")
 	require.NoError(t, err)
-	assert.Equal(t, 0, cfg.Timeout, "Default timeout should be 0 (no timeout)")
+	assert.Equal(t, 2400, cfg.Timeout, "Default timeout should be 2400 (40 minutes)")
 }
 
 func TestLoad_TimeoutValidValue(t *testing.T) {

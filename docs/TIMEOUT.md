@@ -42,11 +42,12 @@ EOF
 
 | Value | Meaning | Common Use Cases |
 |-------|---------|------------------|
-| `0` | No timeout (default) | Development, interactive use, debugging |
+| `0` | No timeout | Development, interactive use, debugging |
 | `30` | 30 seconds | Quick commands, testing timeout behavior |
 | `300` | 5 minutes | Most workflow commands |
 | `600` | 10 minutes | Complex planning/implementation |
 | `1800` | 30 minutes | Large features |
+| `2400` | 40 minutes (default) | Full workflows |
 | `3600` | 1 hour | Very complex tasks |
 | `86400` | 24 hours | Extremely long-running operations |
 | `604800` | 7 days (maximum) | Extended background processing |
@@ -58,7 +59,7 @@ Configuration sources are applied in this order (highest to lowest priority):
 1. **Environment Variable**: `AUTOSPEC_TIMEOUT`
 2. **Local Config**: `.autospec/config.yml` (current directory)
 3. **Global Config**: `~/.config/autospec/config.yml` (home directory)
-4. **Default**: `0` (no timeout)
+4. **Default**: `2400` (40 minutes)
 
 ### Example: Multiple Configuration Sources
 
