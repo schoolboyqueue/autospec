@@ -131,6 +131,12 @@ autospec clean --yes                                       # Remove without conf
 autospec clean --keep-specs                                # Explicitly preserve specs/ (skip prompt)
 autospec clean --remove-specs                              # Include specs/ in removal (skip prompt)
 autospec clean --yes --remove-specs                        # Remove everything without confirmation
+
+# Uninstall autospec completely (removes binary, user config, state)
+autospec uninstall --dry-run                               # Preview what would be removed
+autospec uninstall                                         # Uninstall with confirmation (y/N prompt)
+autospec uninstall --yes                                   # Uninstall without confirmation
+sudo autospec uninstall --yes                              # Uninstall if binary is in system directory
 ```
 
 ## Architecture Overview
@@ -154,6 +160,7 @@ Cobra-based command structure providing user-facing commands:
 - **analyze.go**: Cross-artifact consistency and quality analysis
 - **update_task.go**: Updates individual task status in tasks.yaml during implementation
 - **clean.go**: Removes autospec files from a project (.autospec/, .claude/commands/autospec*.md); specs/ preserved by default
+- **uninstall.go**: Completely removes autospec from system (binary, ~/.config/autospec/, ~/.autospec/)
 - **doctor.go**: Health check command for dependencies
 - **status.go**: Reports current spec progress
 - **config.go**: Configuration management commands
