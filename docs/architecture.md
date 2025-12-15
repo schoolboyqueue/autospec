@@ -197,10 +197,10 @@ sequenceDiagram
     O->>E: ExecutePhase(specify)
     E->>R: LoadState(001-feature:specify)
     R-->>E: retries=0, max=3
-    E->>C: Execute("/speckit.specify ...")
+    E->>C: Execute("/autospec.specify ...")
     C->>C: Call Claude API/CLI
-    C-->>E: spec.md created
-    E->>V: ValidateSpec(spec.md)
+    C-->>E: spec.yaml created
+    E->>V: ValidateSpec(spec.yaml)
     alt Validation Pass
         V-->>E: OK
         E->>R: ResetRetries(001-feature:specify)
@@ -218,26 +218,26 @@ sequenceDiagram
     Note over O: Phase 2: Plan
     O->>E: ExecutePhase(plan)
     E->>R: LoadState(001-feature:plan)
-    E->>C: Execute("/speckit.plan")
-    C-->>E: plan.md created
-    E->>V: ValidatePlan(plan.md)
+    E->>C: Execute("/autospec.plan")
+    C-->>E: plan.yaml created
+    E->>V: ValidatePlan(plan.yaml)
     V-->>E: OK
     E->>R: ResetRetries(001-feature:plan)
     E-->>O: Success
 
     Note over O: Phase 3: Tasks
     O->>E: ExecutePhase(tasks)
-    E->>C: Execute("/speckit.tasks")
-    C-->>E: tasks.md created
-    E->>V: ValidateTasks(tasks.md)
+    E->>C: Execute("/autospec.tasks")
+    C-->>E: tasks.yaml created
+    E->>V: ValidateTasks(tasks.yaml)
     V-->>E: OK
     E-->>O: Success
 
     Note over O: Phase 4: Implement
     O->>E: ExecutePhase(implement)
-    E->>C: Execute("/speckit.implement")
+    E->>C: Execute("/autospec.implement")
     C-->>E: Implementation complete
-    E->>V: ValidateTasksComplete(tasks.md)
+    E->>V: ValidateTasksComplete(tasks.yaml)
     V-->>E: OK
     E-->>O: Success
 
@@ -321,8 +321,8 @@ func (e *Executor) ExecutePhase(specName, phase, command string, validateFn func
 
 **Priority Order**:
 1. Environment variables (`AUTOSPEC_*`)
-2. Local config (`.autospec/config.json`)
-3. Global config (`~/.autospec/config.json`)
+2. Local config (`.autospec/config.yml`)
+3. Global config (`~/.config/autospec/config.yml`)
 4. Defaults (hardcoded)
 
 **Example**:
@@ -331,10 +331,10 @@ func (e *Executor) ExecutePhase(specName, phase, command string, validateFn func
 export AUTOSPEC_MAX_RETRIES=5
 
 # Priority 2: Local config
-echo '{"max_retries": 3}' > .autospec/config.json
+echo 'max_retries: 3' > .autospec/config.yml
 
 # Priority 3: Global config
-echo '{"max_retries": 2}' > ~/.autospec/config.json
+echo 'max_retries: 2' > ~/.config/autospec/config.yml
 
 # Result: max_retries = 5 (environment wins)
 ```
@@ -392,34 +392,33 @@ func DetectCurrentSpec() (*SpecMetadata, error) {
 3. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
 
 **Configuration**:
-```json
-{
-  "claude_cmd": "claude",
-  "custom_claude_cmd": "claude -p {{PROMPT}} | process-output",
-  "use_api_key": false
-}
+```yaml
+claude_cmd: claude
+custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
+use_api_key: false
 ```
 
 **Prompt Injection**:
 All phase commands support optional guidance text:
 ```bash
 autospec plan "Focus on security best practices"
-# Executes: claude -p "/speckit.plan \"Focus on security best practices\""
+# Executes: claude -p "/autospec.plan \"Focus on security best practices\""
 ```
 
 ### File System
 
 **Directories**:
 - `./specs/NNN-feature-name/`: Feature specifications and artifacts
-- `~/.autospec/`: Global configuration and state
+- `~/.config/autospec/`: Global configuration (XDG compliant)
+- `~/.autospec/state/`: State directory
 - `.autospec/`: Local project configuration
 
 **Files**:
-- `spec.md`: Feature specification
-- `plan.md`: Technical plan
-- `tasks.md`: Task breakdown
-- `~/.autospec/config.json`: Global configuration
-- `.autospec/config.json`: Local configuration
+- `spec.yaml`: Feature specification
+- `plan.yaml`: Technical plan
+- `tasks.yaml`: Task breakdown
+- `~/.config/autospec/config.yml`: Global configuration
+- `.autospec/config.yml`: Local configuration
 - `~/.autospec/state/retry.json`: Retry state
 
 ### External Tools
@@ -427,9 +426,6 @@ autospec plan "Focus on security best practices"
 **Required**:
 - Claude CLI: For workflow execution
 - Git (optional): For branch-based spec detection
-
-**Optional**:
-- SpecKit CLI: For legacy compatibility (being phased out)
 
 ## Performance Characteristics
 
@@ -456,8 +452,8 @@ autospec plan "Focus on security best practices"
 
 **Example**:
 ```
-Error: Validation failed: spec.md not found
-Expected: specs/001-dark-mode/spec.md
+Error: Validation failed: spec file not found
+Expected: specs/001-dark-mode/spec.yaml
 Retry: 2/3 (state: ~/.autospec/state/retry.json)
 Hint: Run 'autospec specify "feature description"' to create spec
 ```
