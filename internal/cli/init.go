@@ -47,7 +47,7 @@ Configuration precedence (highest to lowest):
 func init() {
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().BoolP("project", "p", false, "Create project-level config (.autospec/config.yml)")
-	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config without prompting")
+	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config with defaults")
 	// Keep --global as hidden alias for backward compatibility
 	initCmd.Flags().BoolP("global", "g", false, "Deprecated: use default behavior instead (creates user-level config)")
 	initCmd.Flags().MarkHidden("global")
