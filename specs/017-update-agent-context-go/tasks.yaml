@@ -115,7 +115,7 @@ phases:
             - "Test validates placeholder replacement"
         - id: "T008"
           title: "Create internal/agent/agent.go with UpdateAgentFile function"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -132,7 +132,7 @@ phases:
             - "Creates missing sections if they don't exist in file"
         - id: "T009"
           title: "Add UpdateAllAgents function to internal/agent/agent.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -145,7 +145,7 @@ phases:
             - "Creates CLAUDE.md from template if no agent files exist"
         - id: "T010"
           title: "Create internal/agent/agent_test.go with unit tests for agent file operations"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -180,7 +180,7 @@ phases:
             - "Supports all 17 agent types from FR-004"
         - id: "T012"
           title: "Add UpdateSingleAgent function to internal/agent/agent.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -192,7 +192,7 @@ phases:
             - "Returns UpdateResult with created=true if new file"
         - id: "T013"
           title: "Add unit tests for single agent updates to internal/agent/agent_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-002"
@@ -204,7 +204,7 @@ phases:
             - "Test error handling for invalid agent identifier"
         - id: "T014"
           title: "Create internal/cli/update_agent_context.go with Cobra command"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-002"

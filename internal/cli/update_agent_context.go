@@ -1,0 +1,252 @@
+package cli
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/ariel-frischer/autospec/internal/agent"
+	"github.com/ariel-frischer/autospec/internal/config"
+	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/git"
+	"github.com/ariel-frischer/autospec/internal/spec"
+	"github.com/spf13/cobra"
+)
+
+var (
+	updateAgentContextAgentFlag string
+	updateAgentContextJSONFlag  bool
+)
+
+var updateAgentContextCmd = &cobra.Command{
+	Use:   "update-agent-context",
+	Short: "Update AI agent context files with technology information from plan.yaml",
+	Long: `Updates AI agent context files (CLAUDE.md, GEMINI.md, etc.) with technology
+information extracted from the current feature's plan.yaml file.
+
+The command reads the technical_context section from plan.yaml and updates
+the Active Technologies and Recent Changes sections in agent context files.
+
+By default, it updates all existing agent context files. If no agent files
+exist, it creates CLAUDE.md from a template.
+
+Supported agents: claude, gemini, copilot, cursor, qwen, opencode, codex,
+windsurf, kilocode, auggie, roo, codebuddy, qoder, amp, shai, q, bob`,
+	Example: `  # Update all existing agent context files
+  autospec update-agent-context
+
+  # Update only a specific agent's context file
+  autospec update-agent-context --agent claude
+
+  # Create a specific agent file if it doesn't exist
+  autospec update-agent-context --agent cursor
+
+  # Get JSON output for integration with other tools
+  autospec update-agent-context --json`,
+	RunE: runUpdateAgentContext,
+}
+
+func init() {
+	rootCmd.AddCommand(updateAgentContextCmd)
+
+	updateAgentContextCmd.Flags().StringVar(&updateAgentContextAgentFlag, "agent", "",
+		"Update only the specified agent's context file (e.g., claude, gemini, copilot)")
+	updateAgentContextCmd.Flags().BoolVar(&updateAgentContextJSONFlag, "json", false,
+		"Output results as JSON for programmatic consumption")
+}
+
+func runUpdateAgentContext(cmd *cobra.Command, args []string) error {
+	// Load config
+	configPath, _ := cmd.Flags().GetString("config")
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		cliErr := clierrors.ConfigParseError(configPath, err)
+		if !updateAgentContextJSONFlag {
+			clierrors.PrintError(cliErr)
+		}
+		return outputError(cliErr, updateAgentContextJSONFlag)
+	}
+
+	// Get repository root
+	repoRoot, err := git.GetRepositoryRoot()
+	if err != nil {
+		cliErr := fmt.Errorf("not in a git repository: %w. Run this command from within a git repository", err)
+		if !updateAgentContextJSONFlag {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", cliErr)
+		}
+		return outputError(cliErr, updateAgentContextJSONFlag)
+	}
+
+	// Detect current spec
+	metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
+	if err != nil {
+		cliErr := fmt.Errorf("failed to detect spec: %w\nEnsure you're on a feature branch or have spec directories in %s", err, cfg.SpecsDir)
+		if !updateAgentContextJSONFlag {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", cliErr)
+		}
+		return outputError(cliErr, updateAgentContextJSONFlag)
+	}
+
+	specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+
+	// Find plan.yaml
+	planPath := filepath.Join(metadata.Directory, "plan.yaml")
+
+	// Parse plan.yaml
+	planData, err := agent.ParsePlanData(planPath)
+	if err != nil {
+		cliErr := fmt.Errorf("failed to parse plan.yaml: %w", err)
+		if !updateAgentContextJSONFlag {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", cliErr)
+		}
+		return outputError(cliErr, updateAgentContextJSONFlag)
+	}
+
+	// Validate agent flag if provided
+	if updateAgentContextAgentFlag != "" {
+		if _, err := agent.GetAgentByID(updateAgentContextAgentFlag); err != nil {
+			validAgents := strings.Join(agent.GetAllAgentIDs(), ", ")
+			cliErr := fmt.Errorf("invalid agent: %q\nValid agents: %s", updateAgentContextAgentFlag, validAgents)
+			if !updateAgentContextJSONFlag {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", cliErr)
+			}
+			return outputError(cliErr, updateAgentContextJSONFlag)
+		}
+	}
+
+	// Update agent files
+	var results []agent.UpdateResult
+	var updateErr error
+
+	if updateAgentContextAgentFlag != "" {
+		// Update single agent
+		result, err := agent.UpdateSingleAgent(updateAgentContextAgentFlag, repoRoot, planData)
+		if err != nil {
+			updateErr = err
+		}
+		if result != nil {
+			results = append(results, *result)
+		}
+	} else {
+		// Update all existing agents
+		results, updateErr = agent.UpdateAllAgents(repoRoot, planData)
+	}
+
+	// Build output
+	output := buildCommandOutput(specName, planPath, planData, results, updateErr)
+
+	// Output results
+	if updateAgentContextJSONFlag {
+		return outputJSON(output)
+	}
+
+	return outputText(output)
+}
+
+func buildCommandOutput(specName, planPath string, planData *agent.PlanData, results []agent.UpdateResult, updateErr error) agent.CommandOutput {
+	output := agent.CommandOutput{
+		Success:      true,
+		SpecName:     specName,
+		PlanPath:     planPath,
+		Technologies: planData,
+		UpdatedFiles: results,
+		Errors:       []string{},
+	}
+
+	// Check for errors in results
+	for _, result := range results {
+		if result.Error != nil {
+			output.Success = false
+			output.Errors = append(output.Errors, result.Error.Error())
+		}
+	}
+
+	// Add update error if present
+	if updateErr != nil {
+		output.Success = false
+		output.Errors = append(output.Errors, updateErr.Error())
+	}
+
+	return output
+}
+
+func outputJSON(output agent.CommandOutput) error {
+	encoder := json.NewEncoder(os.Stdout)
+	encoder.SetIndent("", "  ")
+	if err := encoder.Encode(output); err != nil {
+		return fmt.Errorf("failed to encode JSON output: %w", err)
+	}
+
+	if !output.Success {
+		return fmt.Errorf("update failed")
+	}
+	return nil
+}
+
+func outputText(output agent.CommandOutput) error {
+	// Print header
+	fmt.Printf("Updating agent context files for: %s\n", output.SpecName)
+	fmt.Printf("Plan: %s\n\n", output.PlanPath)
+
+	// Print technologies found
+	if output.Technologies != nil {
+		techs := output.Technologies.GetTechnologies()
+		if len(techs) > 0 {
+			fmt.Println("Technologies detected:")
+			for _, tech := range techs {
+				fmt.Printf("  - %s\n", tech)
+			}
+			fmt.Println()
+		}
+	}
+
+	// Print results
+	if len(output.UpdatedFiles) > 0 {
+		fmt.Println("Updated files:")
+		for _, result := range output.UpdatedFiles {
+			status := "updated"
+			if result.Created {
+				status = "created"
+			}
+			if result.Error != nil {
+				status = "failed"
+			}
+
+			fmt.Printf("  ✓ %s (%s)\n", result.FilePath, status)
+
+			if len(result.TechnologiesAdded) > 0 {
+				for _, tech := range result.TechnologiesAdded {
+					fmt.Printf("    + %s\n", tech)
+				}
+			}
+		}
+		fmt.Println()
+	}
+
+	// Print errors
+	if len(output.Errors) > 0 {
+		fmt.Println("Errors:")
+		for _, err := range output.Errors {
+			fmt.Printf("  ✗ %s\n", err)
+		}
+		return fmt.Errorf("update completed with errors")
+	}
+
+	fmt.Println("✓ Agent context files updated successfully")
+	return nil
+}
+
+func outputError(err error, jsonOutput bool) error {
+	if jsonOutput {
+		output := agent.CommandOutput{
+			Success: false,
+			Errors:  []string{err.Error()},
+		}
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		encoder.Encode(output)
+	}
+	return err
+}
