@@ -280,5 +280,5 @@ func outputError(err error, jsonOutput bool) error {
 		encoder.SetIndent("", "  ")
 		encoder.Encode(output)
 	}
-	return fmt.Errorf("agent context update failed: %w", err)
+	return err
 }

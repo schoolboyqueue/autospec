@@ -396,7 +396,7 @@ func GetTasksInDependencyOrder(tasks []TaskItem) ([]TaskItem, error) {
 		// Visit all dependencies first
 		for _, depID := range task.Dependencies {
 			if err := visit(depID); err != nil {
-				return err
+				return fmt.Errorf("visiting dependency %s of task %s: %w", depID, id, err)
 			}
 		}
 

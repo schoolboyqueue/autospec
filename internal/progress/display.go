@@ -28,7 +28,7 @@ func NewProgressDisplay(caps TerminalCapabilities) *ProgressDisplay {
 func (p *ProgressDisplay) StartStage(stage StageInfo) error {
 	// Validate stage info
 	if err := stage.Validate(); err != nil {
-		return err
+		return fmt.Errorf("validating stage info: %w", err)
 	}
 
 	p.currentStage = &stage

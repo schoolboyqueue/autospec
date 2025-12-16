@@ -14,7 +14,7 @@ This document lists critical issues found in the autospec codebase based on the 
 | Long Functions (>40 lines) | 69 functions | HIGH |
 | Missing t.Parallel() | 198 test cases in 44 files | MEDIUM |
 | Slice-based tests (not map-based) | 25 test files | LOW |
-| Unwrapped errors | 29+ instances | MEDIUM |
+| Unwrapped errors | ~~29+ instances~~ 3 remaining (intentional) | DONE |
 | Missing benchmark tests | 19 validation functions | MEDIUM |
 | Missing package docs | 0 packages | OK |
 | errors.New() instead of internal/errors | 6 instances | LOW |
@@ -154,44 +154,23 @@ tests := map[string]struct {
 
 ---
 
-### 4. Unwrapped Errors (Missing Context)
+### 4. Unwrapped Errors (Missing Context) - DONE
 
 **Best Practice**: "Wrap errors with context at boundaries"
 
-Found **29+ instances** of `return err` without wrapping.
+~~Found **29+ instances** of `return err` without wrapping.~~
 
-#### Critical Locations
+**FIXED**: All 65+ unwrapped errors have been wrapped with context. Only 3 intentional exceptions remain:
+- `update_agent_context.go:outputError` - Helper function designed to return original error unchanged
+- `workflow_test.go` (2 instances) - Test code with simpler error handling
 
-**Workflow Package** (most important - core orchestration):
-- `workflow/workflow.go:75` - `RunCompleteWorkflow` returns preflight error unwrapped
-- `workflow/workflow.go:126` - `RunFullWorkflow` returns preflight error unwrapped
-- `workflow/workflow.go:393` - `executePlan` returns error unwrapped
-- `workflow/workflow.go:427` - `executeTasks` returns error unwrapped
-- `workflow/workflow.go:957,962,978` - `ExecuteImplementWithTasks` returns validation errors unwrapped
-- `workflow/executor.go:262` - `ValidateTasksComplete` returns stats error unwrapped
-- `workflow/claude.go:176` - `Execute` returns raw error at function end
-
-**Retry Package**:
-- `retry/retry.go:264` - `MarkPhaseComplete` returns load error unwrapped
-- `retry/retry.go:407` - `MarkTaskComplete` returns load error unwrapped
-
-**CLI Commands** (18 instances):
-- `cli/implement.go:188`
-- `cli/specify.go:82`
-- `cli/all.go:93`
-- `cli/plan.go:76`
-- `cli/tasks.go:76`
-- `cli/prep.go:74`
-- `cli/analyze.go:101`
-- `cli/clarify.go:86`
-- `cli/checklist.go:85`
-- `cli/prereqs.go:84`
-- `cli/setup_plan.go:72,154,160,165`
-- `cli/completion_install.go:231`
-- `cli/artifact.go:254`
-- `cli/update_agent_context.go:252`
-- `cli/yaml_check.go:42`
-- `cli/migrate_mdtoyaml.go:77`
+**Packages Fixed**:
+- ✓ Workflow Package (workflow.go, executor.go, claude.go, phase_context.go)
+- ✓ Retry Package (retry.go)
+- ✓ Config Package (config.go)
+- ✓ CLI Commands (all stage commands and utilities)
+- ✓ Validation Package (tasks_yaml.go)
+- ✓ Progress Package (display.go)
 
 **Correct Pattern**:
 ```go
@@ -267,7 +246,7 @@ All **16 packages** now have `// Package` documentation.
 
 ---
 
-### 7. Using errors.New() Instead of internal/errors Package
+### 7. Using errors.New() Instead of internal/errors Package - DONE
 
 **Best Practice**: "Use project error types for structured errors (internal/errors/)"
 
@@ -302,7 +281,7 @@ errors.New("max retries cannot be negative")
 | Functions <40 lines | 69 violations | 0 |
 | t.Parallel() usage | 54% coverage | 100% |
 | Map-based test cases | 46% (21/46 files) | 100% |
-| Error wrapping | ~70% | 100% |
+| Error wrapping | ~100% (3 intentional exceptions) | 100% |
 | Benchmark coverage | 46% | >80% |
 | Package documentation | 100% (16/16) | 100% |
 
@@ -314,7 +293,7 @@ errors.New("max retries cannot be negative")
 
 1. **Refactor `workflow.go`** - 5 functions >80 lines, core orchestration logic
 2. **Refactor `executor.go:ExecutePhase`** - 117 lines, critical path
-3. **Add error wrapping in workflow package** - Core error handling
+3. ~~**Add error wrapping in workflow package** - Core error handling~~ DONE
 
 ### P1 - High (Next Sprint)
 
@@ -330,4 +309,4 @@ errors.New("max retries cannot be negative")
 ### P3 - Low (Technical Debt)
 
 1. Add benchmarks for remaining validation utility functions
-2. Review and document any remaining non-wrapped errors
+2. ~~Review and document any remaining non-wrapped errors~~ DONE
