@@ -274,6 +274,87 @@ func TestValidateConfigValues_ValidCustomClaudeCmd(t *testing.T) {
 	}
 }
 
+func TestValidateConfigValues_ImplementMethod(t *testing.T) {
+	tests := []struct {
+		name            string
+		implementMethod string
+		wantErr         bool
+		wantErrContains string
+	}{
+		{
+			name:            "valid single-session",
+			implementMethod: "single-session",
+			wantErr:         false,
+		},
+		{
+			name:            "valid phases",
+			implementMethod: "phases",
+			wantErr:         false,
+		},
+		{
+			name:            "valid tasks",
+			implementMethod: "tasks",
+			wantErr:         false,
+		},
+		{
+			name:            "empty string is valid (uses default)",
+			implementMethod: "",
+			wantErr:         false,
+		},
+		{
+			name:            "invalid value",
+			implementMethod: "invalid-mode",
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+		{
+			name:            "invalid value with typo",
+			implementMethod: "phase", // missing 's'
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+		{
+			name:            "invalid value - uppercase",
+			implementMethod: "PHASES",
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := &Configuration{
+				ClaudeCmd:       "claude",
+				MaxRetries:      3,
+				SpecsDir:        "./specs",
+				StateDir:        "~/.autospec/state",
+				ImplementMethod: tt.implementMethod,
+			}
+
+			err := ValidateConfigValues(cfg, "test.yml")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateConfigValues() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && err != nil {
+				validationErr, ok := err.(*ValidationError)
+				if !ok {
+					t.Fatalf("Expected ValidationError, got %T", err)
+				}
+
+				if validationErr.Field != "implement_method" {
+					t.Errorf("ValidationError.Field = %q, want %q", validationErr.Field, "implement_method")
+				}
+
+				if tt.wantErrContains != "" && !strings.Contains(validationErr.Message, tt.wantErrContains) {
+					t.Errorf("ValidationError.Message = %q, should contain %q", validationErr.Message, tt.wantErrContains)
+				}
+			}
+		})
+	}
+}
+
 func TestValidationError_Error(t *testing.T) {
 	tests := []struct {
 		name     string

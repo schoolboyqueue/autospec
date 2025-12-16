@@ -153,6 +153,25 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 		}
 	}
 
+	// ImplementMethod: must be one of "single-session", "phases", "tasks", or empty (uses default)
+	if cfg.ImplementMethod != "" {
+		validMethods := []string{"single-session", "phases", "tasks"}
+		isValid := false
+		for _, m := range validMethods {
+			if cfg.ImplementMethod == m {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return &ValidationError{
+				FilePath: filePath,
+				Field:    "implement_method",
+				Message:  "must be one of: single-session, phases, tasks",
+			}
+		}
+	}
+
 	return nil
 }
 

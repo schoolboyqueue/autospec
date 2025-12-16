@@ -41,6 +41,10 @@ type Configuration struct {
 	Timeout           int      `koanf:"timeout"`
 	ShowProgress      bool     `koanf:"show_progress"`      // Show progress indicators (spinners) during execution
 	SkipConfirmations bool     `koanf:"skip_confirmations"` // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
+	// ImplementMethod sets the default execution mode for the implement command.
+	// Valid values: "single-session" (legacy), "phases" (default), "tasks"
+	// Can be overridden by CLI flags (--phases, --tasks) or env var AUTOSPEC_IMPLEMENT_METHOD
+	ImplementMethod string `koanf:"implement_method"`
 }
 
 // LoadOptions configures how configuration is loaded

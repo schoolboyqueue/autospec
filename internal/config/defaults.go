@@ -19,5 +19,9 @@ func GetDefaults() map[string]interface{} {
 		"timeout":            2400,  // 40 minutes default
 		"show_progress":      false, // Progress indicators off by default (professional)
 		"skip_confirmations": false, // Confirmation prompts enabled by default
+		// implement_method: Default to "phases" for cost-efficient execution with context isolation.
+		// This changes the legacy behavior (single-session) to run each phase in a separate Claude session.
+		// Valid values: "single-session", "phases", "tasks"
+		"implement_method": "phases",
 	}
 }

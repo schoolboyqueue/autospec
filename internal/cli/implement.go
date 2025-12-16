@@ -25,12 +25,20 @@ The implement command will:
 - Support resuming from where it left off with --resume flag
 
 Execution Modes:
-- Default (no flags): All tasks in a single Claude session (backward compatible)
+- Default (no flags): Uses implement_method from config (default: 'phases')
 - --phases: Run each phase in a separate Claude session (fresh context per phase)
 - --phase N: Run only phase N in a fresh Claude session
 - --from-phase N: Run phases N through end, each in a fresh session
 - --tasks: Run each task in a separate Claude session (finest granularity)
 - --from-task T003: Start task-level execution from a specific task ID
+
+The default execution mode can be configured in config.yml:
+  implement_method: phases     # Each phase in separate session (default)
+  implement_method: tasks      # Each task in separate session
+  implement_method: single-session  # All tasks in one session (legacy)
+
+CLI flags always override the config setting. Environment variable
+AUTOSPEC_IMPLEMENT_METHOD can also be used to set the default.
 
 The --phases mode provides benefits for large implementations:
 - Fresh context per phase reduces attention degradation
@@ -133,6 +141,27 @@ The --tasks mode provides maximum context isolation:
 		// Override max-retries from flag if set
 		if cmd.Flags().Changed("max-retries") {
 			cfg.MaxRetries = maxRetries
+		}
+
+		// Apply config default execution mode when no execution mode flags are provided
+		// CLI flags take precedence over config, so only apply config if no flags are set
+		noExecutionModeFlags := !cmd.Flags().Changed("phases") &&
+			!cmd.Flags().Changed("tasks") &&
+			!cmd.Flags().Changed("phase") &&
+			!cmd.Flags().Changed("from-phase") &&
+			!cmd.Flags().Changed("from-task")
+
+		if noExecutionModeFlags && cfg.ImplementMethod != "" {
+			switch cfg.ImplementMethod {
+			case "phases":
+				runAllPhases = true
+			case "tasks":
+				taskMode = true
+			case "single-session":
+				// Legacy behavior: no phase/task mode (default state)
+				// runAllPhases and taskMode are already false
+			}
+			// Empty string uses the default from config (phases), which is already handled above
 		}
 
 		// Check if constitution exists (required for implement)
