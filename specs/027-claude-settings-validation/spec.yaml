@@ -17,12 +17,15 @@ user_stories:
       - given: "A project directory with no .claude/ directory"
         when: "User runs autospec init"
         then: ".claude/settings.local.json is created with Bash(autospec:*) permission in allow list"
+        message: "Created .claude/settings.local.json with Claude Code permissions for autospec"
       - given: "A project with existing .claude/settings.local.json missing autospec permissions"
         when: "User runs autospec init"
         then: "Bash(autospec:*) permission is added to the existing allow list without removing other settings"
+        message: "Added Bash(autospec:*) permission to .claude/settings.local.json"
       - given: "A project with .claude/settings.local.json already containing Bash(autospec:*)"
         when: "User runs autospec init"
-        then: "Settings file is unchanged and user sees 'permissions configured' message"
+        then: "Settings file is unchanged"
+        message: "Claude Code permissions already configured"
 
   - id: "US-002"
     title: "Claude settings validation in doctor command"
@@ -36,12 +39,15 @@ user_stories:
       - given: "A project with no .claude/settings.local.json file"
         when: "User runs autospec doctor"
         then: "Doctor reports failure with message to run 'autospec init'"
+        message: "✗ Claude settings: .claude/settings.local.json not found (run 'autospec init' to configure)"
       - given: "A project with settings file missing Bash(autospec:*) permission"
         when: "User runs autospec doctor"
         then: "Doctor reports failure listing the missing permission"
+        message: "✗ Claude settings: missing Bash(autospec:*) permission (run 'autospec init' to fix)"
       - given: "A project with correctly configured Claude settings"
         when: "User runs autospec doctor"
         then: "Doctor reports success for Claude settings check"
+        message: "✓ Claude settings: Bash(autospec:*) permission configured"
 
   - id: "US-003"
     title: "Respect user's explicit deny rules"
@@ -55,9 +61,11 @@ user_stories:
       - given: "A project with Bash(autospec:*) in the deny list"
         when: "User runs autospec init"
         then: "Warning is displayed explaining the conflict and file is not modified"
+        message: "⚠ Warning: Bash(autospec:*) is in your deny list in .claude/settings.local.json. Remove it from permissions.deny to allow autospec commands."
       - given: "A project with Bash(autospec:*) in the deny list"
         when: "User runs autospec doctor"
         then: "Doctor reports the conflict and provides manual resolution instructions"
+        message: "✗ Claude settings: Bash(autospec:*) is explicitly denied. Remove from permissions.deny in .claude/settings.local.json to allow autospec commands."
 
   - id: "US-004"
     title: "Preserve existing Claude settings"
@@ -122,6 +130,11 @@ requirements:
       testable: true
       acceptance_criteria: "Written JSON file has proper indentation and is readable"
 
+    - id: "FR-010"
+      description: "All settings operations MUST output a user-facing message describing what was done"
+      testable: true
+      acceptance_criteria: "Every code path (create, modify, skip, warn) outputs an appropriate message to stdout"
+
   non_functional:
     - id: "NFR-001"
       category: "reliability"
@@ -142,6 +155,15 @@ requirements:
       category: "performance"
       description: "Settings validation must complete quickly"
       measurable_target: "Settings check completes in under 100ms"
+
+    - id: "NFR-005"
+      category: "code_quality"
+      description: "Go coding standards per PRIN-011"
+      measurable_target: |
+        Functions must be <40 lines. Extract helpers for complex logic.
+        Errors must be wrapped with context: fmt.Errorf("doing X: %w", err).
+        Tests use map-based table-driven pattern with t.Parallel().
+        Accept interfaces, return concrete types.
 
 success_criteria:
   measurable_outcomes:
@@ -234,8 +256,15 @@ out_of_scope:
   - "Validation of Claude Code installation or version"
 
 _meta:
-  version: "1.0.0"
+  version: "1.1.0"
   generator: "autospec"
   generator_version: "autospec dev"
   created: "2025-12-16T19:09:05Z"
+  updated: "2025-12-16"
   artifact_type: "spec"
+  changelog:
+    - version: "1.1.0"
+      changes:
+        - "Added explicit message requirements to all acceptance scenarios"
+        - "Added FR-010 requiring user-facing messages for all settings operations"
+        - "Added NFR-005 for Go coding standards per PRIN-011"
