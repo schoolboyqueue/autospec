@@ -7,37 +7,16 @@
 
 **Spec-Driven Development Automation**
 
-<!-- GitHub Badges -->
 [![GitHub CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ariel-frischer/autospec)](https://goreportcard.com/report/github.com/ariel-frischer/autospec)
-
-<!-- GitLab Badges -->
-[![GitLab Pipeline](https://gitlab.com/ariel-frischer/autospec/badges/main/pipeline.svg)](https://gitlab.com/ariel-frischer/autospec/-/pipelines)
-[![GitLab Release](https://gitlab.com/ariel-frischer/autospec/-/badges/release.svg)](https://gitlab.com/ariel-frischer/autospec/-/releases)
-
-<!-- General Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Automated feature development workflows with structured YAML output for AI-powered code generation.
+🏗️ Build features systematically with AI-powered specification workflows.
 
 </div>
 
-Inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access, validation, and CI/CD integration.
-
-## ✨ What Makes Autospec Different?
-
-Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec is now a **fully standalone tool** with its own embedded commands and workflows.
-
-| Feature | GitHub SpecKit | Autospec |
-|---------|---------------|----------|
-| Output Format | Markdown | **YAML** (machine-readable) |
-| Validation | Manual review | **Automatic** with retry logic |
-| Scripting Support | Basic | **Standardized** exit codes |
-| Phase Orchestration | Manual | **Automated** with dependencies |
-| Progress Tracking | None | **Built-in** status & task updates |
-| Session Isolation | Single session | **Per-phase/task** (80%+ cost savings) |
-| Dependencies | Requires SpecKit CLI | **Self-contained** (only needs Claude CLI) |
+Inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access and validation.
 
 ## 🎯 Key Features
 
@@ -53,6 +32,20 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 - 📋 **Custom Checklists** — Auto-generated validation checklists per feature
 - 🧪 **Comprehensive Testing** — Unit tests, benchmarks, and integration tests
 - 🐚 **Shell Completion** — Tab completion for bash, zsh, fish, and PowerShell
+
+## ✨ What Makes Autospec Different?
+
+Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec is now a **fully standalone tool** with its own embedded commands and workflows.
+
+| Feature | GitHub SpecKit | Autospec |
+|---------|---------------|----------|
+| Output Format | Markdown | **YAML** (machine-readable) |
+| Validation | Manual review | **Automatic** with retry logic |
+| Scripting Support | Basic | **Standardized** exit codes |
+| Phase Orchestration | Manual | **Automated** with dependencies |
+| Progress Tracking | None | **Built-in** status & task updates |
+| Session Isolation | Single session | **Per-phase/task** (80%+ cost savings) |
+| Dependencies | Requires SpecKit CLI | **Self-contained** (only needs Claude CLI) |
 
 ## 📦 Quick Start
 
