@@ -146,11 +146,17 @@ func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
 func TestAllCommandsHaveNotificationSupport(t *testing.T) {
 	// Commands that should have notification support
 	commandFiles := map[string]string{
-		"specify":   "specify.go",
-		"prep":      "prep.go",
-		"run":       "run.go",
-		"implement": "implement.go",
-		"all":       "all.go",
+		"specify":      "specify.go",
+		"prep":         "prep.go",
+		"run":          "run.go",
+		"implement":    "implement.go",
+		"all":          "all.go",
+		"clarify":      "clarify.go",
+		"analyze":      "analyze.go",
+		"plan":         "plan.go",
+		"tasks":        "tasks.go",
+		"checklist":    "checklist.go",
+		"constitution": "constitution.go",
 	}
 
 	requiredPatterns := []struct {

@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
@@ -66,6 +68,7 @@ You can optionally provide a prompt to guide the task generation.`,
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+			cmd.SilenceUsage = true
 			return NewExitError(ExitInvalidArguments)
 		}
 
@@ -85,9 +88,24 @@ You can optionally provide a prompt to guide the task generation.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
+		// Create notification handler and attach to executor
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		orch.Executor.NotificationHandler = notifHandler
+
+		// Track command start time
+		startTime := time.Now()
+		notifHandler.SetStartTime(startTime)
+
 		// Execute tasks stage
-		if err := orch.ExecuteTasks("", prompt); err != nil {
-			return fmt.Errorf("tasks stage failed: %w", err)
+		execErr := orch.ExecuteTasks("", prompt)
+
+		// Calculate duration and send command completion notification
+		duration := time.Since(startTime)
+		success := execErr == nil
+		notifHandler.OnCommandComplete("tasks", success, duration)
+
+		if execErr != nil {
+			return fmt.Errorf("tasks stage failed: %w", execErr)
 		}
 
 		return nil

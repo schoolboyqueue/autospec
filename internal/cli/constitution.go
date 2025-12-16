@@ -3,9 +3,11 @@ package cli
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -63,9 +65,24 @@ This command has no prerequisites - it can be run at any time.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
+		// Create notification handler and attach to executor
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		orch.Executor.NotificationHandler = notifHandler
+
+		// Track command start time
+		startTime := time.Now()
+		notifHandler.SetStartTime(startTime)
+
 		// Execute constitution stage
-		if err := orch.ExecuteConstitution(prompt); err != nil {
-			return fmt.Errorf("constitution stage failed: %w", err)
+		execErr := orch.ExecuteConstitution(prompt)
+
+		// Calculate duration and send command completion notification
+		duration := time.Since(startTime)
+		success := execErr == nil
+		notifHandler.OnCommandComplete("constitution", success, duration)
+
+		if execErr != nil {
+			return fmt.Errorf("constitution stage failed: %w", execErr)
 		}
 
 		return nil

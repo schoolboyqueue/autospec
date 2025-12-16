@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
@@ -86,10 +88,25 @@ Prerequisites:
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
+		// Create notification handler and attach to executor
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		orch.Executor.NotificationHandler = notifHandler
+
+		// Track command start time
+		startTime := time.Now()
+		notifHandler.SetStartTime(startTime)
+
 		// Execute checklist stage
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
-		if err := orch.ExecuteChecklist(specName, prompt); err != nil {
-			return fmt.Errorf("checklist stage failed: %w", err)
+		execErr := orch.ExecuteChecklist(specName, prompt)
+
+		// Calculate duration and send command completion notification
+		duration := time.Since(startTime)
+		success := execErr == nil
+		notifHandler.OnCommandComplete("checklist", success, duration)
+
+		if execErr != nil {
+			return fmt.Errorf("checklist stage failed: %w", execErr)
 		}
 
 		return nil

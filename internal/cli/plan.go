@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
@@ -85,9 +87,24 @@ You can optionally provide a prompt to guide the planning process.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
+		// Create notification handler and attach to executor
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		orch.Executor.NotificationHandler = notifHandler
+
+		// Track command start time
+		startTime := time.Now()
+		notifHandler.SetStartTime(startTime)
+
 		// Execute plan stage
-		if err := orch.ExecutePlan("", prompt); err != nil {
-			return fmt.Errorf("plan stage failed: %w", err)
+		execErr := orch.ExecutePlan("", prompt)
+
+		// Calculate duration and send command completion notification
+		duration := time.Since(startTime)
+		success := execErr == nil
+		notifHandler.OnCommandComplete("plan", success, duration)
+
+		if execErr != nil {
+			return fmt.Errorf("plan stage failed: %w", execErr)
 		}
 
 		return nil

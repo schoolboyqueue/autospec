@@ -110,6 +110,34 @@ for name, tt := range tests {
 }
 ```
 
+### CLI Command Notification Handlers (REQUIRED)
+
+All workflow CLI commands in `internal/cli/` MUST have notification handler integration. This ensures users receive completion notifications (sound/visual) when commands finish.
+
+Required pattern for each command:
+
+```go
+// Create notification handler and attach to executor
+notifHandler := notify.NewHandler(cfg.Notifications)
+orch.Executor.NotificationHandler = notifHandler
+
+// Track command start time
+startTime := time.Now()
+notifHandler.SetStartTime(startTime)
+
+// Execute the stage
+execErr := orch.ExecuteXxx(...)
+
+// Calculate duration and send command completion notification
+duration := time.Since(startTime)
+success := execErr == nil
+notifHandler.OnCommandComplete("command-name", success, duration)
+```
+
+Commands requiring this pattern: `specify`, `plan`, `tasks`, `clarify`, `analyze`, `checklist`, `constitution`, `prep`, `run`, `implement`, `all`.
+
+Regression test: `TestAllCommandsHaveNotificationSupport` in `internal/cli/specify_test.go` verifies all commands have notification support.
+
 ## Spec Generation (MUST)
 
 When generating `spec.yaml` files, ALWAYS include these Go coding standards as non-functional requirements:
