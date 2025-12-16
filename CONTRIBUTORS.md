@@ -87,7 +87,7 @@ Autospec uses YAML config files with hierarchical loading:
 claude_cmd: claude
 claude_args:
   - -p
-  - --dangerously-skip-permissions
+  - --dangerously-skip-permissions  # Enable sandbox first: /sandbox (uses bubblewrap on Linux)
   - --verbose
   - --output-format
   - stream-json
