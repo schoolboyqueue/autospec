@@ -203,7 +203,7 @@ Stages are always executed in canonical order:
 		}
 
 		// Execute stages in canonical order
-		return executeStages(orchestrator, stageConfig, featureDescription, specMetadata, resume, debug)
+		return executeStages(orchestrator, stageConfig, featureDescription, specMetadata, resume, debug, cfg.ImplementMethod)
 	},
 }
 
@@ -259,7 +259,7 @@ func printDryRunPreview(stageConfig *workflow.StageConfig, featureDescription st
 }
 
 // executeStages executes the selected stages in order
-func executeStages(orchestrator *workflow.WorkflowOrchestrator, stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool) error {
+func executeStages(orchestrator *workflow.WorkflowOrchestrator, stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool, implementMethod string) error {
 	stages := stageConfig.GetCanonicalOrder()
 	totalStages := len(stages)
 	orchestrator.Executor.TotalStages = totalStages
@@ -302,8 +302,16 @@ func executeStages(orchestrator *workflow.WorkflowOrchestrator, stageConfig *wor
 			}
 
 		case workflow.StageImplement:
-			// Use default phase options when called from run command (single-session mode)
+			// Build phase options from config's implement_method setting
 			phaseOpts := workflow.PhaseExecutionOptions{}
+			switch implementMethod {
+			case "phases":
+				phaseOpts.RunAllPhases = true
+			case "tasks":
+				phaseOpts.TaskMode = true
+			case "single-session":
+				// Legacy behavior: no phase/task mode (default state)
+			}
 			if err := orchestrator.ExecuteImplement(specName, featureDescription, resume, phaseOpts); err != nil {
 				return fmt.Errorf("implement stage failed: %w", err)
 			}
