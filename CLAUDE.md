@@ -81,6 +81,9 @@ autospec implement
 autospec implement "Focus on documentation tasks"          # With prompt guidance
 autospec implement 003-my-feature                          # Specific spec
 autospec implement 003-my-feature "Complete tests"         # Spec + prompt
+autospec implement --phases                                # Run each phase in separate Claude session
+autospec implement --phase 3                               # Run only phase 3
+autospec implement --from-phase 3                          # Run phases 3 onwards
 
 # Run individual optional phases
 autospec constitution                                      # Create/update project constitution

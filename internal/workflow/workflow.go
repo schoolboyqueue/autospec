@@ -434,7 +434,7 @@ func (w *WorkflowOrchestrator) ExecuteTasks(specNameArg string, prompt string) e
 }
 
 // ExecuteImplement runs the implementation phase with optional prompt
-func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt string, resume bool) error {
+func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt string, resume bool, phaseOpts PhaseExecutionOptions) error {
 	var specName string
 	var metadata *spec.Metadata
 	var err error
@@ -457,8 +457,23 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt strin
 		fmt.Printf("Detected spec: %s\n", specName)
 	}
 
+	// Dispatch to appropriate execution mode based on phase options
+	switch phaseOpts.Mode() {
+	case ModeAllPhases:
+		return w.ExecuteImplementWithPhases(specName, metadata, prompt, resume)
+	case ModeSinglePhase:
+		return w.ExecuteImplementSinglePhase(specName, metadata, prompt, phaseOpts.SinglePhase)
+	case ModeFromPhase:
+		return w.ExecuteImplementFromPhase(specName, metadata, prompt, phaseOpts.FromPhase)
+	default:
+		// Default mode: single session (backward compatible)
+		return w.executeImplementDefault(specName, metadata, prompt, resume)
+	}
+}
+
+// executeImplementDefault executes implementation in a single Claude session (backward compatible)
+func (w *WorkflowOrchestrator) executeImplementDefault(specName string, metadata *spec.Metadata, prompt string, resume bool) error {
 	// Check progress
-	// TODO: Display progress information
 	fmt.Printf("Progress: checking tasks...\n\n")
 
 	// Build command with optional prompt
@@ -508,6 +523,235 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt strin
 	if statsErr == nil && stats.TotalTasks > 0 {
 		fmt.Println("Task Summary:")
 		fmt.Print(validation.FormatTaskSummary(stats))
+	}
+
+	return nil
+}
+
+// ExecuteImplementWithPhases runs each phase in a separate Claude session
+func (w *WorkflowOrchestrator) ExecuteImplementWithPhases(specName string, metadata *spec.Metadata, prompt string, resume bool) error {
+	specDir := filepath.Join(w.SpecsDir, specName)
+	tasksPath := validation.GetTasksFilePath(specDir)
+
+	// Get phase information
+	phases, err := validation.GetPhaseInfo(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to get phase info: %w", err)
+	}
+
+	if len(phases) == 0 {
+		return fmt.Errorf("no phases found in tasks.yaml")
+	}
+
+	totalPhases := len(phases)
+
+	// Find the first incomplete phase
+	firstIncomplete, _, err := validation.GetFirstIncompletePhase(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to check phase completion: %w", err)
+	}
+
+	// If all phases are complete, nothing to do
+	if firstIncomplete == 0 {
+		fmt.Println("✓ All phases already complete!")
+		return nil
+	}
+
+	// Display skip message if starting from a later phase
+	if firstIncomplete > 1 {
+		fmt.Printf("Phases 1-%d complete, starting from phase %d\n\n", firstIncomplete-1, firstIncomplete)
+	}
+
+	// Execute each phase starting from the first incomplete
+	for _, phase := range phases {
+		if phase.Number < firstIncomplete {
+			continue // Skip already complete phases
+		}
+
+		fmt.Printf("[Phase %d/%d] %s\n", phase.Number, totalPhases, phase.Title)
+
+		// Execute this phase
+		err := w.executeSinglePhaseSession(specName, phase.Number, prompt)
+		if err != nil {
+			return fmt.Errorf("phase %d failed: %w", phase.Number, err)
+		}
+
+		// Verify phase completion
+		complete, verifyErr := validation.IsPhaseComplete(tasksPath, phase.Number)
+		if verifyErr != nil {
+			return fmt.Errorf("failed to verify phase %d completion: %w", phase.Number, verifyErr)
+		}
+
+		if !complete {
+			fmt.Printf("\n⚠ Phase %d has incomplete tasks. Run 'autospec implement --phase %d' to continue.\n", phase.Number, phase.Number)
+			return fmt.Errorf("phase %d did not complete all tasks", phase.Number)
+		}
+
+		fmt.Printf("✓ Phase %d complete\n\n", phase.Number)
+	}
+
+	// Show final summary
+	fmt.Println("✓ All phases completed!")
+	fmt.Println()
+	stats, statsErr := validation.GetTaskStats(tasksPath)
+	if statsErr == nil && stats.TotalTasks > 0 {
+		fmt.Println("Task Summary:")
+		fmt.Print(validation.FormatTaskSummary(stats))
+	}
+
+	return nil
+}
+
+// ExecuteImplementSinglePhase runs only a specific phase
+func (w *WorkflowOrchestrator) ExecuteImplementSinglePhase(specName string, metadata *spec.Metadata, prompt string, phaseNumber int) error {
+	specDir := filepath.Join(w.SpecsDir, specName)
+	tasksPath := validation.GetTasksFilePath(specDir)
+
+	// Get total phases for validation
+	totalPhases, err := validation.GetTotalPhases(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to get total phases: %w", err)
+	}
+
+	if phaseNumber < 1 || phaseNumber > totalPhases {
+		return fmt.Errorf("phase %d is out of range (valid: 1-%d)", phaseNumber, totalPhases)
+	}
+
+	// Get phase info
+	phases, err := validation.GetPhaseInfo(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to get phase info: %w", err)
+	}
+
+	var phaseTitle string
+	for _, p := range phases {
+		if p.Number == phaseNumber {
+			phaseTitle = p.Title
+			break
+		}
+	}
+
+	fmt.Printf("[Phase %d/%d] %s\n", phaseNumber, totalPhases, phaseTitle)
+
+	// Execute the specific phase
+	err = w.executeSinglePhaseSession(specName, phaseNumber, prompt)
+	if err != nil {
+		return fmt.Errorf("phase %d failed: %w", phaseNumber, err)
+	}
+
+	// Verify phase completion
+	complete, verifyErr := validation.IsPhaseComplete(tasksPath, phaseNumber)
+	if verifyErr != nil {
+		return fmt.Errorf("failed to verify phase %d completion: %w", phaseNumber, verifyErr)
+	}
+
+	if complete {
+		fmt.Printf("✓ Phase %d complete\n", phaseNumber)
+	} else {
+		fmt.Printf("⚠ Phase %d has incomplete tasks\n", phaseNumber)
+	}
+
+	return nil
+}
+
+// ExecuteImplementFromPhase runs phases starting from the specified phase
+func (w *WorkflowOrchestrator) ExecuteImplementFromPhase(specName string, metadata *spec.Metadata, prompt string, startPhase int) error {
+	specDir := filepath.Join(w.SpecsDir, specName)
+	tasksPath := validation.GetTasksFilePath(specDir)
+
+	// Get total phases for validation
+	totalPhases, err := validation.GetTotalPhases(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to get total phases: %w", err)
+	}
+
+	if startPhase < 1 || startPhase > totalPhases {
+		return fmt.Errorf("phase %d is out of range (valid: 1-%d)", startPhase, totalPhases)
+	}
+
+	// Get phase info
+	phases, err := validation.GetPhaseInfo(tasksPath)
+	if err != nil {
+		return fmt.Errorf("failed to get phase info: %w", err)
+	}
+
+	fmt.Printf("Starting from phase %d of %d\n\n", startPhase, totalPhases)
+
+	// Execute each phase starting from startPhase
+	for _, phase := range phases {
+		if phase.Number < startPhase {
+			continue // Skip phases before startPhase
+		}
+
+		fmt.Printf("[Phase %d/%d] %s\n", phase.Number, totalPhases, phase.Title)
+
+		// Execute this phase
+		err := w.executeSinglePhaseSession(specName, phase.Number, prompt)
+		if err != nil {
+			return fmt.Errorf("phase %d failed: %w", phase.Number, err)
+		}
+
+		// Verify phase completion
+		complete, verifyErr := validation.IsPhaseComplete(tasksPath, phase.Number)
+		if verifyErr != nil {
+			return fmt.Errorf("failed to verify phase %d completion: %w", phase.Number, verifyErr)
+		}
+
+		if !complete {
+			fmt.Printf("\n⚠ Phase %d has incomplete tasks. Run 'autospec implement --phase %d' to continue.\n", phase.Number, phase.Number)
+			return fmt.Errorf("phase %d did not complete all tasks", phase.Number)
+		}
+
+		fmt.Printf("✓ Phase %d complete\n\n", phase.Number)
+	}
+
+	// Show final summary
+	fmt.Println("✓ All phases completed!")
+	fmt.Println()
+	stats, statsErr := validation.GetTaskStats(tasksPath)
+	if statsErr == nil && stats.TotalTasks > 0 {
+		fmt.Println("Task Summary:")
+		fmt.Print(validation.FormatTaskSummary(stats))
+	}
+
+	return nil
+}
+
+// executeSinglePhaseSession executes a single phase in a fresh Claude session
+func (w *WorkflowOrchestrator) executeSinglePhaseSession(specName string, phaseNumber int, prompt string) error {
+	// Build command with phase filter
+	command := fmt.Sprintf("/autospec.implement --phase %d", phaseNumber)
+	if prompt != "" {
+		command = fmt.Sprintf("/autospec.implement --phase %d \"%s\"", phaseNumber, prompt)
+	}
+
+	fmt.Printf("Executing: %s\n", command)
+
+	result, err := w.Executor.ExecutePhase(
+		specName,
+		PhaseImplement,
+		command,
+		func(specDir string) error {
+			// For phased execution, we validate the specific phase
+			tasksPath := validation.GetTasksFilePath(specDir)
+			complete, err := validation.IsPhaseComplete(tasksPath, phaseNumber)
+			if err != nil {
+				return err
+			}
+			if !complete {
+				return fmt.Errorf("phase %d has incomplete tasks", phaseNumber)
+			}
+			return nil
+		},
+	)
+
+	if err != nil {
+		if result.Exhausted {
+			fmt.Printf("\nPhase %d paused.\n", phaseNumber)
+			fmt.Printf("To resume: autospec implement --phase %d\n", phaseNumber)
+			return fmt.Errorf("phase %d exhausted retries: %w", phaseNumber, err)
+		}
+		return err
 	}
 
 	return nil

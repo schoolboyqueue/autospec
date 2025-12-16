@@ -89,12 +89,12 @@ The --phases mode provides benefits for large implementations:
 
 		// Validate phase flag values
 		if singlePhase < 0 {
-			cliErr := clierrors.InvalidArgumentsError("--phase must be a positive integer")
+			cliErr := clierrors.NewArgumentError("--phase must be a positive integer")
 			clierrors.PrintError(cliErr)
 			return cliErr
 		}
 		if fromPhase < 0 {
-			cliErr := clierrors.InvalidArgumentsError("--from-phase must be a positive integer")
+			cliErr := clierrors.NewArgumentError("--from-phase must be a positive integer")
 			clierrors.PrintError(cliErr)
 			return cliErr
 		}

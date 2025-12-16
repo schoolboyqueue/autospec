@@ -193,7 +193,7 @@ phases:
             - "Clear explanation of backward compatible default"
         - id: "T015"
           title: "Add unit tests for CLI flag parsing in internal/cli/implement_test.go"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -210,7 +210,7 @@ phases:
       tasks:
         - id: "T016"
           title: "Create internal/workflow/phase_execution.go with helper structs"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -222,7 +222,7 @@ phases:
             - "Constants for phase execution modes (All, Single, FromPhase)"
         - id: "T017"
           title: "Add ExecuteImplementWithPhases() to internal/workflow/workflow.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -235,7 +235,7 @@ phases:
             - "Displays 'Phases 1-N complete, starting from phase M' when skipping"
         - id: "T018"
           title: "Add ExecuteImplementSinglePhase() to internal/workflow/workflow.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -247,7 +247,7 @@ phases:
             - "Returns clear error for invalid phase number"
         - id: "T019"
           title: "Add ExecuteImplementFromPhase() to internal/workflow/workflow.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -259,7 +259,7 @@ phases:
             - "Validates starting phase exists"
         - id: "T020"
           title: "Add phase completion validation between transitions"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -271,7 +271,7 @@ phases:
             - "Returns error if validation fails"
         - id: "T021"
           title: "Add progress display showing current phase in internal/workflow/workflow.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -283,7 +283,7 @@ phases:
             - "Uses existing spinner/progress display patterns"
         - id: "T022"
           title: "Update ExecuteImplement() to dispatch to phased execution in internal/workflow/workflow.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -297,7 +297,7 @@ phases:
             - "Backward compatible with existing workflows"
         - id: "T023"
           title: "Add integration tests for phased workflow in internal/workflow/workflow_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -314,7 +314,7 @@ phases:
       tasks:
         - id: "T024"
           title: "Update .claude/commands/autospec.implement.md to accept phase filter"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -331,7 +331,7 @@ phases:
       tasks:
         - id: "T025"
           title: "Update CLAUDE.md with new phase flags documentation"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -343,7 +343,7 @@ phases:
             - "Explain when to use each mode"
         - id: "T026"
           title: "Add edge case handling for invalid phase numbers"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -355,7 +355,7 @@ phases:
             - "Exit code 3 for invalid arguments"
         - id: "T027"
           title: "Add edge case handling for empty/single phases"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: true
           story_id: null

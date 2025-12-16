@@ -302,7 +302,9 @@ func executePhases(orchestrator *workflow.WorkflowOrchestrator, phaseConfig *wor
 			}
 
 		case workflow.PhaseImplement:
-			if err := orchestrator.ExecuteImplement(specName, featureDescription, resume); err != nil {
+			// Use default phase options when called from run command (single-session mode)
+			phaseOpts := workflow.PhaseExecutionOptions{}
+			if err := orchestrator.ExecuteImplement(specName, featureDescription, resume, phaseOpts); err != nil {
 				return fmt.Errorf("implement phase failed: %w", err)
 			}
 			ranImplement = true

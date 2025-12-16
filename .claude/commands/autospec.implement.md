@@ -1,6 +1,6 @@
 ---
 description: Execute the implementation plan by processing tasks defined in tasks.yaml.
-version: "1.0.0"
+version: "1.1.0"
 handoffs:
   - label: Analyze For Consistency
     agent: autospec.analyze
@@ -17,6 +17,34 @@ $ARGUMENTS
 ```
 
 You **MUST** consider the user input before proceeding (if not empty).
+
+## Phase-Specific Execution
+
+**If `--phase N` is specified in the arguments**, execute ONLY that specific phase:
+
+1. Parse the `--phase N` argument to extract the phase number
+2. Read tasks.yaml and locate phase N
+3. Execute ONLY the tasks within phase N (skip all other phases)
+4. When starting a phase, display: `[Phase N/Total] Phase Title`
+5. Execute tasks within the phase following normal task rules
+6. When the phase is complete (all tasks Completed or Blocked), output:
+   ```
+   ✓ Phase N complete
+   ```
+7. **Do not proceed to the next phase** - exit after completing phase N
+8. Report phase-specific summary showing only Phase N's task counts
+
+**Example phase-specific execution**:
+```
+[Phase 3/5] User Story: Authentication
+Executing tasks T007-T012...
+✓ Task T007 complete
+✓ Task T008 complete
+...
+✓ Phase 3 complete (6/6 tasks)
+```
+
+**If no `--phase` argument**, proceed with full implementation below.
 
 ## Outline
 
