@@ -21,6 +21,16 @@ func newWindowsSender() Sender {
 	}
 }
 
+// newDarwinSender returns a no-op sender on windows
+func newDarwinSender() Sender {
+	return &noopSender{}
+}
+
+// newLinuxSender returns a no-op sender on windows
+func newLinuxSender() Sender {
+	return &noopSender{}
+}
+
 // SendVisual sends a toast notification using PowerShell
 func (s *windowsSender) SendVisual(n Notification) error {
 	if !s.visualAvailable {

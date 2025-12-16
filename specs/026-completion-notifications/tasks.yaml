@@ -55,7 +55,7 @@ phases:
             - "Constructor function NewNotification(title, message, notificationType)"
         - id: "T004"
           title: "Implement NotificationSender interface in internal/notify/sender.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -68,7 +68,7 @@ phases:
             - "Tool availability checks using exec.LookPath"
         - id: "T005"
           title: "Implement platform availability detection in internal/notify/sender.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -86,7 +86,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Implement macOS notification sender in internal/notify/darwin.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -100,7 +100,7 @@ phases:
             - "Graceful failure when osascript/afplay unavailable"
         - id: "T007"
           title: "Implement Linux notification sender in internal/notify/linux.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -114,7 +114,7 @@ phases:
             - "Detects missing display environment"
         - id: "T008"
           title: "Implement Windows notification sender in internal/notify/windows.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
