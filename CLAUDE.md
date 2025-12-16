@@ -113,6 +113,12 @@ autospec prereqs --paths-only                              # Output paths only (
 autospec setup-plan                                        # Initialize plan.yaml
 autospec setup-plan --json                                 # JSON output for scripting
 
+# Update AI agent context files from plan.yaml
+autospec update-agent-context                              # Update all existing agent files
+autospec update-agent-context --agent claude               # Update only CLAUDE.md
+autospec update-agent-context --agent cursor               # Update/create Cursor context file
+autospec update-agent-context --json                       # JSON output for integration
+
 # Validate YAML artifacts against schemas
 autospec artifact plan                                     # Type only: auto-detect spec from branch
 autospec artifact specs/001-feature/plan.yaml             # Path only: infer type from filename
@@ -668,11 +674,15 @@ Fully migrated Go binary with:
 - gopkg.in/yaml.v3 (v3.0.1)
 - File system (YAML config in ~/.config/autospec/config.yml and .autospec/config.yml, state in ~/.autospec/state/retry.json)
 - YAML artifacts in `specs/*/` (spec.yaml, plan.yaml, tasks.yaml)
-
+- github.com/spf13/cobra v1.10.1
+- Project Type: cli
 ## Recent Changes
+- 017-update-agent-context-go: Added from plan.yaml
 - 003-command-timeout: Added Go 1.25.1
 
 ## Important Notes
 
 ### Embedded Scripts
 The `.autospec/scripts/` directory is created by `autospec init`, which copies embedded scripts from the Go binary. The source templates are in `internal/scripts/` and are embedded via `embed.go`. When modifying scripts like `create-new-feature.sh`, update the source template in `internal/scripts/` so changes apply to newly initialized projects.
+
+**Last updated**: 2025-12-15
