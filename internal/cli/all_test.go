@@ -30,7 +30,6 @@ func TestAllCmdFlags(t *testing.T) {
 	}{
 		"max-retries": {shorthand: "r", usage: "Override max retry attempts"},
 		"resume":      {shorthand: "", usage: "Resume implementation"},
-		"progress":    {shorthand: "", usage: "Show progress indicators"},
 	}
 
 	for flagName, flag := range flags {
@@ -171,13 +170,6 @@ func TestMaxRetriesOverride(t *testing.T) {
 	f := allCmd.Flags().Lookup("max-retries")
 	require.NotNil(t, f)
 	assert.Equal(t, "0", f.DefValue)
-}
-
-func TestProgressFlag(t *testing.T) {
-	// Test that progress flag default is false
-	f := allCmd.Flags().Lookup("progress")
-	require.NotNil(t, f)
-	assert.Equal(t, "false", f.DefValue)
 }
 
 func TestResumeFlag(t *testing.T) {

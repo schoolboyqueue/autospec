@@ -12,14 +12,12 @@ func GetDefaults() map[string]interface{} {
 			"--output-format",
 			"stream-json",
 		},
-		"use_api_key":        false,
 		"custom_claude_cmd":  "",
-		"max_retries":        3,
+		"max_retries":        0,
 		"specs_dir":          "./specs",
 		"state_dir":          "~/.autospec/state",
 		"skip_preflight":     false,
 		"timeout":            2400,  // 40 minutes default
-		"show_progress":      false, // Progress indicators off by default (professional)
 		"skip_confirmations": false, // Confirmation prompts enabled by default
 		// implement_method: Default to "phases" for cost-efficient execution with context isolation.
 		// This changes the legacy behavior (single-session) to run each phase in a separate Claude session.

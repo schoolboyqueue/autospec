@@ -10,6 +10,7 @@ import (
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/notify"
+	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -184,7 +185,20 @@ The --tasks mode provides maximum context isolation:
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
-			return fmt.Errorf("constitution required")
+			return NewExitError(ExitInvalidArguments)
+		}
+
+		// Auto-detect spec directory for prerequisite validation
+		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
+		if err != nil {
+			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
+		}
+
+		// Validate tasks.yaml exists (required for implement stage)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageImplement, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			return NewExitError(ExitInvalidArguments)
 		}
 
 		// Create workflow orchestrator

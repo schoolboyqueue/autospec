@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 
 	"github.com/ariel-frischer/autospec/internal/config"
-	"github.com/ariel-frischer/autospec/internal/progress"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/validation"
 )
@@ -35,28 +34,17 @@ func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
 	claude := &ClaudeExecutor{
 		ClaudeCmd:       cfg.ClaudeCmd,
 		ClaudeArgs:      cfg.ClaudeArgs,
-		UseAPIKey:       cfg.UseAPIKey,
 		CustomClaudeCmd: cfg.CustomClaudeCmd,
 		Timeout:         cfg.Timeout,
 	}
 
-	// Detect terminal capabilities and create progress display (only if enabled)
-	var progressDisplay *progress.ProgressDisplay
-	if cfg.ShowProgress {
-		caps := progress.DetectTerminalCapabilities()
-		if caps.IsTTY {
-			progressDisplay = progress.NewProgressDisplay(caps)
-		}
-	}
-
 	executor := &Executor{
-		Claude:          claude,
-		StateDir:        cfg.StateDir,
-		SpecsDir:        cfg.SpecsDir,
-		MaxRetries:      cfg.MaxRetries,
-		ProgressDisplay: progressDisplay,
-		TotalStages:     3,     // Default to 3 stages (specify, plan, tasks)
-		Debug:           false, // Will be set by CLI command
+		Claude:      claude,
+		StateDir:    cfg.StateDir,
+		SpecsDir:    cfg.SpecsDir,
+		MaxRetries:  cfg.MaxRetries,
+		TotalStages: 3,     // Default to 3 stages (specify, plan, tasks)
+		Debug:       false, // Will be set by CLI command
 	}
 
 	return &WorkflowOrchestrator{

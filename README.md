@@ -264,14 +264,12 @@ claude_args:                          # Arguments passed to Claude CLI
   - --verbose
   - --output-format
   - stream-json
-use_api_key: false                    # Use API key instead of Claude CLI
 custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
-max_retries: 3                        # Max retry attempts (1-10)
+max_retries: 0                        # Max retry attempts (0-10)
 specs_dir: ./specs                    # Directory for feature specs
 state_dir: ~/.autospec/state          # Directory for state files
 skip_preflight: false                 # Skip preflight checks
 timeout: 2400                         # Timeout in seconds (40 min default, 0 = no timeout)
-show_progress: false                  # Show progress spinners
 skip_confirmations: false             # Skip confirmation prompts
 implement_method: phases              # Default: phases | tasks | single-session
 
@@ -290,10 +288,10 @@ notifications:
 ### Environment Variables
 
 ```bash
-export AUTOSPEC_MAX_RETRIES=5
-export AUTOSPEC_SPECS_DIR="./features"
-export AUTOSPEC_TIMEOUT=600
-export AUTOSPEC_YES=true  # Skip confirmations
+export AUTOSPEC_MAX_RETRIES=0      # Default: 0 (no retries)
+export AUTOSPEC_SPECS_DIR="./specs" # Default: ./specs
+export AUTOSPEC_TIMEOUT=2400        # Default: 2400 (40 minutes)
+export AUTOSPEC_YES=false           # Default: false (prompts enabled)
 ```
 
 ### Commands

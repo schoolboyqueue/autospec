@@ -14,7 +14,6 @@ import (
 type ClaudeExecutor struct {
 	ClaudeCmd       string
 	ClaudeArgs      []string
-	UseAPIKey       bool
 	CustomClaudeCmd string
 	Timeout         int // Timeout in seconds (0 = no timeout)
 }
@@ -48,10 +47,6 @@ func (c *ClaudeExecutor) Execute(prompt string) error {
 
 	// Set up environment
 	cmd.Env = os.Environ()
-	if !c.UseAPIKey {
-		// Explicitly set empty API key if not using it
-		cmd.Env = append(cmd.Env, "ANTHROPIC_API_KEY=")
-	}
 
 	// Stream output to stdout
 	cmd.Stdout = os.Stdout
@@ -156,9 +151,6 @@ func (c *ClaudeExecutor) StreamCommand(prompt string, stdout, stderr io.Writer) 
 	}
 
 	cmd.Env = os.Environ()
-	if !c.UseAPIKey {
-		cmd.Env = append(cmd.Env, "ANTHROPIC_API_KEY=")
-	}
 
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr

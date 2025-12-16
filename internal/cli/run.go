@@ -71,7 +71,6 @@ Stages are always executed in canonical order:
 		maxRetries, _ := cmd.Flags().GetInt("max-retries")
 		resume, _ := cmd.Flags().GetBool("resume")
 		debug, _ := cmd.Flags().GetBool("debug")
-		progress, _ := cmd.Flags().GetBool("progress")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 		// Build StageConfig from flags
@@ -122,9 +121,6 @@ Stages are always executed in canonical order:
 		}
 		if cmd.Flags().Changed("max-retries") {
 			cfg.MaxRetries = maxRetries
-		}
-		if cmd.Flags().Changed("progress") {
-			cfg.ShowProgress = progress
 		}
 
 		// Resolve skip confirmations (flag > env > config)
@@ -485,6 +481,5 @@ func init() {
 	// Other flags (NOTE: max-retries is now long-only, -r is used for clarify)
 	runCmd.Flags().Int("max-retries", 0, "Override max retry attempts (0 = use config)")
 	runCmd.Flags().Bool("resume", false, "Resume implementation from where it left off")
-	runCmd.Flags().Bool("progress", false, "Show progress indicators (spinners) during execution")
 	runCmd.Flags().Bool("dry-run", false, "Preview what stages would run without executing")
 }

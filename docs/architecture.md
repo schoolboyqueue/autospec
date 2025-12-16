@@ -311,7 +311,7 @@ func (e *Executor) ExecutePhase(specName, phase, command string, validateFn func
 export AUTOSPEC_MAX_RETRIES=5
 
 # Priority 2: Local config
-echo 'max_retries: 3' > .autospec/config.yml
+echo 'max_retries: 0' > .autospec/config.yml
 
 # Priority 3: Global config
 echo 'max_retries: 2' > ~/.config/autospec/config.yml
@@ -368,14 +368,12 @@ func DetectCurrentSpec() (*SpecMetadata, error) {
 
 **Methods**:
 1. **CLI Mode** (default): Execute `claude` command via shell
-2. **API Mode**: Direct API calls using API key
-3. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
+2. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
 
 **Configuration**:
 ```yaml
 claude_cmd: claude
 custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
-use_api_key: false
 ```
 
 **Prompt Injection**:

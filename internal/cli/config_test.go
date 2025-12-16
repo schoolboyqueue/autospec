@@ -155,7 +155,6 @@ func TestConfigShowCmd_AllFields(t *testing.T) {
 	expectedFields := []string{
 		"claude_cmd",
 		"claude_args",
-		"use_api_key",
 		"custom_claude_cmd",
 		"max_retries",
 		"specs_dir",

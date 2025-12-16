@@ -206,8 +206,8 @@ func TestValidateConfigValues_InvalidMaxRetries(t *testing.T) {
 		maxRetries int
 		wantErr    bool
 	}{
-		"too low":       {maxRetries: 0, wantErr: true},
-		"minimum valid": {maxRetries: 1, wantErr: false},
+		"too low":       {maxRetries: -1, wantErr: true},
+		"minimum valid": {maxRetries: 0, wantErr: false},
 		"middle valid":  {maxRetries: 5, wantErr: false},
 		"maximum valid": {maxRetries: 10, wantErr: false},
 		"too high":      {maxRetries: 11, wantErr: true},

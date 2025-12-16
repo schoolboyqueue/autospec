@@ -75,7 +75,7 @@ autospec config show
 **Local config** (`.autospec/config.yml`):
 ```yaml
 timeout: 600
-max_retries: 3
+max_retries: 0
 claude_cmd: claude
 ```
 

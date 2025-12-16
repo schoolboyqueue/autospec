@@ -118,7 +118,7 @@ phases:
             - "Uses centralized validation pattern"
         - id: "T008"
           title: "Verify tasks.go checks constitution in internal/cli/tasks.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -129,7 +129,7 @@ phases:
             - "Uses centralized validation pattern"
         - id: "T009"
           title: "Verify implement.go checks constitution in internal/cli/implement.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -146,7 +146,7 @@ phases:
       tasks:
         - id: "T010"
           title: "Add spec.yaml validation to plan.go in internal/cli/plan.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-002"
@@ -158,7 +158,7 @@ phases:
             - "Exits with code 3 when spec.yaml missing"
         - id: "T011"
           title: "Add spec.yaml validation to clarify.go in internal/cli/clarify.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-002"
@@ -170,7 +170,7 @@ phases:
             - "Exits with code 3 when prerequisites missing"
         - id: "T012"
           title: "Add spec.yaml validation to checklist.go in internal/cli/checklist.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-002"
@@ -182,7 +182,7 @@ phases:
             - "Exits with code 3 when prerequisites missing"
         - id: "T013"
           title: "Add plan.yaml validation to tasks.go in internal/cli/tasks.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -194,7 +194,7 @@ phases:
             - "Exits with code 3 when plan.yaml missing"
         - id: "T014"
           title: "Add tasks.yaml validation to implement.go in internal/cli/implement.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -206,7 +206,7 @@ phases:
             - "Exits with code 3 when tasks.yaml missing"
         - id: "T015"
           title: "Add multi-artifact validation to analyze.go in internal/cli/analyze.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"

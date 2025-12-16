@@ -120,7 +120,6 @@ func TestMigrateJSONToYAML_PreservesAllFields(t *testing.T) {
 	jsonContent := `{
 		"claude_cmd": "custom-claude",
 		"claude_args": ["-p", "--verbose"],
-		"use_api_key": true,
 		"custom_claude_cmd": "wrapper {{PROMPT}}",
 		"max_retries": 5,
 		"specs_dir": "./custom/specs",
@@ -143,7 +142,6 @@ func TestMigrateJSONToYAML_PreservesAllFields(t *testing.T) {
 
 	assert.Contains(t, yamlStr, "claude_cmd: custom-claude")
 	assert.Contains(t, yamlStr, "max_retries: 5")
-	assert.Contains(t, yamlStr, "use_api_key: true")
 	assert.Contains(t, yamlStr, "timeout: 600")
 	assert.Contains(t, yamlStr, "skip_preflight: true")
 }

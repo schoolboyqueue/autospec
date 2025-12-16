@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/config"
@@ -64,16 +63,24 @@ Prerequisites:
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Check if constitution exists (required for checklist)
+		constitutionCheck := workflow.CheckConstitutionExists()
+		if !constitutionCheck.Exists {
+			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+			return NewExitError(ExitInvalidArguments)
+		}
+
 		// Auto-detect current spec and verify spec.yaml exists
 		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
 		if err != nil {
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
 
-		// Check that spec.yaml exists
-		specFile := filepath.Join(metadata.Directory, "spec.yaml")
-		if _, err := os.Stat(specFile); os.IsNotExist(err) {
-			return fmt.Errorf("spec.yaml not found in %s\n\nRun 'autospec specify' to create a spec first", metadata.Directory)
+		// Validate spec.yaml exists (required for checklist stage)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageChecklist, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			return NewExitError(ExitInvalidArguments)
 		}
 
 		// Create workflow orchestrator

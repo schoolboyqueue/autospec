@@ -74,7 +74,7 @@ autospec init
 This creates `~/.config/autospec/config.yml` with default settings:
 ```yaml
 claude_cmd: claude
-max_retries: 3
+max_retries: 0
 specs_dir: ./specs
 state_dir: ~/.autospec/state
 timeout: 0
@@ -259,9 +259,9 @@ Essential configuration options (stored in `~/.config/autospec/config.yml` or `.
 # Customize if you have Claude CLI in a non-standard location
 claude_cmd: claude
 
-# Maximum retry attempts (default: 3, range: 1-10)
+# Maximum retry attempts (default: 0, range: 0-10)
 # Controls how many times to retry on validation failure
-max_retries: 3
+max_retries: 0
 
 # Specs directory (default: "./specs")
 # Where feature specifications are stored

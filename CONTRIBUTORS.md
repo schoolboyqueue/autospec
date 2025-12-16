@@ -106,7 +106,7 @@ timeout: 300
 | `claude_cmd` | string | `"claude"` | Claude CLI command |
 | `claude_args` | array | `[]` | Arguments passed to Claude CLI |
 | `custom_claude_cmd` | string | `""` | Custom command with `{{PROMPT}}` placeholder |
-| `max_retries` | int | `3` | Maximum retry attempts (1-10) |
+| `max_retries` | int | `0` | Maximum retry attempts (0-10) |
 | `specs_dir` | string | `"./specs"` | Directory for feature specs |
 | `state_dir` | string | `"~/.autospec/state"` | Retry state storage |
 | `skip_preflight` | bool | `false` | Skip dependency checks |

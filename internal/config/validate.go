@@ -127,12 +127,12 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 		}
 	}
 
-	// MaxRetries: min=1, max=10
-	if cfg.MaxRetries < 1 || cfg.MaxRetries > 10 {
+	// MaxRetries: min=0, max=10
+	if cfg.MaxRetries < 0 || cfg.MaxRetries > 10 {
 		return &ValidationError{
 			FilePath: filePath,
 			Field:    "max_retries",
-			Message:  "must be between 1 and 10",
+			Message:  "must be between 0 and 10",
 		}
 	}
 

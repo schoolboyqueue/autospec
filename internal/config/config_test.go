@@ -32,9 +32,8 @@ func TestLoad_Defaults(t *testing.T) {
 	cfg, err := Load("")
 	require.NoError(t, err)
 	assert.Equal(t, "claude", cfg.ClaudeCmd)
-	assert.Equal(t, 3, cfg.MaxRetries)
+	assert.Equal(t, 0, cfg.MaxRetries)
 	assert.Equal(t, "./specs", cfg.SpecsDir)
-	assert.False(t, cfg.UseAPIKey)
 }
 
 func TestLoad_LocalOverride(t *testing.T) {
@@ -354,7 +353,6 @@ specs_dir: "./specs"
 state_dir: "~/.autospec/state"
 skip_preflight: true
 timeout: 300
-show_progress: true
 skip_confirmations: false
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
@@ -369,7 +367,6 @@ skip_confirmations: false
 	assert.Equal(t, []string{"-p", "--verbose"}, cfg.ClaudeArgs)
 	assert.True(t, cfg.SkipPreflight)
 	assert.Equal(t, 300, cfg.Timeout)
-	assert.True(t, cfg.ShowProgress)
 }
 
 func TestLoad_YAMLEmptyFile(t *testing.T) {

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/config"
@@ -67,29 +66,24 @@ Prerequisites:
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Check if constitution exists (required for analyze)
+		constitutionCheck := workflow.CheckConstitutionExists()
+		if !constitutionCheck.Exists {
+			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+			return NewExitError(ExitInvalidArguments)
+		}
+
 		// Auto-detect current spec and verify all required artifacts exist
 		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
 		if err != nil {
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
 
-		// Check that all required artifacts exist
-		var missingArtifacts []string
-		specFile := filepath.Join(metadata.Directory, "spec.yaml")
-		if _, err := os.Stat(specFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "spec.yaml")
-		}
-		planFile := filepath.Join(metadata.Directory, "plan.yaml")
-		if _, err := os.Stat(planFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "plan.yaml")
-		}
-		tasksFile := filepath.Join(metadata.Directory, "tasks.yaml")
-		if _, err := os.Stat(tasksFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "tasks.yaml")
-		}
-
-		if len(missingArtifacts) > 0 {
-			return fmt.Errorf("missing required artifacts in %s: %v\n\nRun the following commands first:\n  - autospec specify (for spec.yaml)\n  - autospec plan (for plan.yaml)\n  - autospec tasks (for tasks.yaml)", metadata.Directory, missingArtifacts)
+		// Validate all required artifacts exist (spec.yaml, plan.yaml, tasks.yaml)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageAnalyze, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			return NewExitError(ExitInvalidArguments)
 		}
 
 		// Create workflow orchestrator
