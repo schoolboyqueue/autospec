@@ -36,6 +36,7 @@ autospec doctor                          # Check dependencies
 | `docs/YAML-STRUCTURED-OUTPUT.md` | YAML artifact schemas and slash commands |
 | `docs/SHELL-COMPLETION.md` | Shell completion implementation |
 | `docs/troubleshooting.md` | Common issues and solutions |
+| `docs/claude-settings.md` | Claude Code settings and sandboxing configuration |
 
 ## Architecture Overview
 

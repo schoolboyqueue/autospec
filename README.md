@@ -283,7 +283,7 @@ custom_claude_cmd: "ANTHROPIC_API_KEY='' claude -p --verbose --output-format str
 
 > ⚠️ **DANGER:** Adding `--dangerously-skip-permissions` bypasses ALL Claude safety checks. Never use with credentials, API keys, or production data. Your system becomes fully exposed to any command Claude generates.
 >
-> **Recommended:** Enable Claude Code's sandbox first (`/sandbox` command) which uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux or Seatbelt on macOS for OS-level isolation.
+> **Recommended:** Enable Claude Code's sandbox first (`/sandbox` command) which uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux or Seatbelt on macOS for OS-level isolation. See [Claude Settings docs](docs/claude-settings.md) for configuration via settings.json.
 
 ### Environment Variables
 

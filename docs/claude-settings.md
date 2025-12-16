@@ -1,5 +1,7 @@
 # Claude Code Settings & Sandboxing
 
+*Last updated: 2025-12-16*
+
 Configuration guide for Claude Code settings relevant to autospec workflows.
 
 ## Sandboxing Overview
