@@ -127,9 +127,15 @@ tidy: ## Tidy go.mod and go.sum
 
 ##@ Testing
 
-test-go: ## Run Go tests
+test-go: ## Run Go tests (excludes integration tests)
 	@echo "Running Go tests..."
 	@go test -v -race -cover ./...
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@go test -v -race -tags=integration ./tests/integration/...
+
+test-all: test-go test-integration ## Run all tests including integration
 
 test: test-go ## Run all tests
 

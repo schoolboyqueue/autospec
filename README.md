@@ -59,10 +59,11 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 ### Prerequisites
 
 **Required:**
-- [Claude Code CLI](https://claude.ai/download)
+- [Claude Code CLI](https://code.claude.com/docs/en/setup)
 - Git
 
 **Optional:**
+- [claude-clean](https://github.com/ariel-frischer/claude-clean) (cclean) - Beautiful terminal parser for Claude Code's streaming JSON output
 - Go 1.21+ (for building from source)
 - make (for Makefile commands)
 
