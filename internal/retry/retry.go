@@ -19,8 +19,8 @@ type RetryState struct {
 
 // RetryStore contains all retry states persisted to disk
 type RetryStore struct {
-	Retries     map[string]*RetryState           `json:"retries"`
-	PhaseStates map[string]*PhaseExecutionState  `json:"phase_states,omitempty"`
+	Retries     map[string]*RetryState          `json:"retries"`
+	PhaseStates map[string]*PhaseExecutionState `json:"phase_states,omitempty"`
 }
 
 // PhaseExecutionState tracks progress through phased implementation

@@ -355,7 +355,7 @@ phases:
             - "Exit code 3 for invalid arguments"
         - id: "T027"
           title: "Add edge case handling for empty/single phases"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -367,7 +367,7 @@ phases:
             - "Legacy format (no phases) treats all as phase 1"
         - id: "T028"
           title: "Run make fmt and verify all tests pass"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null

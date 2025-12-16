@@ -722,10 +722,10 @@ func TestGetPhaseInfo(t *testing.T) {
 
 func TestIsPhaseComplete(t *testing.T) {
 	tests := map[string]struct {
-		content     string
-		phaseNum    int
+		content      string
+		phaseNum     int
 		wantComplete bool
-		wantErr     bool
+		wantErr      bool
 	}{
 		"completed phase": {
 			content: `phases:
