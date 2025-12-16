@@ -96,21 +96,21 @@ func TestGetSchema_UnknownType(t *testing.T) {
 }
 
 func TestParseArtifactType(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		input    string
 		expected ArtifactType
 		wantErr  bool
 	}{
-		{"spec", ArtifactTypeSpec, false},
-		{"plan", ArtifactTypePlan, false},
-		{"tasks", ArtifactTypeTasks, false},
-		{"unknown", "", true},
-		{"SPEC", "", true}, // case sensitive
-		{"", "", true},
+		"spec":              {input: "spec", expected: ArtifactTypeSpec, wantErr: false},
+		"plan":              {input: "plan", expected: ArtifactTypePlan, wantErr: false},
+		"tasks":             {input: "tasks", expected: ArtifactTypeTasks, wantErr: false},
+		"unknown":           {input: "unknown", expected: "", wantErr: true},
+		"SPEC case-sensitive": {input: "SPEC", expected: "", wantErr: true},
+		"empty string":      {input: "", expected: "", wantErr: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := ParseArtifactType(tt.input)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseArtifactType(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
@@ -269,42 +269,41 @@ func TestSchemaField_HasDescription(t *testing.T) {
 }
 
 func TestInferArtifactTypeFromFilename(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		filename string
 		want     ArtifactType
 		wantErr  bool
 	}{
 		// Valid .yaml filenames
-		{"spec.yaml", "spec.yaml", ArtifactTypeSpec, false},
-		{"plan.yaml", "plan.yaml", ArtifactTypePlan, false},
-		{"tasks.yaml", "tasks.yaml", ArtifactTypeTasks, false},
+		"spec.yaml":  {filename: "spec.yaml", want: ArtifactTypeSpec, wantErr: false},
+		"plan.yaml":  {filename: "plan.yaml", want: ArtifactTypePlan, wantErr: false},
+		"tasks.yaml": {filename: "tasks.yaml", want: ArtifactTypeTasks, wantErr: false},
 
 		// Valid .yml filenames
-		{"spec.yml", "spec.yml", ArtifactTypeSpec, false},
-		{"plan.yml", "plan.yml", ArtifactTypePlan, false},
-		{"tasks.yml", "tasks.yml", ArtifactTypeTasks, false},
+		"spec.yml":  {filename: "spec.yml", want: ArtifactTypeSpec, wantErr: false},
+		"plan.yml":  {filename: "plan.yml", want: ArtifactTypePlan, wantErr: false},
+		"tasks.yml": {filename: "tasks.yml", want: ArtifactTypeTasks, wantErr: false},
 
 		// Full paths with .yaml
-		{"path with spec.yaml", "specs/016-feature/spec.yaml", ArtifactTypeSpec, false},
-		{"path with plan.yaml", "specs/016-feature/plan.yaml", ArtifactTypePlan, false},
-		{"path with tasks.yaml", "specs/016-feature/tasks.yaml", ArtifactTypeTasks, false},
+		"path with spec.yaml":  {filename: "specs/016-feature/spec.yaml", want: ArtifactTypeSpec, wantErr: false},
+		"path with plan.yaml":  {filename: "specs/016-feature/plan.yaml", want: ArtifactTypePlan, wantErr: false},
+		"path with tasks.yaml": {filename: "specs/016-feature/tasks.yaml", want: ArtifactTypeTasks, wantErr: false},
 
 		// Full paths with .yml
-		{"path with spec.yml", "/absolute/path/spec.yml", ArtifactTypeSpec, false},
-		{"path with plan.yml", "relative/plan.yml", ArtifactTypePlan, false},
+		"path with spec.yml": {filename: "/absolute/path/spec.yml", want: ArtifactTypeSpec, wantErr: false},
+		"path with plan.yml": {filename: "relative/plan.yml", want: ArtifactTypePlan, wantErr: false},
 
 		// Unrecognized filenames
-		{"config.yaml", "config.yaml", "", true},
-		{"random.yaml", "random.yaml", "", true},
-		{"myspec.yaml", "myspec.yaml", "", true},
-		{"spec.json", "spec.json", "", true},
-		{"SPEC.yaml", "SPEC.yaml", "", true}, // case sensitive
-		{"Plan.yaml", "Plan.yaml", "", true}, // case sensitive
+		"config.yaml":             {filename: "config.yaml", want: "", wantErr: true},
+		"random.yaml":             {filename: "random.yaml", want: "", wantErr: true},
+		"myspec.yaml":             {filename: "myspec.yaml", want: "", wantErr: true},
+		"spec.json":               {filename: "spec.json", want: "", wantErr: true},
+		"SPEC.yaml case-sensitive": {filename: "SPEC.yaml", want: "", wantErr: true},
+		"Plan.yaml case-sensitive": {filename: "Plan.yaml", want: "", wantErr: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := InferArtifactTypeFromFilename(tt.filename)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("InferArtifactTypeFromFilename(%q) error = %v, wantErr %v", tt.filename, err, tt.wantErr)

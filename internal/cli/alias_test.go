@@ -6,70 +6,58 @@ import (
 )
 
 func TestCommandAliases(t *testing.T) {
-	tests := []struct {
-		name          string
+	tests := map[string]struct {
 		commandName   string
 		expectedAlias []string
 	}{
-		{
-			name:          "specify command has aliases spec and s",
+		"specify command has aliases spec and s": {
 			commandName:   "specify",
 			expectedAlias: []string{"spec", "s"},
 		},
-		{
-			name:          "plan command has alias p",
+		"plan command has alias p": {
 			commandName:   "plan",
 			expectedAlias: []string{"p"},
 		},
-		{
-			name:          "tasks command has alias t",
+		"tasks command has alias t": {
 			commandName:   "tasks",
 			expectedAlias: []string{"t"},
 		},
-		{
-			name:          "implement command has aliases impl and i",
+		"implement command has aliases impl and i": {
 			commandName:   "implement",
 			expectedAlias: []string{"impl", "i"},
 		},
-		{
-			name:          "status command has alias st",
+		"status command has alias st": {
 			commandName:   "status",
 			expectedAlias: []string{"st"},
 		},
-		{
-			name:          "doctor command has alias doc",
+		"doctor command has alias doc": {
 			commandName:   "doctor",
 			expectedAlias: []string{"doc"},
 		},
-		{
-			name:          "constitution command has alias const",
+		"constitution command has alias const": {
 			commandName:   "constitution",
 			expectedAlias: []string{"const"},
 		},
-		{
-			name:          "clarify command has alias cl",
+		"clarify command has alias cl": {
 			commandName:   "clarify",
 			expectedAlias: []string{"cl"},
 		},
-		{
-			name:          "checklist command has alias chk",
+		"checklist command has alias chk": {
 			commandName:   "checklist",
 			expectedAlias: []string{"chk"},
 		},
-		{
-			name:          "analyze command has alias az",
+		"analyze command has alias az": {
 			commandName:   "analyze",
 			expectedAlias: []string{"az"},
 		},
-		{
-			name:          "version command has alias v",
+		"version command has alias v": {
 			commandName:   "version",
 			expectedAlias: []string{"v"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Find the command by name
 			cmd, _, err := rootCmd.Find([]string{tt.commandName})
 			if err != nil {
@@ -93,27 +81,27 @@ func TestCommandAliases(t *testing.T) {
 }
 
 func TestAliasResolution(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		alias       string
 		commandName string
 	}{
-		{"spec", "specify"},
-		{"s", "specify"},
-		{"p", "plan"},
-		{"t", "tasks"},
-		{"impl", "implement"},
-		{"i", "implement"},
-		{"st", "status"},
-		{"doc", "doctor"},
-		{"const", "constitution"},
-		{"cl", "clarify"},
-		{"chk", "checklist"},
-		{"az", "analyze"},
-		{"v", "version"},
+		"spec resolves to specify":  {alias: "spec", commandName: "specify"},
+		"s resolves to specify":     {alias: "s", commandName: "specify"},
+		"p resolves to plan":        {alias: "p", commandName: "plan"},
+		"t resolves to tasks":       {alias: "t", commandName: "tasks"},
+		"impl resolves to implement": {alias: "impl", commandName: "implement"},
+		"i resolves to implement":   {alias: "i", commandName: "implement"},
+		"st resolves to status":     {alias: "st", commandName: "status"},
+		"doc resolves to doctor":    {alias: "doc", commandName: "doctor"},
+		"const resolves to constitution": {alias: "const", commandName: "constitution"},
+		"cl resolves to clarify":    {alias: "cl", commandName: "clarify"},
+		"chk resolves to checklist": {alias: "chk", commandName: "checklist"},
+		"az resolves to analyze":    {alias: "az", commandName: "analyze"},
+		"v resolves to version":     {alias: "v", commandName: "version"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.alias+" resolves to "+tt.commandName, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			cmd, _, err := rootCmd.Find([]string{tt.alias})
 			if err != nil {
 				t.Fatalf("alias %q not found: %v", tt.alias, err)
@@ -127,25 +115,25 @@ func TestAliasResolution(t *testing.T) {
 }
 
 func TestHelpTextShowsAliases(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		commandName    string
 		expectedInHelp string
 	}{
-		{"specify", "Aliases:"},
-		{"plan", "Aliases:"},
-		{"tasks", "Aliases:"},
-		{"implement", "Aliases:"},
-		{"status", "Aliases:"},
-		{"doctor", "Aliases:"},
-		{"constitution", "Aliases:"},
-		{"clarify", "Aliases:"},
-		{"checklist", "Aliases:"},
-		{"analyze", "Aliases:"},
-		{"version", "Aliases:"},
+		"specify help shows aliases":      {commandName: "specify", expectedInHelp: "Aliases:"},
+		"plan help shows aliases":         {commandName: "plan", expectedInHelp: "Aliases:"},
+		"tasks help shows aliases":        {commandName: "tasks", expectedInHelp: "Aliases:"},
+		"implement help shows aliases":    {commandName: "implement", expectedInHelp: "Aliases:"},
+		"status help shows aliases":       {commandName: "status", expectedInHelp: "Aliases:"},
+		"doctor help shows aliases":       {commandName: "doctor", expectedInHelp: "Aliases:"},
+		"constitution help shows aliases": {commandName: "constitution", expectedInHelp: "Aliases:"},
+		"clarify help shows aliases":      {commandName: "clarify", expectedInHelp: "Aliases:"},
+		"checklist help shows aliases":    {commandName: "checklist", expectedInHelp: "Aliases:"},
+		"analyze help shows aliases":      {commandName: "analyze", expectedInHelp: "Aliases:"},
+		"version help shows aliases":      {commandName: "version", expectedInHelp: "Aliases:"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.commandName+" help shows aliases", func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			cmd, _, err := rootCmd.Find([]string{tt.commandName})
 			if err != nil {
 				t.Fatalf("command %q not found: %v", tt.commandName, err)

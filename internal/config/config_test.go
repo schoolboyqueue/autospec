@@ -269,22 +269,21 @@ func TestLoad_TimeoutEnvOverride(t *testing.T) {
 func TestLoad_TimeoutValidRange(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		timeout int
 		valid   bool
 	}{
-		{"minimum valid", 1, true},
-		{"mid-range valid", 300, true},
-		{"maximum valid (1 hour)", 3600, true},
-		{"7 days (maximum)", 604800, true},
-		{"zero (no timeout)", 0, true},
-		{"below minimum", -5, false},
-		{"above maximum", 604801, false},
+		"minimum valid":          {timeout: 1, valid: true},
+		"mid-range valid":        {timeout: 300, valid: true},
+		"maximum valid (1 hour)": {timeout: 3600, valid: true},
+		"7 days (maximum)":       {timeout: 604800, valid: true},
+		"zero (no timeout)":      {timeout: 0, valid: true},
+		"below minimum":          {timeout: -5, valid: false},
+		"above maximum":          {timeout: 604801, valid: false},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			tmpDir := t.TempDir()

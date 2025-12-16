@@ -65,18 +65,18 @@ func TestExtractMeta_InvalidYAML(t *testing.T) {
 }
 
 func TestParseVersion_Valid(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		input    string
 		expected Version
 	}{
-		{"1.0.0", Version{Major: 1, Minor: 0, Patch: 0}},
-		{"2.3.4", Version{Major: 2, Minor: 3, Patch: 4}},
-		{"0.1.0", Version{Major: 0, Minor: 1, Patch: 0}},
-		{"10.20.30", Version{Major: 10, Minor: 20, Patch: 30}},
+		"1.0.0":    {input: "1.0.0", expected: Version{Major: 1, Minor: 0, Patch: 0}},
+		"2.3.4":    {input: "2.3.4", expected: Version{Major: 2, Minor: 3, Patch: 4}},
+		"0.1.0":    {input: "0.1.0", expected: Version{Major: 0, Minor: 1, Patch: 0}},
+		"10.20.30": {input: "10.20.30", expected: Version{Major: 10, Minor: 20, Patch: 30}},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			v, err := ParseVersion(tt.input)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expected, v)
@@ -85,42 +85,43 @@ func TestParseVersion_Valid(t *testing.T) {
 }
 
 func TestParseVersion_Invalid(t *testing.T) {
-	tests := []string{
-		"",
-		"1.0",
-		"1",
-		"v1.0.0",
-		"1.0.0.0",
-		"a.b.c",
-		"1.0.0-beta",
+	tests := map[string]struct {
+		input string
+	}{
+		"empty string":     {input: ""},
+		"two parts only":   {input: "1.0"},
+		"single part":      {input: "1"},
+		"with v prefix":    {input: "v1.0.0"},
+		"four parts":       {input: "1.0.0.0"},
+		"non-numeric":      {input: "a.b.c"},
+		"with beta suffix": {input: "1.0.0-beta"},
 	}
 
-	for _, input := range tests {
-		t.Run(input, func(t *testing.T) {
-			_, err := ParseVersion(input)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := ParseVersion(tt.input)
 			assert.Error(t, err, "should error on invalid version")
 		})
 	}
 }
 
 func TestVersion_Compare(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		v1       Version
 		v2       Version
 		expected int
 	}{
-		{"equal", Version{1, 0, 0}, Version{1, 0, 0}, 0},
-		{"major greater", Version{2, 0, 0}, Version{1, 0, 0}, 1},
-		{"major less", Version{1, 0, 0}, Version{2, 0, 0}, -1},
-		{"minor greater", Version{1, 2, 0}, Version{1, 1, 0}, 1},
-		{"minor less", Version{1, 1, 0}, Version{1, 2, 0}, -1},
-		{"patch greater", Version{1, 0, 2}, Version{1, 0, 1}, 1},
-		{"patch less", Version{1, 0, 1}, Version{1, 0, 2}, -1},
+		"equal":         {v1: Version{1, 0, 0}, v2: Version{1, 0, 0}, expected: 0},
+		"major greater": {v1: Version{2, 0, 0}, v2: Version{1, 0, 0}, expected: 1},
+		"major less":    {v1: Version{1, 0, 0}, v2: Version{2, 0, 0}, expected: -1},
+		"minor greater": {v1: Version{1, 2, 0}, v2: Version{1, 1, 0}, expected: 1},
+		"minor less":    {v1: Version{1, 1, 0}, v2: Version{1, 2, 0}, expected: -1},
+		"patch greater": {v1: Version{1, 0, 2}, v2: Version{1, 0, 1}, expected: 1},
+		"patch less":    {v1: Version{1, 0, 1}, v2: Version{1, 0, 2}, expected: -1},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			result := tt.v1.Compare(tt.v2)
 			assert.Equal(t, tt.expected, result)
 		})
@@ -133,19 +134,19 @@ func TestVersion_String(t *testing.T) {
 }
 
 func TestIsMajorVersionMismatch(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		v1       string
 		v2       string
 		expected bool
 	}{
-		{"1.0.0", "1.0.0", false},
-		{"1.0.0", "1.1.0", false},
-		{"1.0.0", "2.0.0", true},
-		{"2.0.0", "1.0.0", true},
+		"same version":           {v1: "1.0.0", v2: "1.0.0", expected: false},
+		"same major diff minor":  {v1: "1.0.0", v2: "1.1.0", expected: false},
+		"v1 major greater":       {v1: "2.0.0", v2: "1.0.0", expected: true},
+		"v2 major greater":       {v1: "1.0.0", v2: "2.0.0", expected: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.v1+"_vs_"+tt.v2, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			result := IsMajorVersionMismatch(tt.v1, tt.v2)
 			assert.Equal(t, tt.expected, result)
 		})

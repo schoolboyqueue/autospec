@@ -186,25 +186,21 @@ func TestFixArtifact_NonExistentFile(t *testing.T) {
 }
 
 func TestFormatFixes(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		fixes    []*AutoFix
 		contains []string
 	}{
-		{
-			name:     "no fixes",
+		"no fixes": {
 			fixes:    []*AutoFix{},
 			contains: []string{"No fixes applied"},
 		},
-		{
-			name: "one fix",
+		"one fix": {
 			fixes: []*AutoFix{
 				{Type: "add_optional_field", Path: "_meta", After: "(added)"},
 			},
 			contains: []string{"Applied 1 fix(es)", "add_optional_field", "_meta", "(added)"},
 		},
-		{
-			name: "multiple fixes",
+		"multiple fixes": {
 			fixes: []*AutoFix{
 				{Type: "add_optional_field", Path: "_meta", After: "(added)"},
 				{Type: "normalize_format", Path: "status", After: "Draft"},
@@ -213,8 +209,8 @@ func TestFormatFixes(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			result := FormatFixes(tc.fixes)
 			for _, s := range tc.contains {
 				if !strings.Contains(result, s) {
@@ -294,17 +290,17 @@ _meta:
 }
 
 func TestFixArtifact_AllTypes(t *testing.T) {
-	types := []struct {
+	types := map[string]struct {
 		artifactType ArtifactType
 		fixture      string
 	}{
-		{ArtifactTypeSpec, "testdata/spec/valid.yaml"},
-		{ArtifactTypePlan, "testdata/plan/valid.yaml"},
-		{ArtifactTypeTasks, "testdata/tasks/valid.yaml"},
+		"spec":  {artifactType: ArtifactTypeSpec, fixture: "testdata/spec/valid.yaml"},
+		"plan":  {artifactType: ArtifactTypePlan, fixture: "testdata/plan/valid.yaml"},
+		"tasks": {artifactType: ArtifactTypeTasks, fixture: "testdata/tasks/valid.yaml"},
 	}
 
-	for _, tc := range types {
-		t.Run(string(tc.artifactType), func(t *testing.T) {
+	for name, tc := range types {
+		t.Run(name, func(t *testing.T) {
 			tempDir := t.TempDir()
 			tempFile := filepath.Join(tempDir, string(tc.artifactType)+".yaml")
 

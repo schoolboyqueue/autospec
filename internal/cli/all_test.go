@@ -35,8 +35,8 @@ func TestAllCmdFlags(t *testing.T) {
 
 	for flagName, flag := range flags {
 		t.Run("flag "+flagName, func(t *testing.T) {
-			f := allCmd.Flags().Lookup(flag.name)
-			require.NotNil(t, f, "flag %s should exist", flag.name)
+			f := allCmd.Flags().Lookup(flagName)
+			require.NotNil(t, f, "flag %s should exist", flagName)
 			if flag.shorthand != "" {
 				assert.Equal(t, flag.shorthand, f.Shorthand)
 			}
@@ -100,34 +100,30 @@ func TestStageConfigForAllCommand(t *testing.T) {
 	// The all command should enable all 4 core stages
 	// Verify the expected stage behavior
 
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		skipPreflight   bool
 		maxRetries      int
 		expectPreflight bool
 	}{
-		{
-			name:            "default settings",
+		"default settings": {
 			skipPreflight:   false,
 			maxRetries:      0,
 			expectPreflight: false, // default is false
 		},
-		{
-			name:            "skip preflight",
+		"skip preflight": {
 			skipPreflight:   true,
 			maxRetries:      0,
 			expectPreflight: true,
 		},
-		{
-			name:            "custom max retries",
+		"custom max retries": {
 			skipPreflight:   false,
 			maxRetries:      5,
 			expectPreflight: false,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			// These are configuration checks, not full workflow tests
 			if tc.skipPreflight {
 				assert.True(t, tc.expectPreflight)

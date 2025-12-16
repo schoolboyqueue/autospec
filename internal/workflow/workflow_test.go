@@ -148,37 +148,32 @@ func TestExecuteTasksWithPrompt(t *testing.T) {
 
 // TestSpecNameFormat tests that spec names are formatted correctly with number prefix
 func TestSpecNameFormat(t *testing.T) {
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		metadata     *spec.Metadata
 		wantSpecName string
 	}{
-		{
-			name: "spec with three-digit number",
+		"spec with three-digit number": {
 			metadata: &spec.Metadata{
 				Number: "003",
 				Name:   "command-timeout",
 			},
 			wantSpecName: "003-command-timeout",
 		},
-		{
-			name: "spec with two-digit number",
+		"spec with two-digit number": {
 			metadata: &spec.Metadata{
 				Number: "002",
 				Name:   "go-binary-migration",
 			},
 			wantSpecName: "002-go-binary-migration",
 		},
-		{
-			name: "spec with single digit number",
+		"spec with single digit number": {
 			metadata: &spec.Metadata{
 				Number: "001",
 				Name:   "initial-feature",
 			},
 			wantSpecName: "001-initial-feature",
 		},
-		{
-			name: "spec with hyphenated name",
+		"spec with hyphenated name": {
 			metadata: &spec.Metadata{
 				Number: "123",
 				Name:   "multi-word-feature-name",
@@ -187,8 +182,8 @@ func TestSpecNameFormat(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			// Test the format string used in the workflow
 			specName := fmt.Sprintf("%s-%s", tt.metadata.Number, tt.metadata.Name)
@@ -204,34 +199,30 @@ func TestSpecNameFormat(t *testing.T) {
 func TestSpecDirectoryConstruction(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		specsDir    string
 		specName    string
 		wantSpecDir string
 	}{
-		{
-			name:        "full spec name with number",
+		"full spec name with number": {
 			specsDir:    tmpDir,
 			specName:    "003-command-timeout",
 			wantSpecDir: filepath.Join(tmpDir, "003-command-timeout"),
 		},
-		{
-			name:        "relative specs dir",
+		"relative specs dir": {
 			specsDir:    "./specs",
 			specName:    "002-go-binary-migration",
 			wantSpecDir: filepath.Join("./specs", "002-go-binary-migration"),
 		},
-		{
-			name:        "absolute specs dir",
+		"absolute specs dir": {
 			specsDir:    "/tmp/specs",
 			specName:    "001-initial-feature",
 			wantSpecDir: filepath.Join("/tmp/specs", "001-initial-feature"),
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			// Test directory construction used in executor
 			specDir := filepath.Join(tt.specsDir, tt.specName)
@@ -347,28 +338,24 @@ func TestTaskModeDispatch(t *testing.T) {
 
 // TestTaskModeWithFromTask tests that FromTask is correctly included in options
 func TestTaskModeWithFromTask(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		opts     PhaseExecutionOptions
 		wantMode PhaseExecutionMode
 	}{
-		{
-			name: "task mode enabled",
+		"task mode enabled": {
 			opts: PhaseExecutionOptions{
 				TaskMode: true,
 			},
 			wantMode: ModeAllTasks,
 		},
-		{
-			name: "task mode with from-task",
+		"task mode with from-task": {
 			opts: PhaseExecutionOptions{
 				TaskMode: true,
 				FromTask: "T005",
 			},
 			wantMode: ModeAllTasks,
 		},
-		{
-			name: "task mode takes precedence over phases",
+		"task mode takes precedence over phases": {
 			opts: PhaseExecutionOptions{
 				TaskMode:     true,
 				RunAllPhases: true, // This should be ignored
@@ -377,8 +364,8 @@ func TestTaskModeWithFromTask(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			if got := tt.opts.Mode(); got != tt.wantMode {
 				t.Errorf("Mode() = %v, want %v", got, tt.wantMode)
@@ -389,40 +376,34 @@ func TestTaskModeWithFromTask(t *testing.T) {
 
 // TestTaskCompletionValidation tests that task completion is properly validated
 func TestTaskCompletionValidation(t *testing.T) {
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		taskStatus  string
 		expectError bool
 	}{
-		{
-			name:        "task completed",
+		"task completed": {
 			taskStatus:  "Completed",
 			expectError: false,
 		},
-		{
-			name:        "task completed lowercase",
+		"task completed lowercase": {
 			taskStatus:  "completed",
 			expectError: false,
 		},
-		{
-			name:        "task pending",
+		"task pending": {
 			taskStatus:  "Pending",
 			expectError: true,
 		},
-		{
-			name:        "task in progress",
+		"task in progress": {
 			taskStatus:  "InProgress",
 			expectError: true,
 		},
-		{
-			name:        "task blocked",
+		"task blocked": {
 			taskStatus:  "Blocked",
 			expectError: true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			// Create isolated directory for this subtest
 			tmpDir := t.TempDir()

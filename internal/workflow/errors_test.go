@@ -9,34 +9,30 @@ import (
 )
 
 func TestTimeoutError_Error(t *testing.T) {
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		timeout         time.Duration
 		command         string
 		expectedMessage string
 	}{
-		{
-			name:            "5 minute timeout",
+		"5 minute timeout": {
 			timeout:         5 * time.Minute,
 			command:         "claude /autospec.plan",
 			expectedMessage: "command timed out after 5m0s: claude /autospec.plan (hint: increase timeout in config)",
 		},
-		{
-			name:            "30 second timeout",
+		"30 second timeout": {
 			timeout:         30 * time.Second,
 			command:         "claude /autospec.implement",
 			expectedMessage: "command timed out after 30s: claude /autospec.implement (hint: increase timeout in config)",
 		},
-		{
-			name:            "1 hour timeout",
+		"1 hour timeout": {
 			timeout:         1 * time.Hour,
 			command:         "claude /autospec.workflow",
 			expectedMessage: "command timed out after 1h0m0s: claude /autospec.workflow (hint: increase timeout in config)",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := NewTimeoutError(tt.timeout, tt.command)
 			got := err.Error()
 
@@ -62,15 +58,13 @@ func TestTimeoutError_Unwrap(t *testing.T) {
 }
 
 func TestTimeoutError_ErrorMessageFormat(t *testing.T) {
-	tests := []struct {
-		name             string
+	tests := map[string]struct {
 		timeout          time.Duration
 		command          string
 		shouldContain    []string
 		shouldNotContain []string
 	}{
-		{
-			name:    "message contains timeout duration",
+		"message contains timeout duration": {
 			timeout: 5 * time.Minute,
 			command: "claude /autospec.plan",
 			shouldContain: []string{
@@ -78,8 +72,7 @@ func TestTimeoutError_ErrorMessageFormat(t *testing.T) {
 				"timed out",
 			},
 		},
-		{
-			name:    "message contains command",
+		"message contains command": {
 			timeout: 30 * time.Second,
 			command: "claude /autospec.implement",
 			shouldContain: []string{
@@ -87,8 +80,7 @@ func TestTimeoutError_ErrorMessageFormat(t *testing.T) {
 				"timed out",
 			},
 		},
-		{
-			name:    "message contains hint",
+		"message contains hint": {
 			timeout: 1 * time.Hour,
 			command: "test command",
 			shouldContain: []string{
@@ -97,8 +89,8 @@ func TestTimeoutError_ErrorMessageFormat(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := NewTimeoutError(tt.timeout, tt.command)
 			msg := err.Error()
 
