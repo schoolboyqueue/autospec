@@ -7,10 +7,17 @@
 
 **Spec-Driven Development Automation**
 
-[![CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
+<!-- GitHub Badges -->
+[![GitHub CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ariel-frischer/autospec)](https://goreportcard.com/report/github.com/ariel-frischer/autospec)
+
+<!-- GitLab Badges -->
+[![GitLab Pipeline](https://gitlab.com/ariel-frischer/autospec/badges/main/pipeline.svg)](https://gitlab.com/ariel-frischer/autospec/-/pipelines)
+[![GitLab Release](https://gitlab.com/ariel-frischer/autospec/-/badges/release.svg)](https://gitlab.com/ariel-frischer/autospec/-/releases)
+
+<!-- General Badges -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 
 Automated feature development workflows with structured YAML output for AI-powered code generation.
 

@@ -1,0 +1,117 @@
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+stages:
+  - lint
+  - test
+  - build
+
+variables:
+  GO_VERSION: "1.25.1"
+
+default:
+  image: golang:${GO_VERSION}
+  before_script:
+    - go version
+
+# Lint Jobs
+lint:go-fmt:
+  stage: lint
+  script:
+    - |
+      if [ -n "$(gofmt -s -l .)" ]; then
+        echo "Go code is not formatted:"
+        gofmt -s -d .
+        exit 1
+      fi
+
+lint:go-vet:
+  stage: lint
+  script:
+    - go vet ./...
+
+lint:bash:
+  stage: lint
+  image: koalaman/shellcheck-alpine:stable
+  before_script: []
+  script:
+    - find . -name '*.sh' -type f | xargs shellcheck
+
+# Test Jobs
+test:go:
+  stage: test
+  script:
+    - go mod download
+    - go test -v -race -cover -coverprofile=coverage.out ./...
+    - go tool cover -func=coverage.out
+  coverage: '/total:\s+\(statements\)\s+(\d+\.\d+)%/'
+  artifacts:
+    paths:
+      - coverage.out
+    expire_in: 7 days
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.out
+
+test:bash:
+  stage: test
+  image: bats/bats:latest
+  before_script: []
+  script:
+    - ./tests/run-all-tests.sh
+  allow_failure: true  # Remove once bats tests are stable on GitLab
+
+# Build Jobs
+.build-template: &build-template
+  stage: build
+  needs:
+    - lint:go-fmt
+    - lint:go-vet
+    - test:go
+  script:
+    - |
+      VERSION="${CI_COMMIT_TAG:-dev}"
+      GOOS=$TARGET_OS GOARCH=$TARGET_ARCH make build VERSION=$VERSION
+  artifacts:
+    paths:
+      - autospec*
+    expire_in: 7 days
+
+build:linux-amd64:
+  <<: *build-template
+  variables:
+    TARGET_OS: linux
+    TARGET_ARCH: amd64
+
+build:linux-arm64:
+  <<: *build-template
+  variables:
+    TARGET_OS: linux
+    TARGET_ARCH: arm64
+
+build:darwin-amd64:
+  <<: *build-template
+  variables:
+    TARGET_OS: darwin
+    TARGET_ARCH: amd64
+
+build:darwin-arm64:
+  <<: *build-template
+  variables:
+    TARGET_OS: darwin
+    TARGET_ARCH: arm64
+
+build:windows-amd64:
+  <<: *build-template
+  variables:
+    TARGET_OS: windows
+    TARGET_ARCH: amd64
+
+build:windows-arm64:
+  <<: *build-template
+  variables:
+    TARGET_OS: windows
+    TARGET_ARCH: arm64

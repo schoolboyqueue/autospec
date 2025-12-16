@@ -52,6 +52,8 @@ Create feature specification from natural language description
 
 **Syntax**: `autospec specify "<feature description>" ["<guidance>"] [flags]`
 
+**Alias**: `autospec spec`, `autospec s`
+
 **Description**: Generate detailed specification with requirements, acceptance criteria, and success metrics.
 
 **Flags**: Same as `autospec full`
@@ -69,6 +71,8 @@ autospec specify "Add API rate limiting" "Focus on security"
 Generate technical implementation plan from specification
 
 **Syntax**: `autospec plan ["<guidance>"] [flags]`
+
+**Alias**: `autospec p`
 
 **Description**: Create technical plan with architecture, file structure, and design decisions.
 
@@ -88,6 +92,8 @@ autospec plan --timeout 300
 Generate task breakdown from implementation plan
 
 **Syntax**: `autospec tasks ["<guidance>"] [flags]`
+
+**Alias**: `autospec t`
 
 **Description**: Break down plan into ordered, actionable tasks with dependencies.
 
@@ -153,6 +159,8 @@ autospec implement --phases "Focus on tests first"
 Run health checks and verify dependencies
 
 **Syntax**: `autospec doctor [flags]`
+
+**Alias**: `autospec doc`
 
 **Description**: Verify Claude CLI installed, authenticated, and directories accessible.
 
@@ -271,6 +279,8 @@ Display version information
 
 **Syntax**: `autospec version`
 
+**Alias**: `autospec v`
+
 **Description**: Show autospec version number and build info.
 
 **Examples**:
@@ -368,6 +378,27 @@ skip_preflight: true
 ```
 
 **Environment**: `AUTOSPEC_SKIP_PREFLIGHT`
+
+### implement_method
+
+**Type**: string (enum)
+**Default**: `"default"`
+**Values**: `"default"` | `"phases"` | `"tasks"`
+**Description**: Default execution method for the implement command
+
+**Example**:
+```yaml
+implement_method: phases  # Each phase in separate Claude session
+```
+
+**Environment**: `AUTOSPEC_IMPLEMENT_METHOD`
+
+**Behavior**:
+- `default`: All tasks in single Claude session (backward compatible)
+- `phases`: Each phase runs in separate session (fresh context per phase)
+- `tasks`: Each task runs in separate session (maximum context isolation)
+
+**Note**: CLI flags (`--phases`, `--tasks`) override this config setting.
 
 ### custom_claude_cmd
 
