@@ -218,6 +218,13 @@ worktree: ## Create a new worktree (make worktree BRANCH=feature-name)
 		echo ""; \
 		echo "✓ Worktree created at $$WORKTREE_PATH"; \
 		echo ""; \
+		echo "Initializing autospec in worktree..."; \
+		cd "$$WORKTREE_PATH" && autospec init --project; \
+		echo ""; \
+		echo "Copying .autospec/* to worktree..."; \
+		cp -rf ./.autospec/* "$$WORKTREE_PATH/.autospec/"; \
+		echo "✓ Copied .autospec/ contents"; \
+		echo ""; \
 		echo "To enter it, run:"; \
 		echo "  cd $$WORKTREE_PATH"; \
 	fi
