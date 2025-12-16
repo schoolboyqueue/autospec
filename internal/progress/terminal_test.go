@@ -9,15 +9,13 @@ import (
 
 // TestDetectTerminalCapabilities tests terminal capability detection
 func TestDetectTerminalCapabilities(t *testing.T) {
-	tests := []struct {
-		name                string
+	tests := map[string]struct {
 		setupEnv            func()
 		cleanupEnv          func()
 		wantSupportsColor   bool
 		wantSupportsUnicode bool
 	}{
-		{
-			name: "NO_COLOR disables color",
+		"NO_COLOR disables color": {
 			setupEnv: func() {
 				os.Setenv("NO_COLOR", "1")
 			},
@@ -27,8 +25,7 @@ func TestDetectTerminalCapabilities(t *testing.T) {
 			wantSupportsColor: false,
 			// Unicode support depends on TTY, we'll just verify color is disabled
 		},
-		{
-			name: "AUTOSPEC_ASCII forces ASCII",
+		"AUTOSPEC_ASCII forces ASCII": {
 			setupEnv: func() {
 				os.Setenv("AUTOSPEC_ASCII", "1")
 			},
@@ -37,8 +34,7 @@ func TestDetectTerminalCapabilities(t *testing.T) {
 			},
 			wantSupportsUnicode: false,
 		},
-		{
-			name: "both NO_COLOR and AUTOSPEC_ASCII",
+		"both NO_COLOR and AUTOSPEC_ASCII": {
 			setupEnv: func() {
 				os.Setenv("NO_COLOR", "1")
 				os.Setenv("AUTOSPEC_ASCII", "1")
@@ -52,8 +48,8 @@ func TestDetectTerminalCapabilities(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if tt.setupEnv != nil {
 				tt.setupEnv()
 				defer tt.cleanupEnv()
@@ -91,15 +87,13 @@ func TestDetectTerminalCapabilities(t *testing.T) {
 
 // TestSelectSymbols tests symbol selection based on capabilities
 func TestSelectSymbols(t *testing.T) {
-	tests := []struct {
-		name                string
+	tests := map[string]struct {
 		capabilities        progress.TerminalCapabilities
 		wantCheckmark       string
 		wantFailure         string
 		wantSpinnerNonEmpty bool
 	}{
-		{
-			name: "Unicode support enabled",
+		"Unicode support enabled": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -109,8 +103,7 @@ func TestSelectSymbols(t *testing.T) {
 			wantFailure:         "✗",
 			wantSpinnerNonEmpty: true,
 		},
-		{
-			name: "ASCII fallback mode",
+		"ASCII fallback mode": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: false,
@@ -120,8 +113,7 @@ func TestSelectSymbols(t *testing.T) {
 			wantFailure:         "[FAIL]",
 			wantSpinnerNonEmpty: true,
 		},
-		{
-			name: "non-TTY mode",
+		"non-TTY mode": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           false,
 				SupportsUnicode: false,
@@ -133,8 +125,8 @@ func TestSelectSymbols(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			symbols := progress.SelectSymbols(tt.capabilities)
 
 			if symbols.Checkmark != tt.wantCheckmark {

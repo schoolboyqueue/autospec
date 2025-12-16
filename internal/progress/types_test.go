@@ -9,35 +9,30 @@ import (
 
 // TestStageStatus_String tests the String() method of StageStatus enum
 func TestStageStatus_String(t *testing.T) {
-	tests := []struct {
-		name   string
+	tests := map[string]struct {
 		status progress.StageStatus
 		want   string
 	}{
-		{
-			name:   "pending status",
+		"pending status": {
 			status: progress.StagePending,
 			want:   "pending",
 		},
-		{
-			name:   "in_progress status",
+		"in_progress status": {
 			status: progress.StageInProgress,
 			want:   "in_progress",
 		},
-		{
-			name:   "completed status",
+		"completed status": {
 			status: progress.StageCompleted,
 			want:   "completed",
 		},
-		{
-			name:   "failed status",
+		"failed status": {
 			status: progress.StageFailed,
 			want:   "failed",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := tt.status.String()
 			if got != tt.want {
 				t.Errorf("StageStatus.String() = %v, want %v", got, tt.want)
@@ -48,14 +43,12 @@ func TestStageStatus_String(t *testing.T) {
 
 // TestStageInfo_Validate tests all validation rules for StageInfo
 func TestStageInfo_Validate(t *testing.T) {
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		stage   progress.StageInfo
 		wantErr bool
 		errMsg  string
 	}{
-		{
-			name: "valid stage info",
+		"valid stage info": {
 			stage: progress.StageInfo{
 				Name:        "specify",
 				Number:      1,
@@ -66,8 +59,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name: "empty name",
+		"empty name": {
 			stage: progress.StageInfo{
 				Name:        "",
 				Number:      1,
@@ -77,8 +69,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stage name cannot be empty",
 		},
-		{
-			name: "number less than or equal to zero",
+		"number less than or equal to zero": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      0,
@@ -87,8 +78,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stage number must be > 0",
 		},
-		{
-			name: "negative number",
+		"negative number": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      -1,
@@ -97,8 +87,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stage number must be > 0",
 		},
-		{
-			name: "number exceeds total stages",
+		"number exceeds total stages": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      4,
@@ -107,8 +96,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stage number cannot exceed total stages",
 		},
-		{
-			name: "total stages less than or equal to zero",
+		"total stages less than or equal to zero": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
@@ -117,8 +105,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "total stages must be > 0",
 		},
-		{
-			name: "negative total stages",
+		"negative total stages": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
@@ -127,8 +114,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "total stages must be > 0",
 		},
-		{
-			name: "negative retry count",
+		"negative retry count": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
@@ -138,8 +124,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "retry count cannot be negative",
 		},
-		{
-			name: "negative max retries",
+		"negative max retries": {
 			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
@@ -150,8 +135,7 @@ func TestStageInfo_Validate(t *testing.T) {
 			wantErr: true,
 			errMsg:  "max retries cannot be negative",
 		},
-		{
-			name: "valid with retry attempt",
+		"valid with retry attempt": {
 			stage: progress.StageInfo{
 				Name:        "plan",
 				Number:      2,
@@ -164,8 +148,8 @@ func TestStageInfo_Validate(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := tt.stage.Validate()
 			if tt.wantErr {
 				if err == nil {

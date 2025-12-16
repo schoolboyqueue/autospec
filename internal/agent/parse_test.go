@@ -11,15 +11,13 @@ func TestParsePlanData(t *testing.T) {
 	// Create a temporary directory for test files
 	tmpDir := t.TempDir()
 
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		yamlContent string
 		wantData    *PlanData
 		wantErr     bool
 		errContains string
 	}{
-		{
-			name: "complete plan.yaml with all fields",
+		"complete plan.yaml with all fields": {
 			yamlContent: `plan:
   branch: "017-update-agent-context-go"
   created: "2025-12-16"
@@ -44,8 +42,7 @@ technical_context:
 			},
 			wantErr: false,
 		},
-		{
-			name: "plan.yaml with no storage",
+		"plan.yaml with no storage": {
 			yamlContent: `plan:
   branch: "002-feature"
 
@@ -66,8 +63,7 @@ technical_context:
 			},
 			wantErr: false,
 		},
-		{
-			name: "plan.yaml with empty primary_dependencies",
+		"plan.yaml with empty primary_dependencies": {
 			yamlContent: `plan:
   branch: "003-simple"
 
@@ -86,8 +82,7 @@ technical_context:
 			},
 			wantErr: false,
 		},
-		{
-			name: "plan.yaml with dependency without version",
+		"plan.yaml with dependency without version": {
 			yamlContent: `plan:
   branch: "004-noversion"
 
@@ -107,8 +102,7 @@ technical_context:
 			},
 			wantErr: false,
 		},
-		{
-			name: "plan.yaml with missing technical_context fields",
+		"plan.yaml with missing technical_context fields": {
 			yamlContent: `plan:
   branch: "005-minimal"
 
@@ -124,18 +118,17 @@ technical_context:
 			},
 			wantErr: false,
 		},
-		{
-			name:        "invalid YAML syntax",
+		"invalid YAML syntax": {
 			yamlContent: `plan:\n  branch: [invalid`,
 			wantErr:     true,
 			errContains: "failed to parse plan.yaml",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create test file
-			planPath := filepath.Join(tmpDir, tt.name+"-plan.yaml")
+			planPath := filepath.Join(tmpDir, name+"-plan.yaml")
 			if err := os.WriteFile(planPath, []byte(tt.yamlContent), 0644); err != nil {
 				t.Fatalf("failed to write test file: %v", err)
 			}
@@ -190,13 +183,11 @@ func TestParsePlanData_FileNotFound(t *testing.T) {
 }
 
 func TestPlanData_GetTechnologies(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		planData PlanData
 		want     []string
 	}{
-		{
-			name: "all fields populated",
+		"all fields populated": {
 			planData: PlanData{
 				Language:    "Go 1.25.1",
 				Framework:   "Cobra CLI v1.10.1",
@@ -205,8 +196,7 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 			},
 			want: []string{"Go 1.25.1", "Cobra CLI v1.10.1", "PostgreSQL", "Project Type: cli"},
 		},
-		{
-			name: "storage is None",
+		"storage is None": {
 			planData: PlanData{
 				Language:    "Python 3.11",
 				Framework:   "FastAPI",
@@ -215,8 +205,7 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 			},
 			want: []string{"Python 3.11", "FastAPI", "Project Type: web"},
 		},
-		{
-			name: "empty framework",
+		"empty framework": {
 			planData: PlanData{
 				Language:    "JavaScript",
 				Framework:   "",
@@ -225,8 +214,7 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 			},
 			want: []string{"JavaScript", "MongoDB", "Project Type: service"},
 		},
-		{
-			name: "all fields empty",
+		"all fields empty": {
 			planData: PlanData{
 				Language:    "",
 				Framework:   "",
@@ -235,8 +223,7 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 			},
 			want: []string{},
 		},
-		{
-			name: "only language",
+		"only language": {
 			planData: PlanData{
 				Language: "Rust",
 			},
@@ -244,8 +231,8 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := tt.planData.GetTechnologies()
 
 			if len(got) != len(tt.want) {
@@ -265,25 +252,22 @@ func TestPlanData_GetTechnologies(t *testing.T) {
 }
 
 func TestPlanData_GetChangeEntry(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		planData PlanData
 		want     string
 	}{
-		{
-			name:     "with branch",
+		"with branch": {
 			planData: PlanData{Branch: "017-update-agent-context"},
 			want:     "017-update-agent-context: Added from plan.yaml",
 		},
-		{
-			name:     "empty branch",
+		"empty branch": {
 			planData: PlanData{Branch: ""},
 			want:     "",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := tt.planData.GetChangeEntry()
 			if got != tt.want {
 				t.Errorf("GetChangeEntry() = %q, want %q", got, tt.want)

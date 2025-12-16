@@ -29,15 +29,13 @@ func captureOutput(fn func()) string {
 
 // TestProgressDisplay_StartStage tests stage counter rendering
 func TestProgressDisplay_StartStage(t *testing.T) {
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
 		stage        progress.StageInfo
 		wantContains []string
 		wantErr      bool
 	}{
-		{
-			name: "TTY mode with Unicode - first stage",
+		"TTY mode with Unicode - first stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -55,8 +53,7 @@ func TestProgressDisplay_StartStage(t *testing.T) {
 			wantContains: []string{"[1/3]", "specify"},
 			wantErr:      false,
 		},
-		{
-			name: "non-TTY mode - second stage",
+		"non-TTY mode - second stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           false,
 				SupportsUnicode: false,
@@ -74,8 +71,7 @@ func TestProgressDisplay_StartStage(t *testing.T) {
 			wantContains: []string{"[2/3]", "Plan"},
 			wantErr:      false,
 		},
-		{
-			name: "retry attempt - show retry count",
+		"retry attempt - show retry count": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -93,8 +89,7 @@ func TestProgressDisplay_StartStage(t *testing.T) {
 			wantContains: []string{"[3/3]", "tasks", "(retry 2/3)"},
 			wantErr:      false,
 		},
-		{
-			name: "invalid stage - empty name",
+		"invalid stage - empty name": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -108,8 +103,7 @@ func TestProgressDisplay_StartStage(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "four-stage workflow - implement stage",
+		"four-stage workflow - implement stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -129,8 +123,8 @@ func TestProgressDisplay_StartStage(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			var output string
@@ -201,14 +195,12 @@ func TestProgressDisplay_UpdateRetry(t *testing.T) {
 
 // TestProgressDisplay_CompleteStage tests completion checkmarks (User Story 3)
 func TestProgressDisplay_CompleteStage(t *testing.T) {
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
 		stage        progress.StageInfo
 		wantContains []string
 	}{
-		{
-			name: "Unicode checkmark with color",
+		"Unicode checkmark with color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -223,8 +215,7 @@ func TestProgressDisplay_CompleteStage(t *testing.T) {
 			},
 			wantContains: []string{"✓", "[1/3]", "Specify", "complete"},
 		},
-		{
-			name: "ASCII checkmark without color",
+		"ASCII checkmark without color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: false,
@@ -239,8 +230,7 @@ func TestProgressDisplay_CompleteStage(t *testing.T) {
 			},
 			wantContains: []string{"[OK]", "[2/3]", "Plan", "complete"},
 		},
-		{
-			name: "non-TTY mode completion",
+		"non-TTY mode completion": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           false,
 				SupportsUnicode: false,
@@ -256,8 +246,8 @@ func TestProgressDisplay_CompleteStage(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			output := captureOutput(func() {
@@ -275,15 +265,13 @@ func TestProgressDisplay_CompleteStage(t *testing.T) {
 
 // TestProgressDisplay_FailStage tests failure indicators (User Story 3)
 func TestProgressDisplay_FailStage(t *testing.T) {
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
 		stage        progress.StageInfo
 		err          error
 		wantContains []string
 	}{
-		{
-			name: "Unicode failure mark with color",
+		"Unicode failure mark with color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
@@ -299,8 +287,7 @@ func TestProgressDisplay_FailStage(t *testing.T) {
 			err:          fmt.Errorf("validation failed"),
 			wantContains: []string{"✗", "[1/3]", "Specify", "failed", "validation failed"},
 		},
-		{
-			name: "ASCII failure mark without color",
+		"ASCII failure mark without color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: false,
@@ -318,8 +305,8 @@ func TestProgressDisplay_FailStage(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			output := captureOutput(func() {

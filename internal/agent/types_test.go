@@ -6,14 +6,12 @@ import (
 )
 
 func TestGetAgentByID(t *testing.T) {
-	tests := []struct {
-		name      string
+	tests := map[string]struct {
 		agentID   string
 		wantAgent AgentType
 		wantErr   bool
 	}{
-		{
-			name:    "valid agent claude",
+		"valid agent claude": {
 			agentID: "claude",
 			wantAgent: AgentType{
 				ID:          "claude",
@@ -22,8 +20,7 @@ func TestGetAgentByID(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name:    "valid agent gemini",
+		"valid agent gemini": {
 			agentID: "gemini",
 			wantAgent: AgentType{
 				ID:          "gemini",
@@ -32,8 +29,7 @@ func TestGetAgentByID(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name:    "valid agent copilot",
+		"valid agent copilot": {
 			agentID: "copilot",
 			wantAgent: AgentType{
 				ID:          "copilot",
@@ -42,8 +38,7 @@ func TestGetAgentByID(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name:    "valid agent cursor",
+		"valid agent cursor": {
 			agentID: "cursor",
 			wantAgent: AgentType{
 				ID:          "cursor",
@@ -52,8 +47,7 @@ func TestGetAgentByID(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name:    "valid agent windsurf",
+		"valid agent windsurf": {
 			agentID: "windsurf",
 			wantAgent: AgentType{
 				ID:          "windsurf",
@@ -62,22 +56,20 @@ func TestGetAgentByID(t *testing.T) {
 			},
 			wantErr: false,
 		},
-		{
-			name:      "unknown agent",
+		"unknown agent": {
 			agentID:   "unknown",
 			wantAgent: AgentType{},
 			wantErr:   true,
 		},
-		{
-			name:      "empty agent id",
+		"empty agent id": {
 			agentID:   "",
 			wantAgent: AgentType{},
 			wantErr:   true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := GetAgentByID(tt.agentID)
 
 			if tt.wantErr {
