@@ -14,7 +14,7 @@ import (
 var tasksCmd = &cobra.Command{
 	Use:     "tasks [optional-prompt]",
 	Aliases: []string{"t"},
-	Short:   "Execute the task generation phase for the current spec (t)",
+	Short:   "Execute the task generation stage for the current spec (t)",
 	Long: `Execute the /autospec.tasks command for the current specification.
 
 The tasks command will:
@@ -71,7 +71,7 @@ You can optionally provide a prompt to guide the task generation.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute tasks phase
+		// Execute tasks stage
 		if err := orch.ExecuteTasks("", prompt); err != nil {
 			return err
 		}

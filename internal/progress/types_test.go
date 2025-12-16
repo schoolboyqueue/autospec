@@ -7,31 +7,31 @@ import (
 	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
-// TestPhaseStatus_String tests the String() method of PhaseStatus enum
-func TestPhaseStatus_String(t *testing.T) {
+// TestStageStatus_String tests the String() method of StageStatus enum
+func TestStageStatus_String(t *testing.T) {
 	tests := []struct {
 		name   string
-		status progress.PhaseStatus
+		status progress.StageStatus
 		want   string
 	}{
 		{
 			name:   "pending status",
-			status: progress.PhasePending,
+			status: progress.StagePending,
 			want:   "pending",
 		},
 		{
 			name:   "in_progress status",
-			status: progress.PhaseInProgress,
+			status: progress.StageInProgress,
 			want:   "in_progress",
 		},
 		{
 			name:   "completed status",
-			status: progress.PhaseCompleted,
+			status: progress.StageCompleted,
 			want:   "completed",
 		},
 		{
 			name:   "failed status",
-			status: progress.PhaseFailed,
+			status: progress.StageFailed,
 			want:   "failed",
 		},
 	}
@@ -40,27 +40,27 @@ func TestPhaseStatus_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.status.String()
 			if got != tt.want {
-				t.Errorf("PhaseStatus.String() = %v, want %v", got, tt.want)
+				t.Errorf("StageStatus.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-// TestPhaseInfo_Validate tests all validation rules for PhaseInfo
-func TestPhaseInfo_Validate(t *testing.T) {
+// TestStageInfo_Validate tests all validation rules for StageInfo
+func TestStageInfo_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
-		phase   progress.PhaseInfo
+		stage   progress.StageInfo
 		wantErr bool
 		errMsg  string
 	}{
 		{
-			name: "valid phase info",
-			phase: progress.PhaseInfo{
+			name: "valid stage info",
+			stage: progress.StageInfo{
 				Name:        "specify",
 				Number:      1,
-				TotalPhases: 3,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 3,
+				Status:      progress.StageInProgress,
 				RetryCount:  0,
 				MaxRetries:  3,
 			},
@@ -68,71 +68,71 @@ func TestPhaseInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "empty name",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "",
 				Number:      1,
-				TotalPhases: 3,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 3,
+				Status:      progress.StageInProgress,
 			},
 			wantErr: true,
-			errMsg:  "phase name cannot be empty",
+			errMsg:  "stage name cannot be empty",
 		},
 		{
 			name: "number less than or equal to zero",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      0,
-				TotalPhases: 3,
+				TotalStages: 3,
 			},
 			wantErr: true,
-			errMsg:  "phase number must be > 0",
+			errMsg:  "stage number must be > 0",
 		},
 		{
 			name: "negative number",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      -1,
-				TotalPhases: 3,
+				TotalStages: 3,
 			},
 			wantErr: true,
-			errMsg:  "phase number must be > 0",
+			errMsg:  "stage number must be > 0",
 		},
 		{
-			name: "number exceeds total phases",
-			phase: progress.PhaseInfo{
+			name: "number exceeds total stages",
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      4,
-				TotalPhases: 3,
+				TotalStages: 3,
 			},
 			wantErr: true,
-			errMsg:  "phase number cannot exceed total phases",
+			errMsg:  "stage number cannot exceed total stages",
 		},
 		{
-			name: "total phases less than or equal to zero",
-			phase: progress.PhaseInfo{
+			name: "total stages less than or equal to zero",
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
-				TotalPhases: 0,
+				TotalStages: 0,
 			},
 			wantErr: true,
-			errMsg:  "total phases must be > 0",
+			errMsg:  "total stages must be > 0",
 		},
 		{
-			name: "negative total phases",
-			phase: progress.PhaseInfo{
+			name: "negative total stages",
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
-				TotalPhases: -1,
+				TotalStages: -1,
 			},
 			wantErr: true,
-			errMsg:  "total phases must be > 0",
+			errMsg:  "total stages must be > 0",
 		},
 		{
 			name: "negative retry count",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
-				TotalPhases: 3,
+				TotalStages: 3,
 				RetryCount:  -1,
 			},
 			wantErr: true,
@@ -140,10 +140,10 @@ func TestPhaseInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "negative max retries",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "test",
 				Number:      1,
-				TotalPhases: 3,
+				TotalStages: 3,
 				RetryCount:  0,
 				MaxRetries:  -1,
 			},
@@ -152,11 +152,11 @@ func TestPhaseInfo_Validate(t *testing.T) {
 		},
 		{
 			name: "valid with retry attempt",
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "plan",
 				Number:      2,
-				TotalPhases: 4,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 4,
+				Status:      progress.StageInProgress,
 				RetryCount:  1,
 				MaxRetries:  3,
 			},
@@ -166,16 +166,16 @@ func TestPhaseInfo_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := tt.phase.Validate()
+			err := tt.stage.Validate()
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("PhaseInfo.Validate() error = nil, want error containing %q", tt.errMsg)
+					t.Errorf("StageInfo.Validate() error = nil, want error containing %q", tt.errMsg)
 				} else if !strings.Contains(err.Error(), tt.errMsg) {
-					t.Errorf("PhaseInfo.Validate() error = %v, want error containing %q", err, tt.errMsg)
+					t.Errorf("StageInfo.Validate() error = %v, want error containing %q", err, tt.errMsg)
 				}
 			} else {
 				if err != nil {
-					t.Errorf("PhaseInfo.Validate() unexpected error = %v", err)
+					t.Errorf("StageInfo.Validate() unexpected error = %v", err)
 				}
 			}
 		})

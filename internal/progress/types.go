@@ -2,65 +2,65 @@ package progress
 
 import "errors"
 
-// PhaseStatus represents the execution state of a workflow phase
-type PhaseStatus int
+// StageStatus represents the execution state of a workflow stage
+type StageStatus int
 
 const (
-	// PhasePending indicates the phase has not started yet
-	PhasePending PhaseStatus = iota
-	// PhaseInProgress indicates the phase is currently running
-	PhaseInProgress
-	// PhaseCompleted indicates the phase finished successfully
-	PhaseCompleted
-	// PhaseFailed indicates the phase failed with an error
-	PhaseFailed
+	// StagePending indicates the stage has not started yet
+	StagePending StageStatus = iota
+	// StageInProgress indicates the stage is currently running
+	StageInProgress
+	// StageCompleted indicates the stage finished successfully
+	StageCompleted
+	// StageFailed indicates the stage failed with an error
+	StageFailed
 )
 
-// String returns the string representation of PhaseStatus
-func (s PhaseStatus) String() string {
+// String returns the string representation of StageStatus
+func (s StageStatus) String() string {
 	switch s {
-	case PhasePending:
+	case StagePending:
 		return "pending"
-	case PhaseInProgress:
+	case StageInProgress:
 		return "in_progress"
-	case PhaseCompleted:
+	case StageCompleted:
 		return "completed"
-	case PhaseFailed:
+	case StageFailed:
 		return "failed"
 	default:
 		return "unknown"
 	}
 }
 
-// PhaseInfo represents metadata about a workflow phase for progress display
-type PhaseInfo struct {
-	// Name is the human-readable phase name (e.g., "specify", "plan", "tasks", "implement")
+// StageInfo represents metadata about a workflow stage for progress display
+type StageInfo struct {
+	// Name is the human-readable stage name (e.g., "specify", "plan", "tasks", "implement")
 	Name string
-	// Number is the current phase number (1-based index)
+	// Number is the current stage number (1-based index)
 	Number int
-	// TotalPhases is the total number of phases in the workflow
-	TotalPhases int
+	// TotalStages is the total number of stages in the workflow
+	TotalStages int
 	// Status is the current execution status
-	Status PhaseStatus
+	Status StageStatus
 	// RetryCount is the number of retry attempts (0 if first attempt)
 	RetryCount int
 	// MaxRetries is the maximum retry attempts allowed
 	MaxRetries int
 }
 
-// Validate checks that all PhaseInfo fields meet validation requirements
-func (p PhaseInfo) Validate() error {
+// Validate checks that all StageInfo fields meet validation requirements
+func (p StageInfo) Validate() error {
 	if p.Name == "" {
-		return errors.New("phase name cannot be empty")
+		return errors.New("stage name cannot be empty")
 	}
 	if p.Number <= 0 {
-		return errors.New("phase number must be > 0")
+		return errors.New("stage number must be > 0")
 	}
-	if p.TotalPhases <= 0 {
-		return errors.New("total phases must be > 0")
+	if p.TotalStages <= 0 {
+		return errors.New("total stages must be > 0")
 	}
-	if p.Number > p.TotalPhases {
-		return errors.New("phase number cannot exceed total phases")
+	if p.Number > p.TotalStages {
+		return errors.New("stage number cannot exceed total stages")
 	}
 	if p.RetryCount < 0 {
 		return errors.New("retry count cannot be negative")

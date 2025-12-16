@@ -15,7 +15,7 @@ import (
 var implementCmd = &cobra.Command{
 	Use:     "implement [spec-name-or-prompt]",
 	Aliases: []string{"impl", "i"},
-	Short:   "Execute the implementation phase for the current spec (impl, i)",
+	Short:   "Execute the implementation stage for the current spec (impl, i)",
 	Long: `Execute the /autospec.implement command for the current specification.
 
 The implement command will:
@@ -154,7 +154,7 @@ The --tasks mode provides maximum context isolation:
 			FromTask:     fromTask,
 		}
 
-		// Execute implement phase with optional prompt and phase options
+		// Execute implement stage with optional prompt and phase options
 		if err := orch.ExecuteImplement(specName, prompt, resume, phaseOpts); err != nil {
 			return err
 		}

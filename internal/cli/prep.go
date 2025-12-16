@@ -13,7 +13,7 @@ import (
 var prepCmd = &cobra.Command{
 	Use:   "prep <feature-description>",
 	Short: "Prepare for implementation: specify → plan → tasks",
-	Long: `Prepare for implementation by running specify, plan, and tasks phases.
+	Long: `Prepare for implementation by running specify, plan, and tasks stages.
 
 This command will:
 1. Run pre-flight checks (unless --skip-preflight)
@@ -24,7 +24,7 @@ This command will:
 6. Execute /autospec.tasks
 7. Validate tasks.yaml exists
 
-Each phase is validated and will retry up to max_retries times if validation fails.
+Each stage is validated and will retry up to max_retries times if validation fails.
 
 This is useful when you want to review the generated artifacts before implementation.`,
 	Example: `  # Prepare spec, plan, and tasks for review before implementation
@@ -59,7 +59,7 @@ This is useful when you want to review the generated artifacts before implementa
 			cfg.MaxRetries = maxRetries
 		}
 
-		// Check if constitution exists (required for all workflow phases)
+		// Check if constitution exists (required for all workflow stages)
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)

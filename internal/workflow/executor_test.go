@@ -26,62 +26,62 @@ func (m *mockClaudeExecutor) FormatCommand(prompt string) string {
 	return "claude " + prompt
 }
 
-func TestGetPhaseNumber(t *testing.T) {
+func TestGetStageNumber(t *testing.T) {
 	tests := map[string]struct {
-		phase Phase
+		stage Stage
 		want  int
 	}{
-		"constitution phase": {phase: PhaseConstitution, want: 1},
-		"specify phase":      {phase: PhaseSpecify, want: 2},
-		"clarify phase":      {phase: PhaseClarify, want: 3},
-		"plan phase":         {phase: PhasePlan, want: 4},
-		"tasks phase":        {phase: PhaseTasks, want: 5},
-		"checklist phase":    {phase: PhaseChecklist, want: 6},
-		"analyze phase":      {phase: PhaseAnalyze, want: 7},
-		"implement phase":    {phase: PhaseImplement, want: 8},
-		"unknown phase":      {phase: Phase("unknown"), want: 0},
-		"empty phase":        {phase: Phase(""), want: 0},
+		"constitution stage": {stage: StageConstitution, want: 1},
+		"specify stage":      {stage: StageSpecify, want: 2},
+		"clarify stage":      {stage: StageClarify, want: 3},
+		"plan stage":         {stage: StagePlan, want: 4},
+		"tasks stage":        {stage: StageTasks, want: 5},
+		"checklist stage":    {stage: StageChecklist, want: 6},
+		"analyze stage":      {stage: StageAnalyze, want: 7},
+		"implement stage":    {stage: StageImplement, want: 8},
+		"unknown stage":      {stage: Stage("unknown"), want: 0},
+		"empty stage":        {stage: Stage(""), want: 0},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			executor := &Executor{}
-			got := executor.getPhaseNumber(tc.phase)
+			got := executor.getStageNumber(tc.stage)
 			assert.Equal(t, tc.want, got)
 		})
 	}
 }
 
-func TestBuildPhaseInfo(t *testing.T) {
+func TestBuildStageInfo(t *testing.T) {
 	tests := map[string]struct {
-		phase       Phase
+		stage       Stage
 		retryCount  int
 		maxRetries  int
-		totalPhases int
+		totalStages int
 		wantName    string
 		wantNumber  int
 	}{
-		"specify phase no retries": {
-			phase:       PhaseSpecify,
+		"specify stage no retries": {
+			stage:       StageSpecify,
 			retryCount:  0,
 			maxRetries:  3,
-			totalPhases: 4,
+			totalStages: 4,
 			wantName:    "specify",
 			wantNumber:  2,
 		},
-		"plan phase with retries": {
-			phase:       PhasePlan,
+		"plan stage with retries": {
+			stage:       StagePlan,
 			retryCount:  2,
 			maxRetries:  3,
-			totalPhases: 4,
+			totalStages: 4,
 			wantName:    "plan",
 			wantNumber:  4,
 		},
-		"implement phase max retries": {
-			phase:       PhaseImplement,
+		"implement stage max retries": {
+			stage:       StageImplement,
 			retryCount:  3,
 			maxRetries:  3,
-			totalPhases: 8,
+			totalStages: 8,
 			wantName:    "implement",
 			wantNumber:  8,
 		},
@@ -91,21 +91,21 @@ func TestBuildPhaseInfo(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			executor := &Executor{
 				MaxRetries:  tc.maxRetries,
-				TotalPhases: tc.totalPhases,
+				TotalStages: tc.totalStages,
 			}
 
-			info := executor.buildPhaseInfo(tc.phase, tc.retryCount)
+			info := executor.buildStageInfo(tc.stage, tc.retryCount)
 
 			assert.Equal(t, tc.wantName, info.Name)
 			assert.Equal(t, tc.wantNumber, info.Number)
-			assert.Equal(t, tc.totalPhases, info.TotalPhases)
+			assert.Equal(t, tc.totalStages, info.TotalStages)
 			assert.Equal(t, tc.retryCount, info.RetryCount)
 			assert.Equal(t, tc.maxRetries, info.MaxRetries)
 		})
 	}
 }
 
-func TestExecutePhase_Success(t *testing.T) {
+func TestExecuteStage_Success(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
 
@@ -129,16 +129,16 @@ func TestExecutePhase_Success(t *testing.T) {
 		return nil
 	}
 
-	result, err := executor.ExecutePhase("001-test", PhaseSpecify, "/test.command", validateFunc)
+	result, err := executor.ExecuteStage("001-test", StageSpecify, "/test.command", validateFunc)
 
 	require.NoError(t, err)
 	assert.True(t, result.Success)
-	assert.Equal(t, PhaseSpecify, result.Phase)
+	assert.Equal(t, StageSpecify, result.Stage)
 	assert.Equal(t, 0, result.RetryCount)
 	assert.False(t, result.Exhausted)
 }
 
-func TestExecutePhase_ValidationFailure(t *testing.T) {
+func TestExecuteStage_ValidationFailure(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
 
@@ -157,7 +157,7 @@ func TestExecutePhase_ValidationFailure(t *testing.T) {
 		return errors.New("validation failed: missing spec.md")
 	}
 
-	result, err := executor.ExecutePhase("001-test", PhaseSpecify, "/test.command", validateFunc)
+	result, err := executor.ExecuteStage("001-test", StageSpecify, "/test.command", validateFunc)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "validation failed")
@@ -165,7 +165,7 @@ func TestExecutePhase_ValidationFailure(t *testing.T) {
 	assert.Equal(t, 1, result.RetryCount) // Should have incremented
 }
 
-func TestExecutePhase_RetryExhausted(t *testing.T) {
+func TestExecuteStage_RetryExhausted(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
 
@@ -193,7 +193,7 @@ func TestExecutePhase_RetryExhausted(t *testing.T) {
 		return errors.New("validation failed")
 	}
 
-	result, err := executor.ExecutePhase("001-test", PhaseSpecify, "/test.command", validateFunc)
+	result, err := executor.ExecuteStage("001-test", StageSpecify, "/test.command", validateFunc)
 
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "exhausted")
@@ -201,7 +201,7 @@ func TestExecutePhase_RetryExhausted(t *testing.T) {
 	assert.True(t, result.Exhausted)
 }
 
-func TestExecutePhase_ResetsRetryOnSuccess(t *testing.T) {
+func TestExecuteStage_ResetsRetryOnSuccess(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
 
@@ -229,7 +229,7 @@ func TestExecutePhase_ResetsRetryOnSuccess(t *testing.T) {
 		return nil
 	}
 
-	result, err := executor.ExecutePhase("001-test", PhaseSpecify, "/test.command", validateFunc)
+	result, err := executor.ExecuteStage("001-test", StageSpecify, "/test.command", validateFunc)
 
 	require.NoError(t, err)
 	assert.True(t, result.Success)
@@ -284,7 +284,7 @@ func TestGetRetryState(t *testing.T) {
 		MaxRetries: 3,
 	}
 
-	loaded, err := executor.GetRetryState("001-test", PhasePlan)
+	loaded, err := executor.GetRetryState("001-test", StagePlan)
 
 	require.NoError(t, err)
 	assert.Equal(t, 1, loaded.Count)
@@ -292,7 +292,7 @@ func TestGetRetryState(t *testing.T) {
 	assert.Equal(t, "plan", loaded.Phase)
 }
 
-func TestResetPhase(t *testing.T) {
+func TestResetStage(t *testing.T) {
 	stateDir := t.TempDir()
 
 	// Save initial state with non-zero count
@@ -309,7 +309,7 @@ func TestResetPhase(t *testing.T) {
 		MaxRetries: 3,
 	}
 
-	err := executor.ResetPhase("001-test", PhaseTasks)
+	err := executor.ResetStage("001-test", StageTasks)
 	require.NoError(t, err)
 
 	// Verify reset

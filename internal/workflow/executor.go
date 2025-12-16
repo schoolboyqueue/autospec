@@ -15,25 +15,25 @@ type Executor struct {
 	SpecsDir        string
 	MaxRetries      int
 	ProgressDisplay *progress.ProgressDisplay // Optional progress display
-	TotalPhases     int                       // Total phases in workflow
+	TotalStages     int                       // Total stages in workflow
 	Debug           bool                      // Enable debug logging
 }
 
-// Phase represents a workflow phase (specify, plan, tasks, implement)
-type Phase string
+// Stage represents a workflow stage (specify, plan, tasks, implement)
+type Stage string
 
 const (
-	// Core workflow phases
-	PhaseSpecify   Phase = "specify"
-	PhasePlan      Phase = "plan"
-	PhaseTasks     Phase = "tasks"
-	PhaseImplement Phase = "implement"
+	// Core workflow stages
+	StageSpecify   Stage = "specify"
+	StagePlan      Stage = "plan"
+	StageTasks     Stage = "tasks"
+	StageImplement Stage = "implement"
 
-	// Optional phases
-	PhaseConstitution Phase = "constitution"
-	PhaseClarify      Phase = "clarify"
-	PhaseChecklist    Phase = "checklist"
-	PhaseAnalyze      Phase = "analyze"
+	// Optional stages
+	StageConstitution Stage = "constitution"
+	StageClarify      Stage = "clarify"
+	StageChecklist    Stage = "checklist"
+	StageAnalyze      Stage = "analyze"
 )
 
 // debugLog prints a debug message if debug mode is enabled
@@ -43,75 +43,75 @@ func (e *Executor) debugLog(format string, args ...interface{}) {
 	}
 }
 
-// getPhaseNumber returns the sequential number for a phase (1-based)
-// For optional phases, this returns their position in the canonical order:
+// getStageNumber returns the sequential number for a stage (1-based)
+// For optional stages, this returns their position in the canonical order:
 // constitution(1) -> specify(2) -> clarify(3) -> plan(4) -> tasks(5) -> checklist(6) -> analyze(7) -> implement(8)
-func (e *Executor) getPhaseNumber(phase Phase) int {
-	switch phase {
-	case PhaseConstitution:
+func (e *Executor) getStageNumber(stage Stage) int {
+	switch stage {
+	case StageConstitution:
 		return 1
-	case PhaseSpecify:
+	case StageSpecify:
 		return 2
-	case PhaseClarify:
+	case StageClarify:
 		return 3
-	case PhasePlan:
+	case StagePlan:
 		return 4
-	case PhaseTasks:
+	case StageTasks:
 		return 5
-	case PhaseChecklist:
+	case StageChecklist:
 		return 6
-	case PhaseAnalyze:
+	case StageAnalyze:
 		return 7
-	case PhaseImplement:
+	case StageImplement:
 		return 8
 	default:
 		return 0
 	}
 }
 
-// buildPhaseInfo constructs a PhaseInfo from Phase enum and retry state
-func (e *Executor) buildPhaseInfo(phase Phase, retryCount int) progress.PhaseInfo {
-	return progress.PhaseInfo{
-		Name:        string(phase),
-		Number:      e.getPhaseNumber(phase),
-		TotalPhases: e.TotalPhases,
-		Status:      progress.PhaseInProgress,
+// buildStageInfo constructs a StageInfo from Stage enum and retry state
+func (e *Executor) buildStageInfo(stage Stage, retryCount int) progress.StageInfo {
+	return progress.StageInfo{
+		Name:        string(stage),
+		Number:      e.getStageNumber(stage),
+		TotalStages: e.TotalStages,
+		Status:      progress.StageInProgress,
 		RetryCount:  retryCount,
 		MaxRetries:  e.MaxRetries,
 	}
 }
 
-// PhaseResult represents the result of executing a workflow phase
-type PhaseResult struct {
-	Phase      Phase
+// StageResult represents the result of executing a workflow stage
+type StageResult struct {
+	Stage      Stage
 	Success    bool
 	Error      error
 	RetryCount int
 	Exhausted  bool
 }
 
-// ExecutePhase executes a workflow phase with validation and retry logic
-func (e *Executor) ExecutePhase(specName string, phase Phase, command string, validateFunc func(string) error) (*PhaseResult, error) {
-	e.debugLog("ExecutePhase called - spec: %s, phase: %s, command: %s", specName, phase, command)
-	result := &PhaseResult{
-		Phase:   phase,
+// ExecuteStage executes a workflow stage with validation and retry logic
+func (e *Executor) ExecuteStage(specName string, stage Stage, command string, validateFunc func(string) error) (*StageResult, error) {
+	e.debugLog("ExecuteStage called - spec: %s, stage: %s, command: %s", specName, stage, command)
+	result := &StageResult{
+		Stage:   stage,
 		Success: false,
 	}
 
 	// Load retry state
 	e.debugLog("Loading retry state from: %s", e.StateDir)
-	retryState, err := retry.LoadRetryState(e.StateDir, specName, string(phase), e.MaxRetries)
+	retryState, err := retry.LoadRetryState(e.StateDir, specName, string(stage), e.MaxRetries)
 	if err != nil {
 		e.debugLog("Failed to load retry state: %v", err)
 		return result, fmt.Errorf("failed to load retry state: %w", err)
 	}
 	e.debugLog("Retry state loaded - count: %d, max: %d", retryState.Count, e.MaxRetries)
 
-	// Build phase info and start progress display
-	phaseInfo := e.buildPhaseInfo(phase, retryState.Count)
+	// Build stage info and start progress display
+	stageInfo := e.buildStageInfo(stage, retryState.Count)
 	if e.ProgressDisplay != nil {
 		e.debugLog("Starting progress display")
-		if err := e.ProgressDisplay.StartPhase(phaseInfo); err != nil {
+		if err := e.ProgressDisplay.StartStage(stageInfo); err != nil {
 			// Log warning but don't fail execution
 			fmt.Printf("Warning: progress display error: %v\n", err)
 		}
@@ -129,7 +129,7 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 
 		// Show failure in progress display
 		if e.ProgressDisplay != nil {
-			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
+			e.ProgressDisplay.FailStage(stageInfo, result.Error)
 		}
 
 		// Increment retry count
@@ -166,7 +166,7 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 
 		// Show failure in progress display
 		if e.ProgressDisplay != nil {
-			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
+			e.ProgressDisplay.FailStage(stageInfo, result.Error)
 		}
 
 		// Increment retry count
@@ -189,8 +189,8 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 	// Success! Show completion in progress display
 	if e.ProgressDisplay != nil {
 		e.debugLog("Showing completion in progress display")
-		phaseInfo.Status = progress.PhaseCompleted
-		if err := e.ProgressDisplay.CompletePhase(phaseInfo); err != nil {
+		stageInfo.Status = progress.StageCompleted
+		if err := e.ProgressDisplay.CompleteStage(stageInfo); err != nil {
 			// Log warning but don't fail execution
 			fmt.Printf("Warning: progress display error: %v\n", err)
 		}
@@ -198,19 +198,19 @@ func (e *Executor) ExecutePhase(specName string, phase Phase, command string, va
 
 	// Reset retry count
 	e.debugLog("Resetting retry count")
-	if err := retry.ResetRetryCount(e.StateDir, specName, string(phase)); err != nil {
+	if err := retry.ResetRetryCount(e.StateDir, specName, string(stage)); err != nil {
 		// Log error but don't fail - reset is not critical
 		fmt.Printf("Warning: failed to reset retry count: %v\n", err)
 	}
 
 	result.Success = true
 	result.RetryCount = 0
-	e.debugLog("ExecutePhase completed successfully - returning")
+	e.debugLog("ExecuteStage completed successfully - returning")
 	return result, nil
 }
 
 // ExecuteWithRetry executes a command and automatically retries on failure
-// This is a simplified version that doesn't require phase tracking
+// This is a simplified version that doesn't require stage tracking
 func (e *Executor) ExecuteWithRetry(command string, maxAttempts int) error {
 	var lastErr error
 
@@ -229,14 +229,14 @@ func (e *Executor) ExecuteWithRetry(command string, maxAttempts int) error {
 	return fmt.Errorf("all %d attempts failed: %w", maxAttempts, lastErr)
 }
 
-// GetRetryState retrieves the current retry state for a spec/phase
-func (e *Executor) GetRetryState(specName string, phase Phase) (*retry.RetryState, error) {
-	return retry.LoadRetryState(e.StateDir, specName, string(phase), e.MaxRetries)
+// GetRetryState retrieves the current retry state for a spec/stage
+func (e *Executor) GetRetryState(specName string, stage Stage) (*retry.RetryState, error) {
+	return retry.LoadRetryState(e.StateDir, specName, string(stage), e.MaxRetries)
 }
 
-// ResetPhase resets the retry count for a specific phase
-func (e *Executor) ResetPhase(specName string, phase Phase) error {
-	return retry.ResetRetryCount(e.StateDir, specName, string(phase))
+// ResetStage resets the retry count for a specific stage
+func (e *Executor) ResetStage(specName string, stage Stage) error {
+	return retry.ResetRetryCount(e.StateDir, specName, string(stage))
 }
 
 // ValidateSpec is a convenience wrapper for spec validation

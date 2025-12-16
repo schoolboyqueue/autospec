@@ -97,9 +97,9 @@ func TestAllCmdLongDescription(t *testing.T) {
 	}
 }
 
-func TestPhaseConfigForAllCommand(t *testing.T) {
-	// The all command should enable all 4 core phases
-	// Verify the expected phase behavior
+func TestStageConfigForAllCommand(t *testing.T) {
+	// The all command should enable all 4 core stages
+	// Verify the expected stage behavior
 
 	tests := []struct {
 		name            string

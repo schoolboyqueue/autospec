@@ -95,7 +95,7 @@ Prerequisites:
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute analyze phase
+		// Execute analyze stage
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
 		if err := orch.ExecuteAnalyze(specName, prompt); err != nil {
 			return err

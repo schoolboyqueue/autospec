@@ -36,11 +36,11 @@ Source: https://github.com/ariel-frischer/autospec`,
   # Prepare for implementation (no code changes)
   autospec prep "Add dark mode support"
 
-  # Flexible phase selection
-  autospec run -spti "Add user auth"   # All core phases
+  # Flexible stage selection
+  autospec run -spti "Add user auth"   # All core stages
   autospec run -pi                     # Plan + implement on current spec
 
-  # Individual phase commands
+  # Individual stage commands
   autospec specify "Add search feature"
   autospec plan
   autospec tasks

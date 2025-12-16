@@ -34,12 +34,12 @@ type PrereqsOutput struct {
 
 var prereqsCmd = &cobra.Command{
 	Use:   "prereqs",
-	Short: "Check prerequisites for workflow phases",
-	Long: `Check that required artifacts exist before running a workflow phase.
+	Short: "Check prerequisites for workflow stages",
+	Long: `Check that required artifacts exist before running a workflow stage.
 
 This command validates that the necessary files are present in the current feature
 directory and outputs the paths to those files. It's used by Claude slash commands
-to ensure prerequisites are met before executing workflow phases.
+to ensure prerequisites are met before executing workflow stages.
 
 By default, the plan file is required. Use --require-* flags to specify which
 files must exist.`,

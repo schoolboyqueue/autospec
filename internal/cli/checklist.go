@@ -79,7 +79,7 @@ Prerequisites:
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute checklist phase
+		// Execute checklist stage
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
 		if err := orch.ExecuteChecklist(specName, prompt); err != nil {
 			return err

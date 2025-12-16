@@ -594,9 +594,9 @@ _meta:
 
 // TestTaskRetryExhaustedBehavior tests that retry exhaustion is handled correctly
 func TestTaskRetryExhaustedBehavior(t *testing.T) {
-	// Test the PhaseResult structure that indicates retry exhaustion
-	result := &PhaseResult{
-		Phase:      PhaseImplement,
+	// Test the StageResult structure that indicates retry exhaustion
+	result := &StageResult{
+		Stage:      StageImplement,
 		Success:    false,
 		Exhausted:  true,
 		RetryCount: 3,
