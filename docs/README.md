@@ -20,6 +20,10 @@ User-facing documentation for the autospec CLI tool.
   - Performance issues
   - Debugging techniques
 
+- **[FAQ](./faq.md)** - Frequently asked questions
+  - Differences from SpecKit
+  - Optional artifact sections
+
 ### Developer Documentation
 
 - **[CLAUDE.md](../CLAUDE.md)** - Development documentation for working with this codebase
