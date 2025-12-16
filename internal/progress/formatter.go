@@ -5,18 +5,18 @@ import (
 	"strings"
 )
 
-// formatPhaseCounter returns the [N/Total] phase counter string
-func formatPhaseCounter(number, total int) string {
+// formatStageCounter returns the [N/Total] stage counter string
+func formatStageCounter(number, total int) string {
 	return fmt.Sprintf("[%d/%d]", number, total)
 }
 
-// buildPhaseMessage constructs the complete phase message with optional retry info
-func buildPhaseMessage(phase PhaseInfo, action string) string {
-	counter := formatPhaseCounter(phase.Number, phase.TotalPhases)
-	msg := fmt.Sprintf("%s %s %s phase", counter, action, capitalize(phase.Name))
+// buildStageMessage constructs the complete stage message with optional retry info
+func buildStageMessage(stage StageInfo, action string) string {
+	counter := formatStageCounter(stage.Number, stage.TotalStages)
+	msg := fmt.Sprintf("%s %s %s stage", counter, action, capitalize(stage.Name))
 
-	if phase.RetryCount > 0 {
-		msg += fmt.Sprintf(" (retry %d/%d)", phase.RetryCount+1, phase.MaxRetries)
+	if stage.RetryCount > 0 {
+		msg += fmt.Sprintf(" (retry %d/%d)", stage.RetryCount+1, stage.MaxRetries)
 	}
 
 	return msg

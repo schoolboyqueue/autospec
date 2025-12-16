@@ -6,86 +6,86 @@ import (
 	"github.com/ariel-frischer/autospec/internal/workflow"
 )
 
-func TestPhaseConfigFromFlags(t *testing.T) {
+func TestStageConfigFromFlags(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *workflow.PhaseConfig
-		expected []workflow.Phase
+		config   *workflow.StageConfig
+		expected []workflow.Stage
 	}{
 		{
-			name: "core phases only (-spti)",
-			config: &workflow.PhaseConfig{
+			name: "core stages only (-spti)",
+			config: &workflow.StageConfig{
 				Specify:   true,
 				Plan:      true,
 				Tasks:     true,
 				Implement: true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseSpecify,
-				workflow.PhasePlan,
-				workflow.PhaseTasks,
-				workflow.PhaseImplement,
+			expected: []workflow.Stage{
+				workflow.StageSpecify,
+				workflow.StagePlan,
+				workflow.StageTasks,
+				workflow.StageImplement,
 			},
 		},
 		{
 			name: "constitution and specify (-ns)",
-			config: &workflow.PhaseConfig{
+			config: &workflow.StageConfig{
 				Constitution: true,
 				Specify:      true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseConstitution,
-				workflow.PhaseSpecify,
+			expected: []workflow.Stage{
+				workflow.StageConstitution,
+				workflow.StageSpecify,
 			},
 		},
 		{
 			name: "specify, clarify, plan (-srp)",
-			config: &workflow.PhaseConfig{
+			config: &workflow.StageConfig{
 				Specify: true,
 				Clarify: true,
 				Plan:    true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseSpecify,
-				workflow.PhaseClarify,
-				workflow.PhasePlan,
+			expected: []workflow.Stage{
+				workflow.StageSpecify,
+				workflow.StageClarify,
+				workflow.StagePlan,
 			},
 		},
 		{
 			name: "tasks, checklist, analyze, implement (-tlzi)",
-			config: &workflow.PhaseConfig{
+			config: &workflow.StageConfig{
 				Tasks:     true,
 				Checklist: true,
 				Analyze:   true,
 				Implement: true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseTasks,
-				workflow.PhaseChecklist,
-				workflow.PhaseAnalyze,
-				workflow.PhaseImplement,
+			expected: []workflow.Stage{
+				workflow.StageTasks,
+				workflow.StageChecklist,
+				workflow.StageAnalyze,
+				workflow.StageImplement,
 			},
 		},
 		{
-			name: "all phases with checklist (-a -l) - core + optional",
-			config: &workflow.PhaseConfig{
+			name: "all stages with checklist (-a -l) - core + optional",
+			config: &workflow.StageConfig{
 				Specify:   true,
 				Plan:      true,
 				Tasks:     true,
 				Implement: true,
 				Checklist: true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseSpecify,
-				workflow.PhasePlan,
-				workflow.PhaseTasks,
-				workflow.PhaseChecklist,
-				workflow.PhaseImplement,
+			expected: []workflow.Stage{
+				workflow.StageSpecify,
+				workflow.StagePlan,
+				workflow.StageTasks,
+				workflow.StageChecklist,
+				workflow.StageImplement,
 			},
 		},
 		{
-			name: "all 8 phases in canonical order",
-			config: &workflow.PhaseConfig{
+			name: "all 8 stages in canonical order",
+			config: &workflow.StageConfig{
 				Constitution: true,
 				Specify:      true,
 				Clarify:      true,
@@ -95,15 +95,15 @@ func TestPhaseConfigFromFlags(t *testing.T) {
 				Analyze:      true,
 				Implement:    true,
 			},
-			expected: []workflow.Phase{
-				workflow.PhaseConstitution,
-				workflow.PhaseSpecify,
-				workflow.PhaseClarify,
-				workflow.PhasePlan,
-				workflow.PhaseTasks,
-				workflow.PhaseChecklist,
-				workflow.PhaseAnalyze,
-				workflow.PhaseImplement,
+			expected: []workflow.Stage{
+				workflow.StageConstitution,
+				workflow.StageSpecify,
+				workflow.StageClarify,
+				workflow.StagePlan,
+				workflow.StageTasks,
+				workflow.StageChecklist,
+				workflow.StageAnalyze,
+				workflow.StageImplement,
 			},
 		},
 	}
@@ -112,90 +112,90 @@ func TestPhaseConfigFromFlags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.config.GetCanonicalOrder()
 			if len(got) != len(tt.expected) {
-				t.Errorf("GetCanonicalOrder() returned %d phases, want %d", len(got), len(tt.expected))
+				t.Errorf("GetCanonicalOrder() returned %d stages, want %d", len(got), len(tt.expected))
 				return
 			}
-			for i, phase := range got {
-				if phase != tt.expected[i] {
-					t.Errorf("GetCanonicalOrder()[%d] = %v, want %v", i, phase, tt.expected[i])
+			for i, stage := range got {
+				if stage != tt.expected[i] {
+					t.Errorf("GetCanonicalOrder()[%d] = %v, want %v", i, stage, tt.expected[i])
 				}
 			}
 		})
 	}
 }
 
-func TestOptionalPhasesWithAll(t *testing.T) {
-	// Test that optional phases can be combined with -a flag
-	// -a sets core phases, optional phases are added separately
-	config := &workflow.PhaseConfig{}
-	config.SetAll() // Sets core phases only
+func TestOptionalStagesWithAll(t *testing.T) {
+	// Test that optional stages can be combined with -a flag
+	// -a sets core stages, optional stages are added separately
+	config := &workflow.StageConfig{}
+	config.SetAll() // Sets core stages only
 
-	// Add optional phases
+	// Add optional stages
 	config.Checklist = true
 	config.Analyze = true
 
-	phases := config.GetCanonicalOrder()
+	stages := config.GetCanonicalOrder()
 
 	// Should be: specify, plan, tasks, checklist, analyze, implement
-	expected := []workflow.Phase{
-		workflow.PhaseSpecify,
-		workflow.PhasePlan,
-		workflow.PhaseTasks,
-		workflow.PhaseChecklist,
-		workflow.PhaseAnalyze,
-		workflow.PhaseImplement,
+	expected := []workflow.Stage{
+		workflow.StageSpecify,
+		workflow.StagePlan,
+		workflow.StageTasks,
+		workflow.StageChecklist,
+		workflow.StageAnalyze,
+		workflow.StageImplement,
 	}
 
-	if len(phases) != len(expected) {
-		t.Errorf("Expected %d phases, got %d", len(expected), len(phases))
+	if len(stages) != len(expected) {
+		t.Errorf("Expected %d stages, got %d", len(expected), len(stages))
 		return
 	}
 
-	for i, phase := range phases {
-		if phase != expected[i] {
-			t.Errorf("Phase %d: expected %s, got %s", i, expected[i], phase)
+	for i, stage := range stages {
+		if stage != expected[i] {
+			t.Errorf("Stage %d: expected %s, got %s", i, expected[i], stage)
 		}
 	}
 }
 
-func TestOptionalPhaseHasAnyPhase(t *testing.T) {
-	// Test that HasAnyPhase returns true for optional phases only
+func TestOptionalStageHasAnyStage(t *testing.T) {
+	// Test that HasAnyStage returns true for optional stages only
 	tests := []struct {
 		name     string
-		config   *workflow.PhaseConfig
+		config   *workflow.StageConfig
 		expected bool
 	}{
 		{
-			name:     "no phases",
-			config:   &workflow.PhaseConfig{},
+			name:     "no stages",
+			config:   &workflow.StageConfig{},
 			expected: false,
 		},
 		{
 			name:     "only constitution",
-			config:   &workflow.PhaseConfig{Constitution: true},
+			config:   &workflow.StageConfig{Constitution: true},
 			expected: true,
 		},
 		{
 			name:     "only clarify",
-			config:   &workflow.PhaseConfig{Clarify: true},
+			config:   &workflow.StageConfig{Clarify: true},
 			expected: true,
 		},
 		{
 			name:     "only checklist",
-			config:   &workflow.PhaseConfig{Checklist: true},
+			config:   &workflow.StageConfig{Checklist: true},
 			expected: true,
 		},
 		{
 			name:     "only analyze",
-			config:   &workflow.PhaseConfig{Analyze: true},
+			config:   &workflow.StageConfig{Analyze: true},
 			expected: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.config.HasAnyPhase(); got != tt.expected {
-				t.Errorf("HasAnyPhase() = %v, want %v", got, tt.expected)
+			if got := tt.config.HasAnyStage(); got != tt.expected {
+				t.Errorf("HasAnyStage() = %v, want %v", got, tt.expected)
 			}
 		})
 	}

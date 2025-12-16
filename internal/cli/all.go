@@ -26,7 +26,7 @@ This command will:
 8. Execute /autospec.implement
 9. Validate all tasks are completed
 
-Each phase is validated and will retry up to max_retries times if validation fails.
+Each stage is validated and will retry up to max_retries times if validation fails.
 This is equivalent to running 'autospec run -a <feature-description>'.`,
 	Example: `  # Run complete workflow for a new feature
   autospec all "Add user authentication feature"
@@ -71,7 +71,7 @@ This is equivalent to running 'autospec run -a <feature-description>'.`,
 			cfg.ShowProgress = progress
 		}
 
-		// Check if constitution exists (required for all workflow phases)
+		// Check if constitution exists (required for all workflow stages)
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)

@@ -11,7 +11,7 @@ import (
 // ProgressDisplay orchestrates the display of progress indicators
 type ProgressDisplay struct {
 	capabilities TerminalCapabilities
-	currentPhase *PhaseInfo
+	currentStage *StageInfo
 	spinner      *spinner.Spinner
 	symbols      ProgressSymbols
 }
@@ -24,17 +24,17 @@ func NewProgressDisplay(caps TerminalCapabilities) *ProgressDisplay {
 	}
 }
 
-// StartPhase begins displaying progress for a phase
-func (p *ProgressDisplay) StartPhase(phase PhaseInfo) error {
-	// Validate phase info
-	if err := phase.Validate(); err != nil {
+// StartStage begins displaying progress for a stage
+func (p *ProgressDisplay) StartStage(stage StageInfo) error {
+	// Validate stage info
+	if err := stage.Validate(); err != nil {
 		return err
 	}
 
-	p.currentPhase = &phase
+	p.currentStage = &stage
 
-	// Build the phase message
-	msg := buildPhaseMessage(phase, "Running")
+	// Build the stage message
+	msg := buildStageMessage(stage, "Running")
 
 	if p.capabilities.IsTTY {
 		// TTY mode: Start spinner animation
@@ -54,12 +54,12 @@ func (p *ProgressDisplay) StartPhase(phase PhaseInfo) error {
 }
 
 // UpdateRetry updates the display with retry count information
-func (p *ProgressDisplay) UpdateRetry(phase PhaseInfo) error {
-	return p.StartPhase(phase)
+func (p *ProgressDisplay) UpdateRetry(stage StageInfo) error {
+	return p.StartStage(stage)
 }
 
-// CompletePhase stops the spinner and displays completion status
-func (p *ProgressDisplay) CompletePhase(phase PhaseInfo) error {
+// CompleteStage stops the spinner and displays completion status
+func (p *ProgressDisplay) CompleteStage(stage StageInfo) error {
 	// Stop spinner if running
 	if p.spinner != nil {
 		p.spinner.Stop()
@@ -68,15 +68,15 @@ func (p *ProgressDisplay) CompletePhase(phase PhaseInfo) error {
 
 	// Display completion message
 	mark := checkmark(p.symbols, p.capabilities.SupportsColor)
-	counter := formatPhaseCounter(phase.Number, phase.TotalPhases)
-	fmt.Printf("%s %s %s phase complete\n", mark, counter, capitalize(phase.Name))
+	counter := formatStageCounter(stage.Number, stage.TotalStages)
+	fmt.Printf("%s %s %s stage complete\n", mark, counter, capitalize(stage.Name))
 
-	p.currentPhase = nil
+	p.currentStage = nil
 	return nil
 }
 
-// FailPhase stops the spinner and displays failure status
-func (p *ProgressDisplay) FailPhase(phase PhaseInfo, err error) error {
+// FailStage stops the spinner and displays failure status
+func (p *ProgressDisplay) FailStage(stage StageInfo, err error) error {
 	// Stop spinner if running
 	if p.spinner != nil {
 		p.spinner.Stop()
@@ -85,10 +85,10 @@ func (p *ProgressDisplay) FailPhase(phase PhaseInfo, err error) error {
 
 	// Display failure message
 	mark := failureMark(p.symbols, p.capabilities.SupportsColor)
-	counter := formatPhaseCounter(phase.Number, phase.TotalPhases)
-	fmt.Printf("%s %s %s phase failed: %v\n", mark, counter, capitalize(phase.Name), err)
+	counter := formatStageCounter(stage.Number, stage.TotalStages)
+	fmt.Printf("%s %s %s stage failed: %v\n", mark, counter, capitalize(stage.Name), err)
 
-	p.currentPhase = nil
+	p.currentStage = nil
 	return nil
 }
 

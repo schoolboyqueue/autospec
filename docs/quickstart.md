@@ -200,7 +200,7 @@ Quick reference for frequently used commands:
 |---------|-------------|---------|
 | `autospec full "..."` | Complete workflow: specify → plan → tasks → implement | `autospec full "Add user auth"` |
 | `autospec prep "..."` | Prepare for implementation: specify → plan → tasks (no implementation) | `autospec prep "Add export"` |
-| `autospec implement` | Execute implementation phase for current feature | `autospec implement` |
+| `autospec implement` | Execute implementation stage for current feature | `autospec implement` |
 | `autospec implement <spec>` | Execute implementation for specific spec | `autospec implement 001-dark-mode` |
 | `autospec status` (alias: `st`) | Check artifacts and task progress | `autospec st -v` |
 | `autospec doctor` | Run health checks and verify dependencies | `autospec doctor` |
@@ -210,7 +210,7 @@ For complete command reference, see [REFERENCE.md](./reference.md).
 
 ## Understanding the Workflow
 
-autospec follows a four-phase workflow:
+autospec follows a four-stage workflow:
 
 ```mermaid
 graph LR
@@ -218,15 +218,15 @@ graph LR
     B --> C[tasks<br/>Task Breakdown]
     C --> D[implement<br/>Execution]
 
-    A:::phase
-    B:::phase
-    C:::phase
-    D:::phase
+    A:::stage
+    B:::stage
+    C:::stage
+    D:::stage
 
-    classDef phase fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
+    classDef stage fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
 ```
 
-### Phase Descriptions
+### Stage Descriptions
 
 **1. Specify**: Transform natural language feature description into a structured specification
 - Input: Feature description (e.g., "Add dark mode toggle")
@@ -299,7 +299,7 @@ Quick solutions for common first-time issues:
 **Solution**: Run `sudo make install` to copy binary to `/usr/local/bin`, or add the binary directory to your PATH
 
 ### "Validation failed: spec file not found"
-**Problem**: Workflow phase failed to create expected output file
+**Problem**: Workflow stage failed to create expected output file
 
 **Solution**: Check error messages from previous command. If retry limit exhausted, reset retry state: `rm ~/.autospec/state/retry.json`
 

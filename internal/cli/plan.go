@@ -14,7 +14,7 @@ import (
 var planCmd = &cobra.Command{
 	Use:     "plan [optional-prompt]",
 	Aliases: []string{"p"},
-	Short:   "Execute the planning phase for the current spec (p)",
+	Short:   "Execute the planning stage for the current spec (p)",
 	Long: `Execute the /autospec.plan command for the current specification.
 
 The plan command will:
@@ -71,7 +71,7 @@ You can optionally provide a prompt to guide the planning process.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute plan phase
+		// Execute plan stage
 		if err := orch.ExecutePlan("", prompt); err != nil {
 			return err
 		}
@@ -81,6 +81,6 @@ You can optionally provide a prompt to guide the planning process.`,
 }
 
 func init() {
-	planCmd.GroupID = GroupCorePhases
+	planCmd.GroupID = GroupCoreStages
 	rootCmd.AddCommand(planCmd)
 }

@@ -222,17 +222,17 @@ func FindSpecsDirectory(specsDir string) (string, error) {
 	return "", fmt.Errorf("specs directory not found: %s", specsDir)
 }
 
-// CheckArtifactDependencies checks if required artifacts exist for the selected phases.
+// CheckArtifactDependencies checks if required artifacts exist for the selected stages.
 // It returns a PreflightResult with MissingArtifacts populated.
-func CheckArtifactDependencies(phaseConfig *PhaseConfig, specDir string) *PreflightResult {
+func CheckArtifactDependencies(stageConfig *StageConfig, specDir string) *PreflightResult {
 	result := &PreflightResult{
 		Passed:           true,
 		MissingArtifacts: make([]string, 0),
 		Warnings:         make([]string, 0),
 	}
 
-	// Get all required artifacts for the selected phases
-	requiredArtifacts := phaseConfig.GetAllRequiredArtifacts()
+	// Get all required artifacts for the selected stages
+	requiredArtifacts := stageConfig.GetAllRequiredArtifacts()
 
 	// Check each required artifact
 	for _, artifact := range requiredArtifacts {
@@ -246,7 +246,7 @@ func CheckArtifactDependencies(phaseConfig *PhaseConfig, specDir string) *Prefli
 	if len(result.MissingArtifacts) > 0 {
 		result.RequiresConfirmation = true
 		result.Passed = false
-		result.WarningMessage = GeneratePrerequisiteWarning(phaseConfig, result.MissingArtifacts)
+		result.WarningMessage = GeneratePrerequisiteWarning(stageConfig, result.MissingArtifacts)
 	}
 
 	return result
@@ -254,7 +254,7 @@ func CheckArtifactDependencies(phaseConfig *PhaseConfig, specDir string) *Prefli
 
 // GeneratePrerequisiteWarning generates a human-readable warning message
 // for missing prerequisites.
-func GeneratePrerequisiteWarning(phaseConfig *PhaseConfig, missingArtifacts []string) string {
+func GeneratePrerequisiteWarning(stageConfig *StageConfig, missingArtifacts []string) string {
 	var sb strings.Builder
 
 	sb.WriteString("\nWARNING: Missing prerequisite artifacts:\n")
@@ -262,22 +262,22 @@ func GeneratePrerequisiteWarning(phaseConfig *PhaseConfig, missingArtifacts []st
 		sb.WriteString(fmt.Sprintf("  - %s\n", artifact))
 	}
 
-	sb.WriteString("\nThe following phases require these artifacts:\n")
-	for _, phase := range phaseConfig.GetSelectedPhases() {
-		requires := GetRequiredArtifacts(phase)
+	sb.WriteString("\nThe following stages require these artifacts:\n")
+	for _, stage := range stageConfig.GetSelectedStages() {
+		requires := GetRequiredArtifacts(stage)
 		for _, req := range requires {
 			for _, missing := range missingArtifacts {
 				if req == missing {
-					sb.WriteString(fmt.Sprintf("  - %s requires %s\n", phase, req))
+					sb.WriteString(fmt.Sprintf("  - %s requires %s\n", stage, req))
 				}
 			}
 		}
 	}
 
-	sb.WriteString("\nSuggested action: Run earlier phases first to generate the required artifacts.\n")
+	sb.WriteString("\nSuggested action: Run earlier stages first to generate the required artifacts.\n")
 	sb.WriteString("For example:\n")
 
-	// Suggest which phases to run based on what's missing
+	// Suggest which stages to run based on what's missing
 	if containsArtifact(missingArtifacts, "spec.yaml") {
 		sb.WriteString("  autospec run -s \"feature description\"  # Generate spec.yaml\n")
 	}
@@ -318,7 +318,7 @@ type ConstitutionCheckResult struct {
 
 // CheckConstitutionExists checks if the constitution file exists.
 // This is a required project-level artifact that must exist before
-// running any workflow phases (specify, plan, tasks, implement).
+// running any workflow stages (specify, plan, tasks, implement).
 // Checks paths in ConstitutionPaths order (.yaml and .yml extensions supported)
 func CheckConstitutionExists() *ConstitutionCheckResult {
 	result := &ConstitutionCheckResult{}
@@ -343,7 +343,7 @@ func generateConstitutionMissingError() string {
 	var sb strings.Builder
 
 	sb.WriteString("\nError: Project constitution not found.\n\n")
-	sb.WriteString("A constitution is required before running any workflow phases.\n")
+	sb.WriteString("A constitution is required before running any workflow stages.\n")
 	sb.WriteString("The constitution defines your project's principles and guidelines.\n\n")
 	sb.WriteString("To create a constitution, run:\n")
 	sb.WriteString("  autospec constitution\n\n")

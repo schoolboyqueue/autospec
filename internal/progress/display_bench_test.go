@@ -7,8 +7,8 @@ import (
 	"github.com/ariel-frischer/autospec/internal/progress"
 )
 
-// BenchmarkProgressDisplay_StartPhase verifies StartPhase meets <10ms performance contract
-func BenchmarkProgressDisplay_StartPhase(b *testing.B) {
+// BenchmarkProgressDisplay_StartStage verifies StartStage meets <10ms performance contract
+func BenchmarkProgressDisplay_StartStage(b *testing.B) {
 	caps := progress.TerminalCapabilities{
 		IsTTY:           false, // Avoid spinner overhead in benchmark
 		SupportsUnicode: true,
@@ -17,23 +17,23 @@ func BenchmarkProgressDisplay_StartPhase(b *testing.B) {
 	}
 
 	display := progress.NewProgressDisplay(caps)
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "test",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseInProgress,
+		TotalStages: 3,
+		Status:      progress.StageInProgress,
 		RetryCount:  0,
 		MaxRetries:  3,
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = display.StartPhase(phase)
+		_ = display.StartStage(stage)
 	}
 }
 
-// BenchmarkProgressDisplay_CompletePhase verifies CompletePhase meets <10ms performance contract
-func BenchmarkProgressDisplay_CompletePhase(b *testing.B) {
+// BenchmarkProgressDisplay_CompleteStage verifies CompleteStage meets <10ms performance contract
+func BenchmarkProgressDisplay_CompleteStage(b *testing.B) {
 	caps := progress.TerminalCapabilities{
 		IsTTY:           false,
 		SupportsUnicode: true,
@@ -42,21 +42,21 @@ func BenchmarkProgressDisplay_CompletePhase(b *testing.B) {
 	}
 
 	display := progress.NewProgressDisplay(caps)
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "test",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseCompleted,
+		TotalStages: 3,
+		Status:      progress.StageCompleted,
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = display.CompletePhase(phase)
+		_ = display.CompleteStage(stage)
 	}
 }
 
-// BenchmarkProgressDisplay_FailPhase verifies FailPhase performance
-func BenchmarkProgressDisplay_FailPhase(b *testing.B) {
+// BenchmarkProgressDisplay_FailStage verifies FailStage performance
+func BenchmarkProgressDisplay_FailStage(b *testing.B) {
 	caps := progress.TerminalCapabilities{
 		IsTTY:           false,
 		SupportsUnicode: true,
@@ -65,17 +65,17 @@ func BenchmarkProgressDisplay_FailPhase(b *testing.B) {
 	}
 
 	display := progress.NewProgressDisplay(caps)
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "test",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseFailed,
+		TotalStages: 3,
+		Status:      progress.StageFailed,
 	}
 
 	testErr := errors.New("test error")
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = display.FailPhase(phase, testErr)
+		_ = display.FailStage(stage, testErr)
 	}
 }

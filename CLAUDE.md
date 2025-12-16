@@ -51,15 +51,15 @@ shellcheck scripts/**/*.sh
 
 ### Using the CLI
 ```bash
-# Flexible phase selection with run command
-autospec run -a "Add user authentication feature"          # All core phases
+# Flexible stage selection with run command
+autospec run -a "Add user authentication feature"          # All core stages
 autospec run -spti "Add user authentication feature"       # Same as -a
 autospec run -pi                                           # Plan + implement on current spec
 autospec run -ti --spec 007-yaml-output                    # Tasks + implement on specific spec
 autospec run -p "Focus on security best practices"         # Plan with prompt guidance
 autospec run -ti -y                                        # Skip confirmation prompts
 
-# Run with optional phases
+# Run with optional stages
 autospec run -sr "Add user auth"                           # Specify + clarify
 autospec run -al "Add user auth"                           # All core + checklist
 autospec run -tlzi                                         # Tasks + checklist + analyze + implement
@@ -71,7 +71,7 @@ autospec all "Add user authentication feature"             # Shortcut for run -a
 # Prepare for implementation (specify → plan → tasks, no implementation)
 autospec prep "Add user authentication feature"
 
-# Run individual core phases
+# Run individual core stages
 autospec specify "feature description"
 autospec plan
 autospec plan "Focus on security best practices"           # With prompt guidance
@@ -88,7 +88,7 @@ autospec implement --tasks                                 # Run each task in a 
 autospec implement --tasks --from-task T005                # Start from task T005
 autospec implement --task T003                             # Execute only task T003
 
-# Run individual optional phases
+# Run individual optional stages
 autospec constitution                                      # Create/update project constitution
 autospec constitution "Focus on security principles"       # With prompt guidance
 autospec clarify                                           # Refine spec with clarification questions
@@ -188,15 +188,56 @@ sudo autospec uninstall --yes                              # Uninstall if binary
 
 autospec is a **cross-platform Go binary** that automates SpecKit workflow validation and orchestration. The architecture consists of several key layers:
 
+### Terminology: Stages vs Phases
+
+autospec uses two distinct terms to describe levels of work organization:
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        WORKFLOW STAGES                                   │
+│  High-level steps in the autospec workflow (specify, plan, tasks, impl) │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────────────────┐ │
+│  │  STAGE   │   │  STAGE   │   │  STAGE   │   │       STAGE          │ │
+│  │ Specify  │ → │   Plan   │ → │  Tasks   │ → │     Implement        │ │
+│  │          │   │          │   │          │   │                      │ │
+│  │ spec.yaml│   │plan.yaml │   │tasks.yaml│   │  ┌────────────────┐  │ │
+│  └──────────┘   └──────────┘   └──────────┘   │  │ IMPLEMENTATION │  │ │
+│                                               │  │     PHASES     │  │ │
+│                                               │  │ (task groups)  │  │ │
+│                                               │  ├────────────────┤  │ │
+│                                               │  │ Phase 1: Setup │  │ │
+│                                               │  │   T001, T002   │  │ │
+│                                               │  ├────────────────┤  │ │
+│                                               │  │ Phase 2: Core  │  │ │
+│                                               │  │   T003, T004   │  │ │
+│                                               │  ├────────────────┤  │ │
+│                                               │  │ Phase 3: US-01 │  │ │
+│                                               │  │   T005, T006   │  │ │
+│                                               │  └────────────────┘  │ │
+│                                               └──────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Stage**: A high-level workflow step that produces an artifact (e.g., `specify` produces `spec.yaml`). The four core stages are: specify, plan, tasks, implement. Optional stages include: constitution, clarify, checklist, analyze.
+
+**Phase**: A numbered grouping of tasks within the `implement` stage (e.g., "Phase 1: Setup", "Phase 2: Core Features"). Phases organize tasks for sequential or parallel execution within tasks.yaml.
+
+This terminology distinction ensures clarity:
+- CLI flags like `--phases`, `--phase`, `--from-phase` refer to task phases within implementation
+- Workflow orchestration uses "stage" for the high-level workflow steps
+- Documentation consistently uses "stage" for workflow concepts and "phase" for task groupings
+
 ### 1. CLI Layer (`internal/cli/`)
 
 Cobra-based command structure providing user-facing commands:
 - **root.go**: Root command with global flags (`--config`, `--specs-dir`, `--debug`, etc.)
-- **run.go**: Flexible phase selection with core and optional phase flags
+- **run.go**: Flexible stage selection with core and optional stage flags
 - **all.go**: Orchestrates complete specify → plan → tasks → implement workflow
 - **prep.go**: Orchestrates specify → plan → tasks workflow (no implementation)
 - **specify.go**: Creates new feature specifications with optional prompt guidance
-- **plan.go**: Executes planning phase with optional prompt guidance
+- **plan.go**: Executes planning stage with optional prompt guidance
 - **tasks.go**: Generates tasks with optional prompt guidance
 - **implement.go**: Executes implementation with optional spec-name and prompt guidance
 - **constitution.go**: Creates/updates project constitution
@@ -217,18 +258,18 @@ Cobra-based command structure providing user-facing commands:
 - **version.go**: Version information
 - **completion_install.go**: Installs shell completions with auto-detection
 
-**Core Phase Selection Flags (run command):**
-- `-s, --specify`: Include specify phase (requires feature description)
-- `-p, --plan`: Include plan phase
-- `-t, --tasks`: Include tasks phase
-- `-i, --implement`: Include implement phase
-- `-a, --all`: Run all core phases (equivalent to `-spti`)
+**Core Stage Selection Flags (run command):**
+- `-s, --specify`: Include specify stage (requires feature description)
+- `-p, --plan`: Include plan stage
+- `-t, --tasks`: Include tasks stage
+- `-i, --implement`: Include implement stage
+- `-a, --all`: Run all core stages (equivalent to `-spti`)
 
-**Optional Phase Selection Flags (run command):**
-- `-n, --constitution`: Include constitution phase
-- `-r, --clarify`: Include clarify phase
-- `-l, --checklist`: Include checklist phase (note: `-c` is used for `--config`)
-- `-z, --analyze`: Include analyze phase
+**Optional Stage Selection Flags (run command):**
+- `-n, --constitution`: Include constitution stage
+- `-r, --clarify`: Include clarify stage
+- `-l, --checklist`: Include checklist stage (note: `-c` is used for `--config`)
+- `-z, --analyze`: Include analyze stage
 
 **Other Flags:**
 - `-y, --yes`: Skip confirmation prompts
@@ -242,31 +283,31 @@ Cobra-based command structure providing user-facing commands:
 
 **Note:** `--tasks`/`--from-task`/`--task` are mutually exclusive with `--phases`/`--phase`/`--from-phase`. Use task-level OR phase-level execution, not both.
 
-**Canonical Phase Order:**
-Phases always execute in this order, regardless of flag order:
+**Canonical Stage Order:**
+Stages always execute in this order, regardless of flag order:
 `constitution → specify → clarify → plan → tasks → checklist → analyze → implement`
 
 ### 2. Workflow Orchestration (`internal/workflow/`)
 
 Manages the complete SpecKit workflow lifecycle:
-- **workflow.go**: `WorkflowOrchestrator` executes multi-phase workflows with validation
+- **workflow.go**: `WorkflowOrchestrator` executes multi-stage workflows with validation
   - `RunFullWorkflow()`: Complete workflow including implementation (specify → plan → tasks → implement)
   - `RunCompleteWorkflow()`: Planning workflow only (specify → plan → tasks)
-  - `ExecuteImplement()`: Implementation phase only
+  - `ExecuteImplement()`: Implementation stage only
   - `ExecuteImplementWithTasks()`: Task-level implementation with isolated Claude sessions per task
-- **executor.go**: `Executor` handles phase execution with retry logic
+- **executor.go**: `Executor` handles stage execution with retry logic
 - **claude.go**: `ClaudeExecutor` interfaces with Claude CLI or API
 - **preflight.go**: Pre-flight checks for dependencies (claude CLI, git)
-  - `CheckArtifactDependencies()`: Validates required artifacts exist before phase execution
+  - `CheckArtifactDependencies()`: Validates required artifacts exist before stage execution
   - `GeneratePrerequisiteWarning()`: Generates human-readable warnings for missing prerequisites
-- **phase_config.go**: Phase configuration and dependency management
-  - `PhaseConfig`: Represents selected phases for execution
-  - `PhaseExecutionOptions`: Execution options including TaskMode, FromTask, SingleTask
-  - `ArtifactDependency`: Maps phases to required/produced artifacts
-  - `GetCanonicalOrder()`: Returns phases in execution order (specify → plan → tasks → implement)
-  - `GetAllRequiredArtifacts()`: Returns external dependencies for selected phases
+- **stage_config.go**: Stage configuration and dependency management
+  - `StageConfig`: Represents selected stages for execution
+  - `StageExecutionOptions`: Execution options including TaskMode, FromTask, SingleTask
+  - `ArtifactDependency`: Maps stages to required/produced artifacts
+  - `GetCanonicalOrder()`: Returns stages in execution order (specify → plan → tasks → implement)
+  - `GetAllRequiredArtifacts()`: Returns external dependencies for selected stages
 
-Key concept: Each phase (specify/plan/tasks/implement) is executed through `ExecutePhase()` which validates output artifacts and retries on failure.
+Key concept: Each stage (specify/plan/tasks/implement) is executed through `ExecuteStage()` which validates output artifacts and retries on failure.
 
 ### 3. Configuration (`internal/config/`)
 
@@ -358,7 +399,7 @@ Persistent retry state tracking:
 - **retry.go**: `RetryState` persisted to `~/.autospec/state/retry.json`
 
 Key behaviors:
-- Tracks retry count per spec:phase combination
+- Tracks retry count per spec:stage combination
 - Atomic file writes for concurrency safety
 - Configurable max retries (1-10)
 - Exit code 2 when retries exhausted
@@ -388,22 +429,22 @@ WorkflowOrchestrator.RunFullWorkflow()
   ↓
   Pre-flight checks (if not skipped)
   ↓
-  Phase 1: Specify
-    → Executor.ExecutePhase(PhaseSpecify, "/autospec.specify", ValidateSpec)
+  Stage 1: Specify
+    → Executor.ExecuteStage(StageSpecify, "/autospec.specify", ValidateSpec)
     → ClaudeExecutor runs command via Claude CLI
     → Validates spec.yaml exists
     → Retries up to max_retries on failure
   ↓
-  Phase 2: Plan
-    → Executor.ExecutePhase(PhasePlan, "/autospec.plan", ValidatePlan)
+  Stage 2: Plan
+    → Executor.ExecuteStage(StagePlan, "/autospec.plan", ValidatePlan)
     → Validates plan.yaml exists
   ↓
-  Phase 3: Tasks
-    → Executor.ExecutePhase(PhaseTasks, "/autospec.tasks", ValidateTasks)
+  Stage 3: Tasks
+    → Executor.ExecuteStage(StageTasks, "/autospec.tasks", ValidateTasks)
     → Validates tasks.yaml exists
   ↓
-  Phase 4: Implement
-    → Executor.ExecutePhase(PhaseImplement, "/autospec.implement", ValidateTasksComplete)
+  Stage 4: Implement
+    → Executor.ExecuteStage(StageImplement, "/autospec.implement", ValidateTasksComplete)
     → Validates all tasks are checked
 ```
 
@@ -414,20 +455,20 @@ WorkflowOrchestrator.RunCompleteWorkflow()
   ↓
   Pre-flight checks (if not skipped)
   ↓
-  Phase 1: Specify
+  Stage 1: Specify
   ↓
-  Phase 2: Plan
+  Stage 2: Plan
   ↓
-  Phase 3: Tasks
+  Stage 3: Tasks
   (stops before implementation)
 ```
 
-### Phase Execution with Retry
+### Stage Execution with Retry
 
-Each phase follows this pattern (in `executor.go`):
+Each stage follows this pattern (in `executor.go`):
 
 ```go
-ExecutePhase(specName, phase, command, validationFunc):
+ExecuteStage(specName, stage, command, validationFunc):
   1. Load retry state from disk
   2. Display full command before execution
   3. Execute command via ClaudeExecutor
@@ -479,7 +520,7 @@ autospec implement --task T003
 
 ### Prompt Injection and Command Display
 
-All SpecKit phase commands (`specify`, `plan`, `tasks`, `implement`) support optional prompt text to guide Claude's execution:
+All SpecKit stage commands (`specify`, `plan`, `tasks`, `implement`) support optional prompt text to guide Claude's execution:
 
 **How it works:**
 1. User provides additional guidance as command arguments
@@ -504,7 +545,7 @@ autospec implement 003-my-feature "Complete the tests"
 ```
 
 **Command Display:**
-Before each phase execution, the full resolved command is displayed:
+Before each stage execution, the full resolved command is displayed:
 ```
 → Executing: claude -p "/autospec.plan \"Focus on security\""
 ```
@@ -543,7 +584,7 @@ Retry state stored as JSON in `~/.autospec/state/retry.json`:
   "retries": {
     "002-go-binary-migration:specify": {
       "spec_name": "002-go-binary-migration",
-      "phase": "specify",
+      "stage": "specify",
       "count": 1,
       "last_attempt": "2025-10-22T10:30:00Z",
       "max_retries": 3
@@ -655,12 +696,12 @@ This allows running `autospec plan` without specifying the spec name.
 4. Add unit tests with table-driven approach
 5. Add benchmark test if performance-critical
 
-### Adding a New Workflow Phase
+### Adding a New Workflow Stage
 
-1. Define phase constant in `internal/workflow/executor.go`
+1. Define stage constant in `internal/workflow/executor.go`
 2. Add validation function in `internal/validation/`
 3. Create CLI command in `internal/cli/`
-4. Update `WorkflowOrchestrator` to include phase
+4. Update `WorkflowOrchestrator` to include stage
 5. Add tests for validation and execution
 6. Update documentation
 

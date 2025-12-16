@@ -55,7 +55,7 @@ func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
 		SpecsDir:        cfg.SpecsDir,
 		MaxRetries:      cfg.MaxRetries,
 		ProgressDisplay: progressDisplay,
-		TotalPhases:     3,     // Default to 3 phases (specify, plan, tasks)
+		TotalStages:     3,     // Default to 3 stages (specify, plan, tasks)
 		Debug:           false, // Will be set by CLI command
 	}
 
@@ -76,33 +76,33 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 		}
 	}
 
-	// Phase 1: Specify
-	fmt.Println("[Phase 1/3] Specify...")
+	// Stage 1: Specify
+	fmt.Println("[Stage 1/3] Specify...")
 	fmt.Printf("Executing: /autospec.specify \"%s\"\n", featureDescription)
 
 	specName, err := w.executeSpecify(featureDescription)
 	if err != nil {
-		return fmt.Errorf("specify phase failed: %w", err)
+		return fmt.Errorf("specify stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/spec.yaml\n\n", specName)
 
-	// Phase 2: Plan
-	fmt.Println("[Phase 2/3] Plan...")
+	// Stage 2: Plan
+	fmt.Println("[Stage 2/3] Plan...")
 	fmt.Println("Executing: /autospec.plan")
 
 	if err := w.executePlan(specName, ""); err != nil {
-		return fmt.Errorf("plan phase failed: %w", err)
+		return fmt.Errorf("plan stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/plan.yaml\n\n", specName)
 
-	// Phase 3: Tasks
-	fmt.Println("[Phase 3/3] Tasks...")
+	// Stage 3: Tasks
+	fmt.Println("[Stage 3/3] Tasks...")
 	fmt.Println("Executing: /autospec.tasks")
 
 	if err := w.executeTasks(specName, ""); err != nil {
-		return fmt.Errorf("tasks phase failed: %w", err)
+		return fmt.Errorf("tasks stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/tasks.yaml\n\n", specName)
@@ -117,8 +117,8 @@ func (w *WorkflowOrchestrator) RunCompleteWorkflow(featureDescription string) er
 
 // RunFullWorkflow executes the complete specify → plan → tasks → implement workflow
 func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume bool) error {
-	// Set total phases for full workflow
-	w.Executor.TotalPhases = 4
+	// Set total stages for full workflow
+	w.Executor.TotalStages = 4
 
 	// Run pre-flight checks
 	if ShouldRunPreflightChecks(w.SkipPreflight) {
@@ -127,41 +127,41 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		}
 	}
 
-	// Phase 1: Specify
-	fmt.Println("[Phase 1/4] Specify...")
+	// Stage 1: Specify
+	fmt.Println("[Stage 1/4] Specify...")
 	fmt.Printf("Executing: /autospec.specify \"%s\"\n", featureDescription)
 
 	specName, err := w.executeSpecify(featureDescription)
 	if err != nil {
-		return fmt.Errorf("specify phase failed: %w", err)
+		return fmt.Errorf("specify stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/spec.yaml\n\n", specName)
 
-	// Phase 2: Plan
-	fmt.Println("[Phase 2/4] Plan...")
+	// Stage 2: Plan
+	fmt.Println("[Stage 2/4] Plan...")
 	fmt.Println("Executing: /autospec.plan")
 
 	if err := w.executePlan(specName, ""); err != nil {
-		return fmt.Errorf("plan phase failed: %w", err)
+		return fmt.Errorf("plan stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/plan.yaml\n\n", specName)
 
-	// Phase 3: Tasks
-	fmt.Println("[Phase 3/4] Tasks...")
+	// Stage 3: Tasks
+	fmt.Println("[Stage 3/4] Tasks...")
 	fmt.Println("Executing: /autospec.tasks")
 
 	if err := w.executeTasks(specName, ""); err != nil {
-		return fmt.Errorf("tasks phase failed: %w", err)
+		return fmt.Errorf("tasks stage failed: %w", err)
 	}
 
 	fmt.Printf("✓ Created specs/%s/tasks.yaml\n\n", specName)
 
-	// Phase 4: Implement
-	fmt.Println("[Phase 4/4] Implement...")
+	// Stage 4: Implement
+	fmt.Println("[Stage 4/4] Implement...")
 	fmt.Println("Executing: /autospec.implement")
-	w.debugLog("Starting implement phase for spec: %s", specName)
+	w.debugLog("Starting implement stage for spec: %s", specName)
 
 	command := "/autospec.implement"
 	if resume {
@@ -169,10 +169,10 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		w.debugLog("Resume flag enabled")
 	}
 
-	w.debugLog("Calling ExecutePhase with command: %s", command)
-	result, err := w.Executor.ExecutePhase(
+	w.debugLog("Calling ExecuteStage with command: %s", command)
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseImplement,
+		StageImplement,
 		command,
 		func(specDir string) error {
 			w.debugLog("Running validation function for spec dir: %s", specDir)
@@ -183,22 +183,22 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 			return validationErr
 		},
 	)
-	w.debugLog("ExecutePhase returned - result: %+v, err: %v", result, err)
+	w.debugLog("ExecuteStage returned - result: %+v, err: %v", result, err)
 
 	if err != nil {
-		w.debugLog("Implement phase failed with error: %v", err)
+		w.debugLog("Implement stage failed with error: %v", err)
 		if result.Exhausted {
 			w.debugLog("Retries exhausted")
 			// Generate continuation prompt
 			fmt.Println("\nImplementation paused.")
 			fmt.Printf("To resume: autospec full \"%s\" --resume\n", featureDescription)
-			return fmt.Errorf("implementation phase exhausted retries: %w", err)
+			return fmt.Errorf("implementation stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("implementation failed: %w", err)
 	}
 
 	// Success!
-	w.debugLog("Implement phase completed successfully")
+	w.debugLog("Implement stage completed successfully")
 	fmt.Println("\n✓ All tasks completed!")
 	fmt.Println()
 
@@ -212,7 +212,7 @@ func (w *WorkflowOrchestrator) RunFullWorkflow(featureDescription string, resume
 		fmt.Println()
 	}
 
-	fmt.Println("Completed 4 workflow phase(s): specify → plan → tasks → implement")
+	fmt.Println("Completed 4 workflow stage(s): specify → plan → tasks → implement")
 	fmt.Printf("Spec: specs/%s/\n", specName)
 	w.debugLog("RunFullWorkflow exiting normally")
 
@@ -264,9 +264,9 @@ func (w *WorkflowOrchestrator) executeSpecify(featureDescription string) (string
 	command := fmt.Sprintf("/autospec.specify \"%s\"", featureDescription)
 
 	// Execute with validation and retry
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		"", // Spec name not known yet
-		PhaseSpecify,
+		StageSpecify,
 		command,
 		func(specDir string) error {
 			// After specify, we need to detect the newly created spec
@@ -303,16 +303,16 @@ func (w *WorkflowOrchestrator) executePlan(specName string, prompt string) error
 	}
 	specDir := filepath.Join(w.SpecsDir, specName)
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhasePlan,
+		StagePlan,
 		command,
 		w.Executor.ValidatePlan,
 	)
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("plan phase exhausted retries: %w", err)
+			return fmt.Errorf("plan stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("plan failed after %d attempts: %w", result.RetryCount, err)
 	}
@@ -333,16 +333,16 @@ func (w *WorkflowOrchestrator) executeTasks(specName string, prompt string) erro
 		command = fmt.Sprintf("/autospec.tasks \"%s\"", prompt)
 	}
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseTasks,
+		StageTasks,
 		command,
 		w.Executor.ValidateTasks,
 	)
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("tasks phase exhausted retries: %w", err)
+			return fmt.Errorf("tasks stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("tasks failed after %d attempts: %w", result.RetryCount, err)
 	}
@@ -350,7 +350,7 @@ func (w *WorkflowOrchestrator) executeTasks(specName string, prompt string) erro
 	return nil
 }
 
-// ExecuteSpecify runs only the specify phase
+// ExecuteSpecify runs only the specify stage
 func (w *WorkflowOrchestrator) ExecuteSpecify(featureDescription string) (string, error) {
 	fmt.Printf("Executing: /autospec.specify \"%s\"\n", featureDescription)
 
@@ -365,7 +365,7 @@ func (w *WorkflowOrchestrator) ExecuteSpecify(featureDescription string) (string
 	return specName, nil
 }
 
-// ExecutePlan runs only the plan phase for a detected or specified spec
+// ExecutePlan runs only the plan stage for a detected or specified spec
 func (w *WorkflowOrchestrator) ExecutePlan(specNameArg string, prompt string) error {
 	var specName string
 	var err error
@@ -399,7 +399,7 @@ func (w *WorkflowOrchestrator) ExecutePlan(specNameArg string, prompt string) er
 	return nil
 }
 
-// ExecuteTasks runs only the tasks phase for a detected or specified spec
+// ExecuteTasks runs only the tasks stage for a detected or specified spec
 func (w *WorkflowOrchestrator) ExecuteTasks(specNameArg string, prompt string) error {
 	var specName string
 	var err error
@@ -433,7 +433,7 @@ func (w *WorkflowOrchestrator) ExecuteTasks(specNameArg string, prompt string) e
 	return nil
 }
 
-// ExecuteImplement runs the implementation phase with optional prompt
+// ExecuteImplement runs the implementation stage with optional prompt
 func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt string, resume bool, phaseOpts PhaseExecutionOptions) error {
 	var specName string
 	var metadata *spec.Metadata
@@ -497,9 +497,9 @@ func (w *WorkflowOrchestrator) executeImplementDefault(specName string, metadata
 		fmt.Println("Executing: /autospec.implement")
 	}
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseImplement,
+		StageImplement,
 		command,
 		func(specDir string) error {
 			tasksPath := validation.GetTasksFilePath(specDir)
@@ -512,7 +512,7 @@ func (w *WorkflowOrchestrator) executeImplementDefault(specName string, metadata
 			// Generate continuation prompt
 			fmt.Println("\nImplementation paused.")
 			fmt.Println("To resume: autospec implement --resume")
-			return fmt.Errorf("implementation phase exhausted retries: %w", err)
+			return fmt.Errorf("implementation stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("implementation failed: %w", err)
 	}
@@ -945,9 +945,9 @@ func (w *WorkflowOrchestrator) executeSingleTaskSession(specName, taskID, taskTi
 
 	fmt.Printf("Executing: %s\n", command)
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseImplement,
+		StageImplement,
 		command,
 		func(specDir string) error {
 			// For task execution, we validate the specific task is completed
@@ -1048,9 +1048,9 @@ func (w *WorkflowOrchestrator) executeSinglePhaseSession(specName string, phaseN
 
 	fmt.Printf("Executing: %s\n", command)
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseImplement,
+		StageImplement,
 		command,
 		func(specDir string) error {
 			// For phased execution, we validate the specific phase
@@ -1078,7 +1078,7 @@ func (w *WorkflowOrchestrator) executeSinglePhaseSession(specName string, phaseN
 	return nil
 }
 
-// ExecuteConstitution runs the constitution phase with optional prompt
+// ExecuteConstitution runs the constitution stage with optional prompt
 // Constitution creates or updates the project constitution file
 func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
 	// Build command with optional prompt
@@ -1093,10 +1093,10 @@ func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
 		fmt.Println("Executing: /autospec.constitution")
 	}
 
-	// Constitution phase doesn't require spec detection - it works at project level
-	result, err := w.Executor.ExecutePhase(
+	// Constitution stage doesn't require spec detection - it works at project level
+	result, err := w.Executor.ExecuteStage(
 		"", // No spec name needed for constitution
-		PhaseConstitution,
+		StageConstitution,
 		command,
 		func(specDir string) error {
 			// Constitution doesn't produce tracked artifacts
@@ -1107,7 +1107,7 @@ func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("constitution phase exhausted retries: %w", err)
+			return fmt.Errorf("constitution stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("constitution failed: %w", err)
 	}
@@ -1116,7 +1116,7 @@ func (w *WorkflowOrchestrator) ExecuteConstitution(prompt string) error {
 	return nil
 }
 
-// ExecuteClarify runs the clarify phase with optional prompt
+// ExecuteClarify runs the clarify stage with optional prompt
 // Clarify refines the specification by asking targeted clarification questions
 func (w *WorkflowOrchestrator) ExecuteClarify(specNameArg string, prompt string) error {
 	var specName string
@@ -1146,9 +1146,9 @@ func (w *WorkflowOrchestrator) ExecuteClarify(specNameArg string, prompt string)
 		fmt.Println("Executing: /autospec.clarify")
 	}
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseClarify,
+		StageClarify,
 		command,
 		func(specDir string) error {
 			// Clarify updates spec.yaml in place - just verify it still exists
@@ -1158,7 +1158,7 @@ func (w *WorkflowOrchestrator) ExecuteClarify(specNameArg string, prompt string)
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("clarify phase exhausted retries: %w", err)
+			return fmt.Errorf("clarify stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("clarify failed: %w", err)
 	}
@@ -1167,7 +1167,7 @@ func (w *WorkflowOrchestrator) ExecuteClarify(specNameArg string, prompt string)
 	return nil
 }
 
-// ExecuteChecklist runs the checklist phase with optional prompt
+// ExecuteChecklist runs the checklist stage with optional prompt
 // Checklist generates a custom checklist for the current feature
 func (w *WorkflowOrchestrator) ExecuteChecklist(specNameArg string, prompt string) error {
 	var specName string
@@ -1197,9 +1197,9 @@ func (w *WorkflowOrchestrator) ExecuteChecklist(specNameArg string, prompt strin
 		fmt.Println("Executing: /autospec.checklist")
 	}
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseChecklist,
+		StageChecklist,
 		command,
 		func(specDir string) error {
 			// Checklist creates files in checklists/ directory
@@ -1210,7 +1210,7 @@ func (w *WorkflowOrchestrator) ExecuteChecklist(specNameArg string, prompt strin
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("checklist phase exhausted retries: %w", err)
+			return fmt.Errorf("checklist stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("checklist failed: %w", err)
 	}
@@ -1219,7 +1219,7 @@ func (w *WorkflowOrchestrator) ExecuteChecklist(specNameArg string, prompt strin
 	return nil
 }
 
-// ExecuteAnalyze runs the analyze phase with optional prompt
+// ExecuteAnalyze runs the analyze stage with optional prompt
 // Analyze performs cross-artifact consistency and quality analysis
 func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string) error {
 	var specName string
@@ -1249,9 +1249,9 @@ func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string)
 		fmt.Println("Executing: /autospec.analyze")
 	}
 
-	result, err := w.Executor.ExecutePhase(
+	result, err := w.Executor.ExecuteStage(
 		specName,
-		PhaseAnalyze,
+		StageAnalyze,
 		command,
 		func(specDir string) error {
 			// Analyze outputs analysis report
@@ -1262,7 +1262,7 @@ func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string)
 
 	if err != nil {
 		if result.Exhausted {
-			return fmt.Errorf("analyze phase exhausted retries: %w", err)
+			return fmt.Errorf("analyze stage exhausted retries: %w", err)
 		}
 		return fmt.Errorf("analyze failed: %w", err)
 	}

@@ -80,7 +80,7 @@ Prerequisites:
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute clarify phase
+		// Execute clarify stage
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
 		if err := orch.ExecuteClarify(specName, prompt); err != nil {
 			return err
@@ -91,6 +91,6 @@ Prerequisites:
 }
 
 func init() {
-	clarifyCmd.GroupID = GroupOptionalPhases
+	clarifyCmd.GroupID = GroupOptionalStages
 	rootCmd.AddCommand(clarifyCmd)
 }

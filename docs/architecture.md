@@ -20,7 +20,7 @@ graph TB
     CLI[CLI Layer<br/>internal/cli] --> Workflow[Workflow Orchestration<br/>internal/workflow]
     CLI --> Config[Configuration<br/>internal/config]
     CLI --> Commands[Embedded Commands<br/>internal/commands]
-    Workflow --> Executor[Phase Executor<br/>internal/workflow]
+    Workflow --> Executor[Stage Executor<br/>internal/workflow]
     Workflow --> Validation[Validation<br/>internal/validation]
     Workflow --> Retry[Retry Management<br/>internal/retry]
     Executor --> Claude[Claude Integration<br/>internal/workflow]
@@ -44,7 +44,7 @@ User-facing Cobra commands (internal/cli/root.go:1): Parse args, load config, in
 
 ### 2. Workflow Orchestration (internal/workflow/)
 
-Multi-phase execution with validation and retry (internal/workflow/workflow.go:1): Execute phases in order, validate outputs, retry on failure
+Multi-stage execution with validation and retry (internal/workflow/workflow.go:1): Execute stages in order, validate outputs, retry on failure
 
 ### 3. Configuration (internal/config/)
 

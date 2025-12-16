@@ -62,7 +62,7 @@ This command has no prerequisites - it can be run at any time.`,
 		// Create workflow orchestrator
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 
-		// Execute constitution phase
+		// Execute constitution stage
 		if err := orch.ExecuteConstitution(prompt); err != nil {
 			return err
 		}
@@ -72,6 +72,6 @@ This command has no prerequisites - it can be run at any time.`,
 }
 
 func init() {
-	constitutionCmd.GroupID = GroupCorePhases
+	constitutionCmd.GroupID = GroupCoreStages
 	rootCmd.AddCommand(constitutionCmd)
 }

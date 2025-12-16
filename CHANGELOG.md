@@ -15,14 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Required constitution checks before command execution
 - Unit tests for error handling and command help output validation
 - `update-task` command for managing task status in tasks.yaml during implementation
-- Optional phase commands: `constitution`, `clarify`, `checklist`, `analyze`
-- Phase selection flags for the `run` command (`-s`, `-p`, `-t`, `-i`, `-a`)
-- Optional phase flags: `-n` (constitution), `-r` (clarify), `-l` (checklist), `-z` (analyze)
-- Flexible phase workflow with canonical execution order
-- `run` command for flexible execution of workflow phases
+- Optional stage commands: `constitution`, `clarify`, `checklist`, `analyze`
+- Stage selection flags for the `run` command (`-s`, `-p`, `-t`, `-i`, `-a`)
+- Optional stage flags: `-n` (constitution), `-r` (clarify), `-l` (checklist), `-z` (analyze)
+- Flexible stage workflow with canonical execution order
+- `run` command for flexible execution of workflow stages
 - Renamed `full` command to `all` for better clarity
 - Artifact dependency checks in preflight validation
-- `PhaseConfig` for managing execution phases and dependencies
+- `StageConfig` for managing execution stages and dependencies
 - Helper scripts for YAML workflow automation
 - `skip_confirmations` config option and `AUTOSPEC_YES` environment variable
 - Implementation command for executing tasks defined in tasks.yaml

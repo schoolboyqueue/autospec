@@ -34,13 +34,13 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), aut
 
 ## 🎯 Key Features
 
-- 🔄 **Automated Workflow Orchestration** — Runs phases in dependency order with automatic retry on failure
+- 🔄 **Automated Workflow Orchestration** — Runs stages in dependency order with automatic retry on failure
 - 📝 **YAML-First Artifacts** — Machine-readable `spec.yaml`, `plan.yaml`, `tasks.yaml` for programmatic access
 - ✅ **Smart Validation** — Validates artifacts exist and meet completeness criteria before proceeding
 - 🔁 **Configurable Retry Logic** — Automatic retries with persistent state tracking
 - ⚡ **Performance Optimized** — Sub-second validation (<10ms per check), <50ms startup
 - 🖥️ **Cross-Platform** — Native binaries for Linux, macOS (Intel/Apple Silicon), and Windows
-- 🎛️ **Flexible Phase Selection** — Mix and match phases with intuitive flags (`-spti`, `-a`, etc.)
+- 🎛️ **Flexible Stage Selection** — Mix and match stages with intuitive flags (`-spti`, `-a`, etc.)
 - 🏗️ **Constitution Support** — Project-level principles that guide all specifications
 - 🔍 **Cross-Artifact Analysis** — Consistency checks across spec, plan, and tasks
 - 📋 **Custom Checklists** — Auto-generated validation checklists per feature
@@ -106,18 +106,18 @@ autospec init
 
 ## 🎮 Usage
 
-### Flexible Phase Selection with `run`
+### Flexible Stage Selection with `run`
 
 ```bash
-# 🚀 Run all core phases (specify → plan → tasks → implement)
+# 🚀 Run all core stages (specify → plan → tasks → implement)
 autospec run -a "Add user authentication with OAuth"
 
-# 📝 Run specific phases
+# 📝 Run specific stages
 autospec run -sp "Add caching layer"        # Specify + plan only
 autospec run -ti --spec 007-feature         # Tasks + implement on specific spec
 autospec run -p "Focus on security"         # Plan with guidance
 
-# ✨ Include optional phases
+# ✨ Include optional stages
 autospec run -sr "Add payments"             # Specify + clarify
 autospec run -a -l                          # All + checklist
 autospec run -tlzi                          # Tasks + checklist + analyze + implement
@@ -126,27 +126,27 @@ autospec run -tlzi                          # Tasks + checklist + analyze + impl
 autospec run -a -y "Feature description"
 ```
 
-### Phase Flags Reference
+### Stage Flags Reference
 
-| Flag | Phase | Description |
+| Flag | Stage | Description |
 |------|-------|-------------|
 | `-s` | specify | Generate feature specification |
 | `-p` | plan | Generate implementation plan |
 | `-t` | tasks | Generate task breakdown |
 | `-i` | implement | Execute implementation |
-| `-a` | all | All core phases (`-spti`) |
+| `-a` | all | All core stages (`-spti`) |
 | `-n` | constitution | Create/update project constitution |
 | `-r` | clarify | Refine spec with Q&A |
 | `-l` | checklist | Generate validation checklist |
 | `-z` | analyze | Cross-artifact consistency check |
 
-> 📌 Phases always execute in canonical order regardless of flag order:
+> 📌 Stages always execute in canonical order regardless of flag order:
 > `constitution → specify → clarify → plan → tasks → checklist → analyze → implement`
 
 ### Shortcut Commands
 
 ```bash
-# 🎯 Complete workflow (all phases)
+# 🎯 Complete workflow (all stages)
 autospec all "Add feature description"
 
 # 📋 Prepare for implementation (no implementation)
@@ -191,7 +191,7 @@ autospec implement --task T003                # Run only task T003
 
 > 💡 **Why isolate sessions?** Context accumulation causes LLM performance degradation and higher API costs (each turn bills the entire context). Phase/task isolation can reduce costs by **80%+** on large specs. See [FAQ](docs/faq.md#why-use---phases-or---tasks-instead-of-running-everything-in-one-session) for details.
 
-### Optional Phase Commands
+### Optional Stage Commands
 
 ```bash
 # 🏛️ Constitution - project principles

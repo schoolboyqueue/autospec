@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -430,10 +431,10 @@ func TestRetryExhaustedError(t *testing.T) {
 	assert.Contains(t, err.Error(), "3/3")
 }
 
-// Phase Execution State Tests
+// Stage Execution State Tests
 
-func TestPhaseExecutionState_Serialization(t *testing.T) {
-	state := &PhaseExecutionState{
+func TestStageExecutionState_Serialization(t *testing.T) {
+	state := &StageExecutionState{
 		SpecName:         "001-test-feature",
 		CurrentPhase:     2,
 		TotalPhases:      5,
@@ -444,10 +445,10 @@ func TestPhaseExecutionState_Serialization(t *testing.T) {
 	stateDir := t.TempDir()
 
 	// Save and reload
-	err := SavePhaseState(stateDir, state)
+	err := SaveStageState(stateDir, state)
 	require.NoError(t, err)
 
-	loaded, err := LoadPhaseState(stateDir, "001-test-feature")
+	loaded, err := LoadStageState(stateDir, "001-test-feature")
 	require.NoError(t, err)
 	require.NotNil(t, loaded)
 
@@ -457,7 +458,7 @@ func TestPhaseExecutionState_Serialization(t *testing.T) {
 	assert.Equal(t, state.CompletedPhases, loaded.CompletedPhases)
 }
 
-func TestLoadPhaseState(t *testing.T) {
+func TestLoadStageState(t *testing.T) {
 	tests := map[string]struct {
 		setupStore func(t *testing.T, stateDir string)
 		specName   string
@@ -470,25 +471,25 @@ func TestLoadPhaseState(t *testing.T) {
 		},
 		"returns nil when spec not in store": {
 			setupStore: func(t *testing.T, stateDir string) {
-				state := &PhaseExecutionState{
+				state := &StageExecutionState{
 					SpecName:        "other-spec",
 					CurrentPhase:    1,
 					CompletedPhases: []int{},
 				}
-				require.NoError(t, SavePhaseState(stateDir, state))
+				require.NoError(t, SaveStageState(stateDir, state))
 			},
 			specName: "001-test",
 			wantNil:  true,
 		},
 		"loads existing state": {
 			setupStore: func(t *testing.T, stateDir string) {
-				state := &PhaseExecutionState{
+				state := &StageExecutionState{
 					SpecName:        "001-test",
 					CurrentPhase:    3,
 					TotalPhases:     5,
 					CompletedPhases: []int{1, 2},
 				}
-				require.NoError(t, SavePhaseState(stateDir, state))
+				require.NoError(t, SaveStageState(stateDir, state))
 			},
 			specName: "001-test",
 			wantNil:  false,
@@ -502,7 +503,7 @@ func TestLoadPhaseState(t *testing.T) {
 			stateDir := t.TempDir()
 			tc.setupStore(t, stateDir)
 
-			state, err := LoadPhaseState(stateDir, tc.specName)
+			state, err := LoadStageState(stateDir, tc.specName)
 			require.NoError(t, err)
 
 			if tc.wantNil {
@@ -515,10 +516,10 @@ func TestLoadPhaseState(t *testing.T) {
 	}
 }
 
-func TestSavePhaseState_Roundtrip(t *testing.T) {
+func TestSaveStageState_Roundtrip(t *testing.T) {
 	stateDir := t.TempDir()
 
-	state := &PhaseExecutionState{
+	state := &StageExecutionState{
 		SpecName:         "001-feature",
 		CurrentPhase:     2,
 		TotalPhases:      4,
@@ -526,10 +527,10 @@ func TestSavePhaseState_Roundtrip(t *testing.T) {
 		LastPhaseAttempt: time.Now().Truncate(time.Millisecond), // JSON loses nanoseconds
 	}
 
-	err := SavePhaseState(stateDir, state)
+	err := SaveStageState(stateDir, state)
 	require.NoError(t, err)
 
-	loaded, err := LoadPhaseState(stateDir, "001-feature")
+	loaded, err := LoadStageState(stateDir, "001-feature")
 	require.NoError(t, err)
 	require.NotNil(t, loaded)
 
@@ -539,9 +540,9 @@ func TestSavePhaseState_Roundtrip(t *testing.T) {
 	assert.Equal(t, state.CompletedPhases, loaded.CompletedPhases)
 }
 
-func TestMarkPhaseComplete(t *testing.T) {
+func TestMarkStageComplete(t *testing.T) {
 	tests := map[string]struct {
-		initialState    *PhaseExecutionState
+		initialState    *StageExecutionState
 		phaseToComplete int
 		wantCompleted   []int
 	}{
@@ -551,7 +552,7 @@ func TestMarkPhaseComplete(t *testing.T) {
 			wantCompleted:   []int{1},
 		},
 		"mark additional phase complete": {
-			initialState: &PhaseExecutionState{
+			initialState: &StageExecutionState{
 				SpecName:        "001-test",
 				CompletedPhases: []int{1},
 			},
@@ -559,7 +560,7 @@ func TestMarkPhaseComplete(t *testing.T) {
 			wantCompleted:   []int{1, 2},
 		},
 		"marking same phase twice is idempotent": {
-			initialState: &PhaseExecutionState{
+			initialState: &StageExecutionState{
 				SpecName:        "001-test",
 				CompletedPhases: []int{1, 2},
 			},
@@ -575,13 +576,13 @@ func TestMarkPhaseComplete(t *testing.T) {
 			stateDir := t.TempDir()
 
 			if tc.initialState != nil {
-				require.NoError(t, SavePhaseState(stateDir, tc.initialState))
+				require.NoError(t, SaveStageState(stateDir, tc.initialState))
 			}
 
-			err := MarkPhaseComplete(stateDir, "001-test", tc.phaseToComplete)
+			err := MarkStageComplete(stateDir, "001-test", tc.phaseToComplete)
 			require.NoError(t, err)
 
-			loaded, err := LoadPhaseState(stateDir, "001-test")
+			loaded, err := LoadStageState(stateDir, "001-test")
 			require.NoError(t, err)
 			require.NotNil(t, loaded)
 
@@ -590,26 +591,26 @@ func TestMarkPhaseComplete(t *testing.T) {
 	}
 }
 
-func TestResetPhaseState(t *testing.T) {
+func TestResetStageState(t *testing.T) {
 	t.Run("reset existing state", func(t *testing.T) {
 		t.Parallel()
 		stateDir := t.TempDir()
 
 		// Create initial state
-		state := &PhaseExecutionState{
+		state := &StageExecutionState{
 			SpecName:        "001-test",
 			CurrentPhase:    3,
 			TotalPhases:     5,
 			CompletedPhases: []int{1, 2},
 		}
-		require.NoError(t, SavePhaseState(stateDir, state))
+		require.NoError(t, SaveStageState(stateDir, state))
 
 		// Reset
-		err := ResetPhaseState(stateDir, "001-test")
+		err := ResetStageState(stateDir, "001-test")
 		require.NoError(t, err)
 
 		// Verify state is gone
-		loaded, err := LoadPhaseState(stateDir, "001-test")
+		loaded, err := LoadStageState(stateDir, "001-test")
 		require.NoError(t, err)
 		assert.Nil(t, loaded)
 	})
@@ -619,7 +620,7 @@ func TestResetPhaseState(t *testing.T) {
 		stateDir := t.TempDir()
 
 		// Reset should not error even if state doesn't exist
-		err := ResetPhaseState(stateDir, "999-nonexistent")
+		err := ResetStageState(stateDir, "999-nonexistent")
 		assert.NoError(t, err)
 	})
 
@@ -628,35 +629,35 @@ func TestResetPhaseState(t *testing.T) {
 		stateDir := t.TempDir()
 
 		// Create two states
-		state1 := &PhaseExecutionState{
+		state1 := &StageExecutionState{
 			SpecName:        "001-test",
 			CompletedPhases: []int{1, 2},
 		}
-		state2 := &PhaseExecutionState{
+		state2 := &StageExecutionState{
 			SpecName:        "002-other",
 			CompletedPhases: []int{1},
 		}
-		require.NoError(t, SavePhaseState(stateDir, state1))
-		require.NoError(t, SavePhaseState(stateDir, state2))
+		require.NoError(t, SaveStageState(stateDir, state1))
+		require.NoError(t, SaveStageState(stateDir, state2))
 
 		// Reset one state
-		err := ResetPhaseState(stateDir, "001-test")
+		err := ResetStageState(stateDir, "001-test")
 		require.NoError(t, err)
 
 		// Verify first is gone
-		loaded1, err := LoadPhaseState(stateDir, "001-test")
+		loaded1, err := LoadStageState(stateDir, "001-test")
 		require.NoError(t, err)
 		assert.Nil(t, loaded1)
 
 		// Verify second is preserved
-		loaded2, err := LoadPhaseState(stateDir, "002-other")
+		loaded2, err := LoadStageState(stateDir, "002-other")
 		require.NoError(t, err)
 		require.NotNil(t, loaded2)
 		assert.Equal(t, []int{1}, loaded2.CompletedPhases)
 	})
 }
 
-func TestPhaseExecutionState_IsPhaseCompleted(t *testing.T) {
+func TestStageExecutionState_IsPhaseCompleted(t *testing.T) {
 	tests := map[string]struct {
 		completedPhases []int
 		checkPhase      int
@@ -682,7 +683,7 @@ func TestPhaseExecutionState_IsPhaseCompleted(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			state := &PhaseExecutionState{
+			state := &StageExecutionState{
 				CompletedPhases: tc.completedPhases,
 			}
 			got := state.IsPhaseCompleted(tc.checkPhase)
@@ -691,8 +692,8 @@ func TestPhaseExecutionState_IsPhaseCompleted(t *testing.T) {
 	}
 }
 
-func TestPhaseStateCoexistsWithRetryState(t *testing.T) {
-	// Test that phase states and retry states can coexist in the same store
+func TestStageStateCoexistsWithRetryState(t *testing.T) {
+	// Test that stage states and retry states can coexist in the same store
 	stateDir := t.TempDir()
 
 	// Save retry state
@@ -704,24 +705,123 @@ func TestPhaseStateCoexistsWithRetryState(t *testing.T) {
 	}
 	require.NoError(t, SaveRetryState(stateDir, retryState))
 
-	// Save phase state
-	phaseState := &PhaseExecutionState{
+	// Save stage state
+	phaseState := &StageExecutionState{
 		SpecName:        "001-test",
 		CurrentPhase:    2,
 		TotalPhases:     4,
 		CompletedPhases: []int{1},
 	}
-	require.NoError(t, SavePhaseState(stateDir, phaseState))
+	require.NoError(t, SaveStageState(stateDir, phaseState))
 
 	// Verify both can be loaded
 	loadedRetry, err := LoadRetryState(stateDir, "001-test", "implement", 3)
 	require.NoError(t, err)
 	assert.Equal(t, 1, loadedRetry.Count)
 
-	loadedPhase, err := LoadPhaseState(stateDir, "001-test")
+	loadedPhase, err := LoadStageState(stateDir, "001-test")
 	require.NoError(t, err)
 	require.NotNil(t, loadedPhase)
 	assert.Equal(t, []int{1}, loadedPhase.CompletedPhases)
+}
+
+// Backward Compatibility Tests
+
+func TestLegacyPhaseStatesBackwardCompatibility(t *testing.T) {
+	// Test that old retry state files with "phase_states" can still be loaded
+	// and are correctly migrated to "stage_states" format
+	stateDir := t.TempDir()
+
+	// Create a legacy format retry.json with phase_states (simulating old format)
+	legacyData := `{
+		"retries": {},
+		"phase_states": {
+			"001-test-feature": {
+				"spec_name": "001-test-feature",
+				"current_phase": 2,
+				"total_phases": 5,
+				"completed_phases": [1],
+				"last_phase_attempt": "2024-01-15T10:30:00Z"
+			}
+		}
+	}`
+
+	retryPath := filepath.Join(stateDir, "retry.json")
+	require.NoError(t, os.WriteFile(retryPath, []byte(legacyData), 0644))
+
+	// Load should work and migrate phase_states to stage_states
+	state, err := LoadStageState(stateDir, "001-test-feature")
+	require.NoError(t, err)
+	require.NotNil(t, state, "legacy phase_states should be migrated to stage_states")
+
+	// Verify migrated data
+	assert.Equal(t, "001-test-feature", state.SpecName)
+	assert.Equal(t, 2, state.CurrentPhase)
+	assert.Equal(t, 5, state.TotalPhases)
+	assert.Equal(t, []int{1}, state.CompletedPhases)
+
+	// Now save something new - this should use the new format
+	state.CompletedPhases = append(state.CompletedPhases, 2)
+	require.NoError(t, SaveStageState(stateDir, state))
+
+	// Read the raw JSON to verify it uses stage_states, not phase_states
+	data, err := os.ReadFile(retryPath)
+	require.NoError(t, err)
+
+	var rawStore map[string]interface{}
+	require.NoError(t, json.Unmarshal(data, &rawStore))
+
+	// New format should have stage_states
+	_, hasStageStates := rawStore["stage_states"]
+	assert.True(t, hasStageStates, "saved file should have stage_states key")
+
+	// Phase_states should NOT be in the new format (only stage_states)
+	_, hasPhaseStates := rawStore["phase_states"]
+	assert.False(t, hasPhaseStates, "saved file should not have phase_states key")
+}
+
+func TestMixedLegacyAndNewFormat(t *testing.T) {
+	// Test that files with both phase_states and stage_states are handled correctly
+	// (stage_states takes precedence, but legacy data is still migrated)
+	stateDir := t.TempDir()
+
+	// Create a file with both formats (edge case during migration)
+	mixedData := `{
+		"retries": {},
+		"phase_states": {
+			"old-spec": {
+				"spec_name": "old-spec",
+				"current_phase": 1,
+				"total_phases": 3,
+				"completed_phases": [1]
+			}
+		},
+		"stage_states": {
+			"new-spec": {
+				"spec_name": "new-spec",
+				"current_phase": 2,
+				"total_phases": 4,
+				"completed_phases": [1, 2]
+			}
+		}
+	}`
+
+	retryPath := filepath.Join(stateDir, "retry.json")
+	require.NoError(t, os.WriteFile(retryPath, []byte(mixedData), 0644))
+
+	// Load old spec (from legacy phase_states)
+	oldState, err := LoadStageState(stateDir, "old-spec")
+	require.NoError(t, err)
+	require.NotNil(t, oldState)
+	assert.Equal(t, "old-spec", oldState.SpecName)
+	assert.Equal(t, []int{1}, oldState.CompletedPhases)
+
+	// Load new spec (from stage_states)
+	newState, err := LoadStageState(stateDir, "new-spec")
+	require.NoError(t, err)
+	require.NotNil(t, newState)
+	assert.Equal(t, "new-spec", newState.SpecName)
+	assert.Equal(t, []int{1, 2}, newState.CompletedPhases)
 }
 
 // Task Execution State Tests
@@ -986,7 +1086,7 @@ func TestTaskExecutionState_IsTaskCompleted(t *testing.T) {
 }
 
 func TestTaskStateCoexistsWithOtherStates(t *testing.T) {
-	// Test that task states, phase states, and retry states can coexist in the same store
+	// Test that task states, stage states, and retry states can coexist in the same store
 	stateDir := t.TempDir()
 
 	// Save retry state
@@ -998,14 +1098,14 @@ func TestTaskStateCoexistsWithOtherStates(t *testing.T) {
 	}
 	require.NoError(t, SaveRetryState(stateDir, retryState))
 
-	// Save phase state
-	phaseState := &PhaseExecutionState{
+	// Save stage state
+	phaseState := &StageExecutionState{
 		SpecName:        "001-test",
 		CurrentPhase:    2,
 		TotalPhases:     4,
 		CompletedPhases: []int{1},
 	}
-	require.NoError(t, SavePhaseState(stateDir, phaseState))
+	require.NoError(t, SaveStageState(stateDir, phaseState))
 
 	// Save task state
 	taskState := &TaskExecutionState{
@@ -1021,7 +1121,7 @@ func TestTaskStateCoexistsWithOtherStates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, loadedRetry.Count)
 
-	loadedPhase, err := LoadPhaseState(stateDir, "001-test")
+	loadedPhase, err := LoadStageState(stateDir, "001-test")
 	require.NoError(t, err)
 	require.NotNil(t, loadedPhase)
 	assert.Equal(t, []int{1}, loadedPhase.CompletedPhases)
