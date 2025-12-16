@@ -16,7 +16,10 @@
 
 </div>
 
-Built for Claude Code and inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access and validation.
+**Stop AI slop.** Autospec brings structure to AI coding: spec → plan → tasks → implement - all in one command.
+
+Built for Claude Code and inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access and validation. These principles ensure reliable, performant, and maintainable software that developers 
+can trust for their critical development workflows.
 
 ## 📦 Installation
 
