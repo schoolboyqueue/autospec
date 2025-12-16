@@ -73,12 +73,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	// Step 2: Handle config
 	var configPath string
-	var configLabel string
 
 	if project {
 		// Project-level config
 		configPath = config.ProjectConfigPath()
-		configLabel = "project"
 	} else {
 		// User-level config (default)
 		var err error
@@ -86,7 +84,6 @@ func runInit(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to get user config path: %w", err)
 		}
-		configLabel = "user"
 	}
 
 	configExists := false
@@ -97,25 +94,8 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 
 	if configExists && !force {
-		// Prompt user
-		label := configLabel
-		if len(label) > 0 {
-			label = strings.ToUpper(label[:1]) + label[1:]
-		}
-		fmt.Fprintf(out, "\n%s config exists at %s\n", label, configPath)
-		if !promptYesNo(cmd, "Update config?") {
-			fmt.Fprintf(out, "✓ Config: unchanged\n")
-			// Still handle constitution even if config unchanged
-			constitutionExists := handleConstitution(out)
-			printSummary(out, constitutionExists)
-			return nil
-		}
-
-		// Interactive config update
-		if err := updateConfigInteractiveYAML(cmd, configPath, existingConfig); err != nil {
-			return err
-		}
-		fmt.Fprintf(out, "✓ Config: updated\n")
+		// Config exists - just mention it and move on
+		fmt.Fprintf(out, "✓ Config: exists at %s\n", configPath)
 	} else {
 		// Create new config with defaults
 		if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
@@ -171,64 +151,6 @@ func promptYesNo(cmd *cobra.Command, question string) bool {
 	answer = strings.TrimSpace(strings.ToLower(answer))
 
 	return answer == "y" || answer == "yes"
-}
-
-func updateConfigInteractiveYAML(cmd *cobra.Command, configPath string, existing map[string]interface{}) error {
-	out := cmd.OutOrStdout()
-	defaults := config.GetDefaults()
-
-	// Merge existing with defaults (existing takes precedence)
-	for k, v := range defaults {
-		if _, exists := existing[k]; !exists {
-			existing[k] = v
-		}
-	}
-
-	fmt.Fprintf(out, "\nCurrent settings (press Enter to keep, or type new value):\n")
-
-	// Key settings to prompt for
-	settings := []struct {
-		key     string
-		desc    string
-		current interface{}
-	}{
-		{"specs_dir", "Specs directory", existing["specs_dir"]},
-		{"max_retries", "Max retries (1-10)", existing["max_retries"]},
-		{"timeout", "Timeout in seconds (0=disabled)", existing["timeout"]},
-		{"skip_preflight", "Skip preflight checks (true/false)", existing["skip_preflight"]},
-		{"show_progress", "Show progress indicators (true/false)", existing["show_progress"]},
-	}
-
-	reader := bufio.NewReader(cmd.InOrStdin())
-
-	for _, s := range settings {
-		fmt.Fprintf(out, "  %s [%v]: ", s.desc, s.current)
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		if input != "" {
-			// Parse based on type
-			switch s.current.(type) {
-			case bool:
-				existing[s.key] = input == "true" || input == "yes" || input == "1"
-			case float64, int:
-				var num int
-				fmt.Sscanf(input, "%d", &num)
-				existing[s.key] = num
-			default:
-				existing[s.key] = input
-			}
-		}
-	}
-
-	// Write updated config as YAML
-	data, err := yaml.Marshal(existing)
-	if err != nil {
-		return fmt.Errorf("failed to serialize config: %w", err)
-	}
-
-	header := "# Autospec Configuration\n# See 'autospec config show' for all available options\n\n"
-	return os.WriteFile(configPath, []byte(header+string(data)), 0644)
 }
 
 // handleConstitution checks for existing constitution and copies it if needed.
