@@ -91,7 +91,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Implement CreateBackup() function in internal/completion/install.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -104,7 +104,7 @@ phases:
             - "Handles case where original file doesn't exist (no backup needed)"
         - id: "T007"
           title: "Implement HasExistingInstallation() function in internal/completion/install.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -117,7 +117,7 @@ phases:
             - "Handles case where rc file doesn't exist"
         - id: "T008"
           title: "Implement Install() orchestration function in internal/completion/install.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -132,7 +132,7 @@ phases:
             - "Returns InstallResult with success, backupPath, configPath, action, message"
         - id: "T009"
           title: "Add unit tests for installation logic in internal/completion/install_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: "US-001"
@@ -147,7 +147,7 @@ phases:
             - "Tests use temp directories for file operations"
         - id: "T010"
           title: "Create Cobra 'completion install' subcommand in internal/cli/completion_install.go"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-002"
