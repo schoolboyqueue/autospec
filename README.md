@@ -97,59 +97,35 @@ autospec constitution
 
 ### Recommended Workflow
 
-1️⃣ Generate the specification first:
+1. Generate the specification
+2. Review and edit `specs/001-user-auth/spec.yaml` as needed
+3. Continue with plan → tasks → implement
 
 ```bash
 autospec run -s "Add user authentication with OAuth"
-```
-
-2️⃣ Review and edit `specs/001-user-auth/spec.yaml` as needed
-
-3️⃣ Continue with plan → tasks → implement:
-
-```bash
 autospec run -pti
 ```
 
-> ⚠️ **Note:** New specs automatically create and checkout a feature branch (e.g., `spec/001-user-auth`).
-
-This iterative approach lets you review and refine the spec before committing to implementation.
+> ⚠️ **Note:** New specs automatically create and checkout a feature branch (e.g., `spec/001-user-auth`). This iterative approach lets you review and refine the spec before committing to implementation.
 
 ### Flexible Stage Selection with `run`
 
-🚀 Run all core stages (specify → plan → tasks → implement):
+| Example | Stages |
+|---------|--------|
+| `-a` | All core (specify → plan → tasks → implement) |
+| `-sp` | Specify + plan |
+| `-ti` | Tasks + implement |
+| `-sr` | Specify + clarify |
+| `-a -l` | All core + checklist |
+| `-tlzi` | Tasks + checklist + analyze + implement |
 
 ```bash
 autospec run -a "Add user authentication with OAuth"
-```
-
-📝 Run specific stages:
-
-```bash
 autospec run -sp "Add caching layer"
-```
-
-```bash
 autospec run -ti --spec 007-feature
-```
-
-✨ Include optional stages:
-
-```bash
 autospec run -sr "Add payments"
-```
-
-```bash
 autospec run -a -l
-```
-
-```bash
 autospec run -tlzi
-```
-
-🏃 Skip confirmations for automation:
-
-```bash
 autospec run -a -y "Feature description"
 ```
 
@@ -172,39 +148,20 @@ autospec run -a -y "Feature description"
 
 ### Shortcut Commands
 
-🎯 Complete workflow (specify → plan → tasks → implement):
+| Command | Stages |
+|---------|--------|
+| `all` | specify → plan → tasks → implement |
+| `prep` | specify → plan → tasks (no implementation) |
+| `implement` | Implementation only |
+| `status` / `st` | Show artifacts and task progress |
 
 ```bash
 autospec all "Add feature description"
-```
-
-📋 Prepare only (specify → plan → tasks, no implementation):
-
-```bash
 autospec prep "Add feature description"
-```
-
-🔨 Implementation only:
-
-```bash
 autospec implement
-```
-
-```bash
 autospec implement 003-feature "Focus on tests"
-```
-
-📊 Check status:
-
-```bash
 autospec status
-```
-
-```bash
 autospec st
-```
-
-```bash
 autospec st -v
 ```
 
@@ -212,45 +169,21 @@ autospec st -v
 
 Control how implementation runs with different levels of context isolation:
 
-🔸 Default: Phase-level (each phase in separate session):
-
-```bash
-autospec implement
-```
-
-```bash
-autospec implement --from-phase 3
-```
-
-```bash
-autospec implement --phase 3
-```
-
-🔹 Task-level: Each task in separate session (maximum isolation):
-
-```bash
-autospec implement --tasks
-```
-
-```bash
-autospec implement --from-task T005
-```
-
-```bash
-autospec implement --task T003
-```
-
-🔸 Single-session: All tasks in one session (legacy mode):
-
-```bash
-autospec implement --single-session
-```
-
 | Mode | Flag | Isolation | Use Case |
 |------|------|-----------|----------|
 | Phase | (default) | 1 session per phase | Balanced cost/context |
 | Task | `--tasks` | 1 session per task | Complex tasks, max isolation |
 | Single | `--single-session` | 1 session for all | Small specs, simple tasks |
+
+```bash
+autospec implement
+autospec implement --from-phase 3
+autospec implement --phase 3
+autospec implement --tasks
+autospec implement --from-task T005
+autospec implement --task T003
+autospec implement --single-session
+```
 
 > 📌 `--tasks`, `--phases`, and `--single-session` are mutually exclusive. Task-level execution respects dependency order and validates each task completes before proceeding.
 
@@ -258,43 +191,27 @@ autospec implement --single-session
 
 ### Optional Stage Commands
 
-🏛️ Constitution - project principles:
+| Command | Description |
+|---------|-------------|
+| `constitution` | Project principles |
+| `clarify` | Refine spec with questions |
+| `checklist` | Validation checklist |
+| `analyze` | Consistency analysis |
 
 ```bash
 autospec constitution "Emphasize security"
-```
-
-❓ Clarify - refine spec with questions:
-
-```bash
 autospec clarify "Focus on edge cases"
-```
-
-✅ Checklist - validation checklist:
-
-```bash
 autospec checklist "Include a11y checks"
-```
-
-🔍 Analyze - consistency analysis:
-
-```bash
 autospec analyze "Verify API contracts"
 ```
 
 ### Task Management
 
-Claude automatically updates task status during implementation. Manual updates are also available:
+Claude automatically updates task status during implementation. Manual updates:
 
 ```bash
 autospec update-task T001 InProgress
-```
-
-```bash
 autospec update-task T001 Completed
-```
-
-```bash
 autospec update-task T001 Blocked
 ```
 
@@ -371,55 +288,28 @@ notifications:
 
 ### Environment Variables
 
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTOSPEC_MAX_RETRIES` | `0` | No retries |
+| `AUTOSPEC_SPECS_DIR` | `./specs` | Specs directory |
+| `AUTOSPEC_TIMEOUT` | `2400` | 40 minutes |
+| `AUTOSPEC_YES` | `false` | Prompts enabled |
+
 ```bash
 export AUTOSPEC_MAX_RETRIES=0
-```
-
-```bash
 export AUTOSPEC_SPECS_DIR="./specs"
-```
-
-```bash
 export AUTOSPEC_TIMEOUT=2400
-```
-
-```bash
 export AUTOSPEC_YES=false
 ```
 
-Defaults: `MAX_RETRIES=0`, `SPECS_DIR=./specs`, `TIMEOUT=2400` (40 min), `YES=false` (prompts enabled)
-
 ### Commands
-
-Initialize config (user-level):
 
 ```bash
 autospec init
-```
-
-Initialize config (project-level):
-
-```bash
 autospec init --project
-```
-
-View config:
-
-```bash
 autospec config show
-```
-
-```bash
 autospec config show --json
-```
-
-Migrate legacy JSON config:
-
-```bash
 autospec config migrate
-```
-
-```bash
 autospec config migrate --dry-run
 ```
 
@@ -443,17 +333,8 @@ Or install for a specific shell:
 
 ```bash
 autospec completion install bash
-```
-
-```bash
 autospec completion install zsh
-```
-
-```bash
 autospec completion install fish
-```
-
-```bash
 autospec completion install powershell
 ```
 
@@ -461,21 +342,9 @@ See [docs/SHELL-COMPLETION.md](docs/SHELL-COMPLETION.md) for detailed setup and 
 
 ## 🔍 Troubleshooting
 
-First step - check dependencies:
-
 ```bash
 autospec doctor
-```
-
-Debug mode:
-
-```bash
 autospec --debug run -a "feature"
-```
-
-View config:
-
-```bash
 autospec config show
 ```
 
@@ -507,13 +376,7 @@ Requires Go 1.21+
 
 ```bash
 git clone https://github.com/ariel-frischer/autospec.git
-```
-
-```bash
 cd autospec
-```
-
-```bash
 make install
 ```
 
