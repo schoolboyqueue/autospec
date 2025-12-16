@@ -4,6 +4,8 @@
 
 Configuration guide for Claude Code settings relevant to autospec workflows.
 
+> **Quick Start**: Run `autospec init` to automatically configure Claude Code permissions.
+
 ## Sandboxing Overview
 
 Claude Code uses OS-level sandboxing to isolate bash commands:
@@ -103,6 +105,32 @@ Network access is controlled via a proxy server:
 ```
 
 ## Using with autospec
+
+### Automatic Configuration
+
+Running `autospec init` automatically configures Claude Code permissions:
+
+```bash
+autospec init
+# Output: Created .claude/settings.local.json with Claude Code permissions for autospec
+```
+
+This creates `.claude/settings.local.json` with the `Bash(autospec:*)` permission in the allow list.
+
+**Behavior:**
+- Creates settings file if missing
+- Adds permission to existing settings without removing other configurations
+- Warns if permission is explicitly denied (respects user security decisions)
+- Skips if permission already configured
+
+### Validating Configuration
+
+Use `autospec doctor` to check Claude settings:
+
+```bash
+autospec doctor
+# ✓ Claude settings: Bash(autospec:*) permission configured
+```
 
 ### Recommended Setup
 
