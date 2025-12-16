@@ -81,6 +81,9 @@ autospec doctor
 
 # Initialize Autospec (config, commands, and scripts)
 autospec init
+
+# Create project constitution (principles that guide all specs)
+autospec constitution
 ```
 
 ## 🎮 Usage
