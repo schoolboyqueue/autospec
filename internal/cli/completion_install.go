@@ -157,7 +157,8 @@ func init() {
 	// Disable Cobra's default completion command so we can add our own
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
-	// Add our custom completion command
+	// Add our custom completion command with proper grouping
+	completionCmd.GroupID = GroupConfiguration
 	rootCmd.AddCommand(completionCmd)
 
 	// Add shell-specific generation commands

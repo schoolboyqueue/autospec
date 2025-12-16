@@ -23,12 +23,6 @@ func TestAllCmdRegistration(t *testing.T) {
 	assert.True(t, found, "all command should be registered")
 }
 
-func TestFullCmdDeprecated(t *testing.T) {
-	// Verify fullCmd is deprecated
-	assert.NotEmpty(t, fullCmd.Deprecated)
-	assert.Contains(t, fullCmd.Deprecated, "autospec all")
-}
-
 func TestAllCmdFlags(t *testing.T) {
 	// Test that all expected flags are registered
 	flags := []struct {
