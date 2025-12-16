@@ -255,14 +255,21 @@ func (e *Executor) ValidateTasks(specDir string) error {
 }
 
 // ValidateTasksComplete checks if all tasks are completed
+// Supports both YAML (status field) and Markdown (checkbox) formats
 func (e *Executor) ValidateTasksComplete(tasksPath string) error {
-	count, err := validation.CountUncheckedTasks(tasksPath)
+	stats, err := validation.GetTaskStats(tasksPath)
 	if err != nil {
 		return err
 	}
 
-	if count > 0 {
-		return fmt.Errorf("implementation incomplete: %d unchecked tasks remain", count)
+	if !stats.IsComplete() {
+		remaining := stats.PendingTasks + stats.InProgressTasks + stats.BlockedTasks
+		if stats.BlockedTasks > 0 {
+			return fmt.Errorf("implementation incomplete: %d tasks remain (%d pending, %d in-progress, %d blocked)",
+				remaining, stats.PendingTasks, stats.InProgressTasks, stats.BlockedTasks)
+		}
+		return fmt.Errorf("implementation incomplete: %d tasks remain (%d pending, %d in-progress)",
+			remaining, stats.PendingTasks, stats.InProgressTasks)
 	}
 
 	return nil

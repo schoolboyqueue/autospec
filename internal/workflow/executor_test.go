@@ -416,7 +416,7 @@ func TestValidateTasksComplete(t *testing.T) {
 
 			if tc.wantErr {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "unchecked tasks")
+				assert.Contains(t, err.Error(), "tasks remain")
 			} else {
 				assert.NoError(t, err)
 			}

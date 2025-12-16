@@ -435,7 +435,7 @@ phases:
             - "Returns exit code 0 if all issues fixed, 1 if unfixable issues remain"
         - id: "T030"
           title: "Create auto-fix tests (internal/validation/autofix_test.go)"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-005"
@@ -454,7 +454,7 @@ phases:
       tasks:
         - id: "T031"
           title: "Update autospec.specify.md to include validation"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-006"
@@ -466,7 +466,7 @@ phases:
             - "Instructions explain validation step to LLM"
         - id: "T032"
           title: "Update autospec.plan.md to include validation"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-006"
@@ -478,7 +478,7 @@ phases:
             - "Instructions explain validation step to LLM"
         - id: "T033"
           title: "Update autospec.tasks.md to include validation"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-006"
@@ -490,7 +490,7 @@ phases:
             - "Instructions explain validation step to LLM"
         - id: "T034"
           title: "Update autospec.implement.md to include validation"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-006"
@@ -505,7 +505,7 @@ phases:
       tasks:
         - id: "T035"
           title: "Update CLAUDE.md with artifact command documentation"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -518,7 +518,7 @@ phases:
             - "Documents exit codes"
         - id: "T036"
           title: "Add benchmark tests for validation performance"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: null
@@ -531,7 +531,7 @@ phases:
             - "Benchmarks demonstrate <500ms for typical artifacts"
         - id: "T037"
           title: "Run go fmt and go vet on all new code"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: false
           story_id: null
@@ -543,7 +543,7 @@ phases:
             - "All new code follows project style"
         - id: "T038"
           title: "Run full test suite and verify all tests pass"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null

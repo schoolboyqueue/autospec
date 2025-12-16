@@ -198,11 +198,12 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 5. **Write the tasks** to `FEATURE_DIR/tasks.yaml`
 
-6. **Validate the YAML**:
+6. **Validate the artifact**:
    ```bash
-   autospec yaml check FEATURE_DIR/tasks.yaml
+   autospec artifact tasks FEATURE_DIR/tasks.yaml
    ```
-   - If validation fails: fix YAML syntax errors and retry
+   - If validation fails: review errors with line numbers and hints, fix issues, and retry
+   - Validation checks: required fields, task ID format, dependency references, status enum values, circular dependencies
    - If validation passes: proceed to report
 
 7. **Report**: Output:
