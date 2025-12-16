@@ -9,8 +9,9 @@ import (
 )
 
 var doctorCmd = &cobra.Command{
-	Use:   "doctor",
-	Short: "Run health checks for autospec dependencies",
+	Use:     "doctor",
+	Aliases: []string{"doc"},
+	Short:   "Run health checks for autospec dependencies",
 	Long: `Run health checks to verify that all required dependencies are installed and available.
 
 This command checks for:

@@ -41,9 +41,10 @@ const (
 var versionPlain bool
 
 var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Display version information",
-	Long:  "Display version, commit, build date, and Go version information for autospec",
+	Use:     "version",
+	Aliases: []string{"v"},
+	Short:   "Display version information",
+	Long:    "Display version, commit, build date, and Go version information for autospec",
 	Example: `  # Show version info
   autospec version
 

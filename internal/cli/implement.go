@@ -13,8 +13,9 @@ import (
 )
 
 var implementCmd = &cobra.Command{
-	Use:   "implement [spec-name-or-prompt]",
-	Short: "Execute the implementation phase for the current spec",
+	Use:     "implement [spec-name-or-prompt]",
+	Aliases: []string{"impl", "i"},
+	Short:   "Execute the implementation phase for the current spec",
 	Long: `Execute the /autospec.implement command for the current specification.
 
 The implement command will:

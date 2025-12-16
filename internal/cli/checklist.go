@@ -14,8 +14,9 @@ import (
 )
 
 var checklistCmd = &cobra.Command{
-	Use:   "checklist [optional-prompt]",
-	Short: "Generate a custom checklist for the current feature",
+	Use:     "checklist [optional-prompt]",
+	Aliases: []string{"chk"},
+	Short:   "Generate a custom checklist for the current feature",
 	Long: `Execute the /autospec.checklist command for the current specification.
 
 The checklist command will:
