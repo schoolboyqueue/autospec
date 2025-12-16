@@ -21,7 +21,7 @@ Install the YAML-based command templates into your project:
 autospec commands install
 ```
 
-This creates command templates in `.claude/commands/` and helper scripts in `.autospec/scripts/`.
+This creates command templates in `.claude/commands/`.
 
 ### 2. Check Installation
 
@@ -47,19 +47,17 @@ Each command generates a corresponding YAML file in `specs/<feature-name>/`.
 
 ### autospec commands install
 
-Installs command templates and helper scripts:
+Installs command templates:
 
 ```bash
-autospec commands install [--target <dir>] [--scripts-target <dir>]
+autospec commands install [--target <dir>]
 ```
 
 **Options**:
 - `--target`: Directory for command templates (default: `.claude/commands`)
-- `--scripts-target`: Directory for helper scripts (default: `.autospec/scripts`)
 
 **Output**:
 - Creates 7 command templates: `autospec.specify.md`, `autospec.plan.md`, `autospec.tasks.md`, `autospec.implement.md`, `autospec.checklist.md`, `autospec.analyze.md`, `autospec.constitution.md`
-- Creates helper scripts: `common.sh`, `check-prerequisites.sh`, `create-new-feature.sh`
 
 ### autospec commands check
 
@@ -345,37 +343,35 @@ implementation_strategy:
 
 The `autospec.*` commands read and write YAML; `speckit.*` commands use markdown.
 
-### Helper Scripts
+### CLI Commands for Workflow Support
 
-The helper scripts in `.autospec/scripts/` are designed for the YAML workflow:
+The following CLI commands support the YAML workflow (replacing legacy shell scripts):
 
-**check-prerequisites.sh**
+**autospec prereqs**
 
-Returns YAML artifacts in `AVAILABLE_DOCS`:
+Returns YAML artifact paths in JSON format:
 
 ```bash
-# SpecKit (old) - checked for separate markdown files
-{"AVAILABLE_DOCS":["research.md","data-model.md","contracts/","tasks.md"]}
-
-# AutoSpec (new) - returns YAML artifacts only
-{"AVAILABLE_DOCS":["spec.yaml","plan.yaml","tasks.yaml","checklists/"]}
+autospec prereqs --json --require-plan
+# Output: {"FEATURE_DIR":"specs/<feature>","FEATURE_SPEC":"specs/<feature>/spec.yaml","IMPL_PLAN":"specs/<feature>/plan.yaml",...}
 ```
 
-**common.sh**
+**autospec new-feature**
 
-Provides path variables for YAML artifacts only:
+Creates feature branches and directories:
+
+```bash
+autospec new-feature --json "Add user authentication"
+# Output: {"BRANCH_NAME":"008-user-auth","FEATURE_DIR":"specs/008-user-auth",...}
+```
+
+Key variables returned:
 
 | Variable       | Value                          |
 |----------------|--------------------------------|
 | `FEATURE_SPEC` | `specs/<feature>/spec.yaml`    |
 | `IMPL_PLAN`    | `specs/<feature>/plan.yaml`    |
 | `TASKS`        | `specs/<feature>/tasks.yaml`   |
-
-Legacy variables removed (now embedded in plan.yaml):
-- `RESEARCH` → `plan.yaml` `research_findings`
-- `DATA_MODEL` → `plan.yaml` `data_model`
-- `CONTRACTS_DIR` → `plan.yaml` `api_contracts`
-- `QUICKSTART` → `plan.yaml` `implementation_strategy`
 
 ## Updating Task Status
 

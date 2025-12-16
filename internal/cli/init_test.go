@@ -97,37 +97,6 @@ func TestCountResults(t *testing.T) {
 	}
 }
 
-func TestCountScriptResults(t *testing.T) {
-	tests := map[string]struct {
-		results     []commands.ScriptInstallResult
-		wantInstall int
-		wantUpdate  int
-	}{
-		"empty": {
-			results:     []commands.ScriptInstallResult{},
-			wantInstall: 0,
-			wantUpdate:  0,
-		},
-		"mixed actions": {
-			results: []commands.ScriptInstallResult{
-				{Action: "installed"},
-				{Action: "updated"},
-				{Action: "skipped"},
-			},
-			wantInstall: 1,
-			wantUpdate:  1,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			installed, updated := countScriptResults(tc.results)
-			assert.Equal(t, tc.wantInstall, installed)
-			assert.Equal(t, tc.wantUpdate, updated)
-		})
-	}
-}
-
 func TestCopyConstitution(t *testing.T) {
 	t.Run("copy success", func(t *testing.T) {
 		srcDir := t.TempDir()
@@ -187,7 +156,6 @@ func TestInitCmdExamples(t *testing.T) {
 func TestInitCmdLongDescription(t *testing.T) {
 	keywords := []string{
 		"command templates",
-		"helper scripts",
 		"user-level",
 		"Configuration precedence",
 	}
@@ -229,7 +197,6 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 
 	output := buf.String()
 	assert.Contains(t, output, "Commands:")
-	assert.Contains(t, output, "Scripts:")
 	assert.Contains(t, output, "Config:")
 }
 

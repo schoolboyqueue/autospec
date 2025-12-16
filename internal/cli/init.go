@@ -163,7 +163,6 @@ func countResults(results []commands.InstallResult) (installed, updated int) {
 	return
 }
 
-
 func promptYesNo(cmd *cobra.Command, question string) bool {
 	fmt.Fprintf(cmd.OutOrStdout(), "%s [y/N]: ", question)
 

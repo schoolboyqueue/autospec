@@ -243,4 +243,3 @@ func GetAutospecCommandNames() []string {
 	}
 	return autospecNames
 }
-

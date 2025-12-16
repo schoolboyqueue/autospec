@@ -20,7 +20,6 @@ graph TB
     CLI[CLI Layer<br/>internal/cli] --> Workflow[Workflow Orchestration<br/>internal/workflow]
     CLI --> Config[Configuration<br/>internal/config]
     CLI --> Commands[Embedded Commands<br/>internal/commands]
-    CLI --> Scripts[Embedded Scripts<br/>internal/scripts]
     Workflow --> Executor[Phase Executor<br/>internal/workflow]
     Workflow --> Validation[Validation<br/>internal/validation]
     Workflow --> Retry[Retry Management<br/>internal/retry]
@@ -36,7 +35,7 @@ graph TB
 
     class CLI,Workflow,Executor primary
     class Config,Validation,Retry,Claude,Health,Spec,Git,Progress secondary
-    class Commands,Scripts embedded
+    class Commands embedded
 ```
 
 ### 1. CLI Layer (internal/cli/)
@@ -78,10 +77,6 @@ Real-time feedback (internal/progress/display.go:1): Spinner indicators for long
 ### 10. Embedded Commands (internal/commands/)
 
 Slash command templates embedded in binary (internal/commands/embed.go:1): Install to `.claude/commands/` during `autospec init`
-
-### 11. Embedded Scripts (internal/scripts/)
-
-Helper shell scripts embedded in binary (internal/scripts/embed.go:1): Install to `.autospec/scripts/` during `autospec init`
 
 ## System Architecture
 
@@ -146,7 +141,6 @@ internal/
 ├── workflow/     # WorkflowOrchestrator, Executor, ClaudeExecutor, PreflightChecks
 ├── config/       # Config loading (koanf), defaults, XDG paths, YAML validation
 ├── commands/     # Embedded slash command templates (.md files)
-├── scripts/      # Embedded helper scripts (.sh files)
 ├── validation/   # File validation, task parsing, prompt generation
 ├── retry/        # Persistent retry state management
 ├── spec/         # Spec detection (git branch, directory scan)

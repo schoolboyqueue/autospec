@@ -167,7 +167,6 @@ internal/
 ├── workflow/     # Workflow orchestration
 ├── config/       # Configuration management
 ├── commands/     # Embedded command templates (installed to .claude/commands/)
-├── scripts/      # Embedded shell scripts (installed to .autospec/scripts/)
 ├── validation/   # Validation functions
 ├── retry/        # Retry state management
 ├── spec/         # Spec detection
