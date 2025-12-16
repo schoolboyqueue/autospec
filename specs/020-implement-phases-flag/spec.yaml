@@ -20,6 +20,9 @@ user_stories:
       - given: "a tasks.yaml file with multiple phases"
         when: "I run 'autospec implement --phases' and phase 3 fails"
         then: "phases 1 and 2 remain completed, and I can resume from phase 3"
+      - given: "phases 1-4 are already completed (all tasks Completed or Blocked)"
+        when: "I run 'autospec implement --phases'"
+        then: "execution automatically starts from phase 5, displaying 'Phases 1-4 complete, starting from phase 5'"
 
   - id: "US-002"
     title: "Run a single specific phase"
@@ -217,6 +220,7 @@ assumptions:
   - "The /autospec.implement slash command can be modified to accept a phase filter parameter"
   - "Retry state mechanism already supports storing additional metadata (phase information)"
   - "Users understand that --phases mode is slower due to session overhead but provides benefits"
+  - "Blocked tasks are intentionally blocked and should not be attempted; only Pending and InProgress tasks are actionable"
 
 constraints:
   - "Cannot modify tasks.yaml schema - must work with existing phase array structure"
