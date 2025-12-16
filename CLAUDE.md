@@ -682,7 +682,13 @@ Fully migrated Go binary with:
 
 ## Important Notes
 
-### Embedded Scripts
-The `.autospec/scripts/` directory is created by `autospec init`, which copies embedded scripts from the Go binary. The source templates are in `internal/scripts/` and are embedded via `embed.go`. When modifying scripts like `create-new-feature.sh`, update the source template in `internal/scripts/` so changes apply to newly initialized projects.
+### Legacy Scripts (Removed)
+Shell scripts have been fully migrated to Go commands. The following Go commands replace the legacy scripts:
+- `autospec new-feature` - replaces `create-new-feature.sh`
+- `autospec prereqs` - replaces `check-prerequisites.sh`
+- `autospec setup-plan` - replaces `setup-plan.sh`
+- `autospec update-agent-context` - replaces `update-agent-context.sh`
+
+The slash commands in `.claude/commands/` now call these Go commands directly instead of shell scripts.
 
 **Last updated**: 2025-12-15

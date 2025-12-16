@@ -141,10 +141,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Step 4: Handle constitution
+	// Step 3: Handle constitution
 	constitutionExists := handleConstitution(out)
 
-	// Step 5: Check .gitignore for .autospec
+	// Step 4: Check .gitignore for .autospec
 	checkGitignore(out)
 
 	printSummary(out, constitutionExists)
