@@ -107,16 +107,43 @@ Execute implementation phase using tasks breakdown
 
 **Syntax**: `autospec implement [<spec-name>] ["<guidance>"] [flags]`
 
-**Description**: Execute tasks with Claude's assistance, validating progress.
+**Alias**: `autospec impl`, `autospec i`
 
-**Flags**: Same as `autospec full`
+**Description**: Execute tasks with Claude's assistance, validating progress. Supports multiple execution modes for context isolation.
+
+**Flags**:
+- `--phases`: Run each phase in a separate Claude session (fresh context per phase)
+- `--phase <N>`: Run only the specified phase number
+- `--from-phase <N>`: Run phases N and onwards, each in separate session
+- `--tasks`: Run each task in a separate Claude session (maximum context isolation)
+- `--from-task <ID>`: Resume from specific task ID
+- Plus all flags from `autospec full`
+
+**Execution Modes**:
+
+| Mode | Flag | Sessions | Use Case |
+|------|------|----------|----------|
+| Default | (none) | 1 | Small specs, quick iterations |
+| Phase-level | `--phases` | 1 per phase | Medium specs, natural recovery points |
+| Task-level | `--tasks` | 1 per task | Large specs, maximum isolation |
 
 **Examples**:
 ```bash
+# Default: all tasks in single session
 autospec implement
 autospec implement 001-dark-mode
-autospec implement "Focus on documentation tasks"
-autospec implement 001-dark-mode "Complete tests first"
+
+# Phase-level isolation
+autospec implement --phases              # All phases, fresh context each
+autospec implement --phase 2             # Run only phase 2
+autospec implement --from-phase 3        # Run phases 3+ sequentially
+
+# Task-level isolation (maximum granularity)
+autospec implement --tasks               # Each task in separate session
+autospec implement --from-task T005      # Resume from task T005
+
+# With guidance
+autospec implement --phases "Focus on tests first"
 ```
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
