@@ -33,16 +33,18 @@ Given that feature description, do this:
      - "Create a dashboard for analytics" → "analytics-dashboard"
      - "Fix payment processing timeout bug" → "fix-payment-timeout"
 
-2. **Create feature branch and directory**: Run the script with your generated short-name:
+2. **Create feature branch and directory**: Run the Go command with your generated short-name:
 
    ```bash
-   .autospec/scripts/create-new-feature.sh --json --short-name "<short-name>" "$ARGUMENTS"
+   autospec new-feature --json --short-name "<short-name>" "$ARGUMENTS"
    ```
 
    Parse the JSON output for:
    - `BRANCH_NAME`: The full branch name (e.g., "008-user-auth")
    - `SPEC_FILE`: Path to the spec file (ignore - we'll create spec.yaml instead)
    - `FEATURE_NUM`: The feature number
+   - `AUTOSPEC_VERSION`: The autospec version (for _meta section)
+   - `CREATED_DATE`: ISO 8601 timestamp (for _meta section)
 
    Set `FEATURE_DIR` to `specs/<BRANCH_NAME>/`
 
@@ -114,8 +116,8 @@ Given that feature description, do this:
    _meta:
      version: "1.0.0"
      generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
+     generator_version: "<AUTOSPEC_VERSION from step 2>"
+     created: "<CREATED_DATE from step 2>"
      artifact_type: "spec"
    ```
 
@@ -147,11 +149,11 @@ Given that feature description, do this:
 
 5. **Write the specification** to `FEATURE_DIR/spec.yaml`
 
-6. **Validate the YAML**:
+6. **Validate the artifact**:
    ```bash
-   autospec yaml check FEATURE_DIR/spec.yaml
+   autospec artifact FEATURE_DIR/spec.yaml
    ```
-   - If validation fails: fix YAML syntax errors and retry
+   - If validation fails: fix schema errors (missing required fields, invalid types) and retry
    - If validation passes: proceed to report
 
 7. **Report**: Output:

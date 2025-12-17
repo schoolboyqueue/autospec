@@ -3,6 +3,8 @@ package workflow
 import (
 	"fmt"
 
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/progress"
 	"github.com/ariel-frischer/autospec/internal/retry"
 	"github.com/ariel-frischer/autospec/internal/validation"
@@ -10,30 +12,31 @@ import (
 
 // Executor handles command execution with retry logic
 type Executor struct {
-	Claude          *ClaudeExecutor
-	StateDir        string
-	SpecsDir        string
-	MaxRetries      int
-	ProgressDisplay *progress.ProgressDisplay // Optional progress display
-	TotalPhases     int                       // Total phases in workflow
-	Debug           bool                      // Enable debug logging
+	Claude              *ClaudeExecutor
+	StateDir            string
+	SpecsDir            string
+	MaxRetries          int
+	ProgressDisplay     *progress.ProgressDisplay // Optional progress display
+	NotificationHandler *notify.Handler           // Optional notification handler for stage/command completion
+	TotalStages         int                       // Total stages in workflow
+	Debug               bool                      // Enable debug logging
 }
 
-// Phase represents a workflow phase (specify, plan, tasks, implement)
-type Phase string
+// Stage represents a workflow stage (specify, plan, tasks, implement)
+type Stage string
 
 const (
-	// Core workflow phases
-	PhaseSpecify   Phase = "specify"
-	PhasePlan      Phase = "plan"
-	PhaseTasks     Phase = "tasks"
-	PhaseImplement Phase = "implement"
+	// Core workflow stages
+	StageSpecify   Stage = "specify"
+	StagePlan      Stage = "plan"
+	StageTasks     Stage = "tasks"
+	StageImplement Stage = "implement"
 
-	// Optional phases
-	PhaseConstitution Phase = "constitution"
-	PhaseClarify      Phase = "clarify"
-	PhaseChecklist    Phase = "checklist"
-	PhaseAnalyze      Phase = "analyze"
+	// Optional stages
+	StageConstitution Stage = "constitution"
+	StageClarify      Stage = "clarify"
+	StageChecklist    Stage = "checklist"
+	StageAnalyze      Stage = "analyze"
 )
 
 // debugLog prints a debug message if debug mode is enabled
@@ -43,174 +46,215 @@ func (e *Executor) debugLog(format string, args ...interface{}) {
 	}
 }
 
-// getPhaseNumber returns the sequential number for a phase (1-based)
-// For optional phases, this returns their position in the canonical order:
+// getStageNumber returns the sequential number for a stage (1-based)
+// For optional stages, this returns their position in the canonical order:
 // constitution(1) -> specify(2) -> clarify(3) -> plan(4) -> tasks(5) -> checklist(6) -> analyze(7) -> implement(8)
-func (e *Executor) getPhaseNumber(phase Phase) int {
-	switch phase {
-	case PhaseConstitution:
+func (e *Executor) getStageNumber(stage Stage) int {
+	switch stage {
+	case StageConstitution:
 		return 1
-	case PhaseSpecify:
+	case StageSpecify:
 		return 2
-	case PhaseClarify:
+	case StageClarify:
 		return 3
-	case PhasePlan:
+	case StagePlan:
 		return 4
-	case PhaseTasks:
+	case StageTasks:
 		return 5
-	case PhaseChecklist:
+	case StageChecklist:
 		return 6
-	case PhaseAnalyze:
+	case StageAnalyze:
 		return 7
-	case PhaseImplement:
+	case StageImplement:
 		return 8
 	default:
 		return 0
 	}
 }
 
-// buildPhaseInfo constructs a PhaseInfo from Phase enum and retry state
-func (e *Executor) buildPhaseInfo(phase Phase, retryCount int) progress.PhaseInfo {
-	return progress.PhaseInfo{
-		Name:        string(phase),
-		Number:      e.getPhaseNumber(phase),
-		TotalPhases: e.TotalPhases,
-		Status:      progress.PhaseInProgress,
+// buildStageInfo constructs a StageInfo from Stage enum and retry state
+func (e *Executor) buildStageInfo(stage Stage, retryCount int) progress.StageInfo {
+	return progress.StageInfo{
+		Name:        string(stage),
+		Number:      e.getStageNumber(stage),
+		TotalStages: e.TotalStages,
+		Status:      progress.StageInProgress,
 		RetryCount:  retryCount,
 		MaxRetries:  e.MaxRetries,
 	}
 }
 
-// PhaseResult represents the result of executing a workflow phase
-type PhaseResult struct {
-	Phase      Phase
+// StageResult represents the result of executing a workflow stage
+type StageResult struct {
+	Stage      Stage
 	Success    bool
 	Error      error
 	RetryCount int
 	Exhausted  bool
 }
 
-// ExecutePhase executes a workflow phase with validation and retry logic
-func (e *Executor) ExecutePhase(specName string, phase Phase, command string, validateFunc func(string) error) (*PhaseResult, error) {
-	e.debugLog("ExecutePhase called - spec: %s, phase: %s, command: %s", specName, phase, command)
-	result := &PhaseResult{
-		Phase:   phase,
+// ExecuteStage executes a workflow stage with validation and retry logic.
+// It uses lifecycle.RunStage to wrap the execution and handle stage notifications.
+func (e *Executor) ExecuteStage(specName string, stage Stage, command string, validateFunc func(string) error) (*StageResult, error) {
+	e.debugLog("ExecuteStage called - spec: %s, stage: %s, command: %s", specName, stage, command)
+	result := &StageResult{
+		Stage:   stage,
 		Success: false,
 	}
 
 	// Load retry state
+	retryState, err := e.loadStageRetryState(specName, stage)
+	if err != nil {
+		return result, err
+	}
+
+	// Build stage info and start progress display
+	stageInfo := e.buildStageInfo(stage, retryState.Count)
+	e.startProgressDisplay(stageInfo)
+
+	// Use lifecycle.RunStage to wrap execution and handle stage notification
+	var stageErr error
+	execErr := lifecycle.RunStage(e.NotificationHandler, string(stage), func() error {
+		// Display and execute command
+		e.displayCommandExecution(command)
+		if err := e.Claude.Execute(command); err != nil {
+			stageErr = e.handleExecutionFailure(result, retryState, stageInfo, err)
+			return stageErr
+		}
+		e.debugLog("Claude.Execute() completed successfully")
+
+		// Validate output
+		specDir := fmt.Sprintf("%s/%s", e.SpecsDir, specName)
+		if err := validateFunc(specDir); err != nil {
+			stageErr = e.handleValidationFailure(result, retryState, stageInfo, err)
+			return stageErr
+		}
+		e.debugLog("Validation passed!")
+
+		// Handle success
+		e.completeStageSuccessNoNotify(result, stageInfo, specName, stage)
+		return nil
+	})
+
+	// If stageErr was set by the inner function, return it
+	if stageErr != nil {
+		return result, stageErr
+	}
+	return result, execErr
+}
+
+// loadStageRetryState loads retry state for a stage
+func (e *Executor) loadStageRetryState(specName string, stage Stage) (*retry.RetryState, error) {
 	e.debugLog("Loading retry state from: %s", e.StateDir)
-	retryState, err := retry.LoadRetryState(e.StateDir, specName, string(phase), e.MaxRetries)
+	retryState, err := retry.LoadRetryState(e.StateDir, specName, string(stage), e.MaxRetries)
 	if err != nil {
 		e.debugLog("Failed to load retry state: %v", err)
-		return result, fmt.Errorf("failed to load retry state: %w", err)
+		return nil, fmt.Errorf("failed to load retry state: %w", err)
 	}
 	e.debugLog("Retry state loaded - count: %d, max: %d", retryState.Count, e.MaxRetries)
+	return retryState, nil
+}
 
-	// Build phase info and start progress display
-	phaseInfo := e.buildPhaseInfo(phase, retryState.Count)
+// startProgressDisplay initializes progress display for a stage
+func (e *Executor) startProgressDisplay(stageInfo progress.StageInfo) {
 	if e.ProgressDisplay != nil {
 		e.debugLog("Starting progress display")
-		if err := e.ProgressDisplay.StartPhase(phaseInfo); err != nil {
-			// Log warning but don't fail execution
+		if err := e.ProgressDisplay.StartStage(stageInfo); err != nil {
 			fmt.Printf("Warning: progress display error: %v\n", err)
 		}
 	}
+}
 
-	// Display the full command before execution
+// displayCommandExecution shows the command being executed
+func (e *Executor) displayCommandExecution(command string) {
 	fullCommand := e.Claude.FormatCommand(command)
 	fmt.Printf("\n→ Executing: %s\n\n", fullCommand)
-
-	// Execute command
 	e.debugLog("About to call Claude.Execute()")
-	if err := e.Claude.Execute(command); err != nil {
-		e.debugLog("Claude.Execute() returned error: %v", err)
-		result.Error = fmt.Errorf("command execution failed: %w", err)
+}
 
-		// Show failure in progress display
-		if e.ProgressDisplay != nil {
-			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
-		}
+// handleExecutionFailure handles command execution failure without sending stage notification.
+// Stage notification is handled by lifecycle.RunStage wrapper.
+func (e *Executor) handleExecutionFailure(result *StageResult, retryState *retry.RetryState, stageInfo progress.StageInfo, err error) error {
+	e.debugLog("Claude.Execute() returned error: %v", err)
+	result.Error = fmt.Errorf("command execution failed: %w", err)
 
-		// Increment retry count
-		if incrementErr := retryState.Increment(); incrementErr != nil {
-			// Check if it's a retry exhausted error
-			if exhaustedErr, ok := incrementErr.(*retry.RetryExhaustedError); ok {
-				result.Exhausted = true
-				result.RetryCount = exhaustedErr.Count
-
-				// Save state before returning
-				retry.SaveRetryState(e.StateDir, retryState)
-
-				return result, fmt.Errorf("retry limit exhausted: %w", err)
-			}
-			return result, incrementErr
-		}
-
-		// Save incremented retry state
-		if saveErr := retry.SaveRetryState(e.StateDir, retryState); saveErr != nil {
-			return result, fmt.Errorf("failed to save retry state: %w", saveErr)
-		}
-
-		result.RetryCount = retryState.Count
-		return result, result.Error
+	if e.ProgressDisplay != nil {
+		e.ProgressDisplay.FailStage(stageInfo, result.Error)
 	}
-	e.debugLog("Claude.Execute() completed successfully")
 
-	// Validate output
-	specDir := fmt.Sprintf("%s/%s", e.SpecsDir, specName) // Simplified for now
-	e.debugLog("Running validation function for spec dir: %s", specDir)
-	if err := validateFunc(specDir); err != nil {
-		e.debugLog("Validation failed: %v", err)
-		result.Error = fmt.Errorf("validation failed: %w", err)
-
-		// Show failure in progress display
-		if e.ProgressDisplay != nil {
-			e.ProgressDisplay.FailPhase(phaseInfo, result.Error)
-		}
-
-		// Increment retry count
-		if incrementErr := retryState.Increment(); incrementErr != nil {
-			if exhaustedErr, ok := incrementErr.(*retry.RetryExhaustedError); ok {
-				result.Exhausted = true
-				result.RetryCount = exhaustedErr.Count
-				retry.SaveRetryState(e.StateDir, retryState)
-				return result, fmt.Errorf("validation failed and retry exhausted: %w", err)
-			}
-			return result, incrementErr
-		}
-
-		retry.SaveRetryState(e.StateDir, retryState)
-		result.RetryCount = retryState.Count
-		return result, result.Error
+	// Send error notification (non-blocking) - separate from stage completion
+	if e.NotificationHandler != nil {
+		e.debugLog("Sending error notification for stage %s", stageInfo.Name)
+		e.NotificationHandler.OnError(stageInfo.Name, result.Error)
 	}
-	e.debugLog("Validation passed!")
 
-	// Success! Show completion in progress display
+	_, retryErr := e.handleRetryIncrement(result, retryState, err, "retry limit exhausted")
+	return retryErr
+}
+
+// handleValidationFailure handles validation failure without sending stage notification.
+// Stage notification is handled by lifecycle.RunStage wrapper.
+func (e *Executor) handleValidationFailure(result *StageResult, retryState *retry.RetryState, stageInfo progress.StageInfo, err error) error {
+	e.debugLog("Validation failed: %v", err)
+	result.Error = fmt.Errorf("validation failed: %w", err)
+
+	if e.ProgressDisplay != nil {
+		e.ProgressDisplay.FailStage(stageInfo, result.Error)
+	}
+
+	// Send error notification (non-blocking) - separate from stage completion
+	if e.NotificationHandler != nil {
+		e.debugLog("Sending error notification for stage %s validation failure", stageInfo.Name)
+		e.NotificationHandler.OnError(stageInfo.Name, result.Error)
+	}
+
+	_, retryErr := e.handleRetryIncrement(result, retryState, err, "validation failed and retry exhausted")
+	return retryErr
+}
+
+// handleRetryIncrement increments retry count and handles exhaustion
+func (e *Executor) handleRetryIncrement(result *StageResult, retryState *retry.RetryState, originalErr error, exhaustedMsg string) (*StageResult, error) {
+	if incrementErr := retryState.Increment(); incrementErr != nil {
+		if exhaustedErr, ok := incrementErr.(*retry.RetryExhaustedError); ok {
+			result.Exhausted = true
+			result.RetryCount = exhaustedErr.Count
+			retry.SaveRetryState(e.StateDir, retryState)
+			return result, fmt.Errorf("%s: %w", exhaustedMsg, originalErr)
+		}
+		return result, incrementErr
+	}
+
+	if saveErr := retry.SaveRetryState(e.StateDir, retryState); saveErr != nil {
+		return result, fmt.Errorf("failed to save retry state: %w", saveErr)
+	}
+
+	result.RetryCount = retryState.Count
+	return result, result.Error
+}
+
+// completeStageSuccessNoNotify handles successful stage completion without sending stage notification.
+// Stage notification is handled by lifecycle.RunStage wrapper.
+func (e *Executor) completeStageSuccessNoNotify(result *StageResult, stageInfo progress.StageInfo, specName string, stage Stage) {
 	if e.ProgressDisplay != nil {
 		e.debugLog("Showing completion in progress display")
-		phaseInfo.Status = progress.PhaseCompleted
-		if err := e.ProgressDisplay.CompletePhase(phaseInfo); err != nil {
-			// Log warning but don't fail execution
+		stageInfo.Status = progress.StageCompleted
+		if err := e.ProgressDisplay.CompleteStage(stageInfo); err != nil {
 			fmt.Printf("Warning: progress display error: %v\n", err)
 		}
 	}
 
-	// Reset retry count
 	e.debugLog("Resetting retry count")
-	if err := retry.ResetRetryCount(e.StateDir, specName, string(phase)); err != nil {
-		// Log error but don't fail - reset is not critical
+	if err := retry.ResetRetryCount(e.StateDir, specName, string(stage)); err != nil {
 		fmt.Printf("Warning: failed to reset retry count: %v\n", err)
 	}
 
 	result.Success = true
 	result.RetryCount = 0
-	e.debugLog("ExecutePhase completed successfully - returning")
-	return result, nil
+	e.debugLog("ExecuteStage completed successfully - returning")
 }
 
 // ExecuteWithRetry executes a command and automatically retries on failure
-// This is a simplified version that doesn't require phase tracking
+// This is a simplified version that doesn't require stage tracking
 func (e *Executor) ExecuteWithRetry(command string, maxAttempts int) error {
 	var lastErr error
 
@@ -229,14 +273,14 @@ func (e *Executor) ExecuteWithRetry(command string, maxAttempts int) error {
 	return fmt.Errorf("all %d attempts failed: %w", maxAttempts, lastErr)
 }
 
-// GetRetryState retrieves the current retry state for a spec/phase
-func (e *Executor) GetRetryState(specName string, phase Phase) (*retry.RetryState, error) {
-	return retry.LoadRetryState(e.StateDir, specName, string(phase), e.MaxRetries)
+// GetRetryState retrieves the current retry state for a spec/stage
+func (e *Executor) GetRetryState(specName string, stage Stage) (*retry.RetryState, error) {
+	return retry.LoadRetryState(e.StateDir, specName, string(stage), e.MaxRetries)
 }
 
-// ResetPhase resets the retry count for a specific phase
-func (e *Executor) ResetPhase(specName string, phase Phase) error {
-	return retry.ResetRetryCount(e.StateDir, specName, string(phase))
+// ResetStage resets the retry count for a specific stage
+func (e *Executor) ResetStage(specName string, stage Stage) error {
+	return retry.ResetRetryCount(e.StateDir, specName, string(stage))
 }
 
 // ValidateSpec is a convenience wrapper for spec validation
@@ -255,14 +299,21 @@ func (e *Executor) ValidateTasks(specDir string) error {
 }
 
 // ValidateTasksComplete checks if all tasks are completed
+// Supports both YAML (status field) and Markdown (checkbox) formats
 func (e *Executor) ValidateTasksComplete(tasksPath string) error {
-	count, err := validation.CountUncheckedTasks(tasksPath)
+	stats, err := validation.GetTaskStats(tasksPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("getting task stats: %w", err)
 	}
 
-	if count > 0 {
-		return fmt.Errorf("implementation incomplete: %d unchecked tasks remain", count)
+	if !stats.IsComplete() {
+		remaining := stats.PendingTasks + stats.InProgressTasks + stats.BlockedTasks
+		if stats.BlockedTasks > 0 {
+			return fmt.Errorf("implementation incomplete: %d tasks remain (%d pending, %d in-progress, %d blocked)",
+				remaining, stats.PendingTasks, stats.InProgressTasks, stats.BlockedTasks)
+		}
+		return fmt.Errorf("implementation incomplete: %d tasks remain (%d pending, %d in-progress)",
+			remaining, stats.PendingTasks, stats.InProgressTasks)
 	}
 
 	return nil

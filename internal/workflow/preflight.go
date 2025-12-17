@@ -222,17 +222,17 @@ func FindSpecsDirectory(specsDir string) (string, error) {
 	return "", fmt.Errorf("specs directory not found: %s", specsDir)
 }
 
-// CheckArtifactDependencies checks if required artifacts exist for the selected phases.
+// CheckArtifactDependencies checks if required artifacts exist for the selected stages.
 // It returns a PreflightResult with MissingArtifacts populated.
-func CheckArtifactDependencies(phaseConfig *PhaseConfig, specDir string) *PreflightResult {
+func CheckArtifactDependencies(stageConfig *StageConfig, specDir string) *PreflightResult {
 	result := &PreflightResult{
 		Passed:           true,
 		MissingArtifacts: make([]string, 0),
 		Warnings:         make([]string, 0),
 	}
 
-	// Get all required artifacts for the selected phases
-	requiredArtifacts := phaseConfig.GetAllRequiredArtifacts()
+	// Get all required artifacts for the selected stages
+	requiredArtifacts := stageConfig.GetAllRequiredArtifacts()
 
 	// Check each required artifact
 	for _, artifact := range requiredArtifacts {
@@ -242,42 +242,42 @@ func CheckArtifactDependencies(phaseConfig *PhaseConfig, specDir string) *Prefli
 		}
 	}
 
-	// If any artifacts are missing, set RequiresConfirmation
+	// If any artifacts are missing, this is a hard error (no earlier stage produces them)
 	if len(result.MissingArtifacts) > 0 {
-		result.RequiresConfirmation = true
+		result.RequiresConfirmation = true // Keep for backward compat in tests
 		result.Passed = false
-		result.WarningMessage = GeneratePrerequisiteWarning(phaseConfig, result.MissingArtifacts)
+		result.WarningMessage = GeneratePrerequisiteError(stageConfig, result.MissingArtifacts)
 	}
 
 	return result
 }
 
-// GeneratePrerequisiteWarning generates a human-readable warning message
-// for missing prerequisites.
-func GeneratePrerequisiteWarning(phaseConfig *PhaseConfig, missingArtifacts []string) string {
+// GeneratePrerequisiteError generates a human-readable error message
+// for missing prerequisites. This is a hard error because no earlier
+// selected stage will produce these artifacts.
+func GeneratePrerequisiteError(stageConfig *StageConfig, missingArtifacts []string) string {
 	var sb strings.Builder
 
-	sb.WriteString("\nWARNING: Missing prerequisite artifacts:\n")
+	sb.WriteString("\nError: Missing required prerequisite artifacts:\n")
 	for _, artifact := range missingArtifacts {
 		sb.WriteString(fmt.Sprintf("  - %s\n", artifact))
 	}
 
-	sb.WriteString("\nThe following phases require these artifacts:\n")
-	for _, phase := range phaseConfig.GetSelectedPhases() {
-		requires := GetRequiredArtifacts(phase)
+	sb.WriteString("\nThe following stages require these artifacts:\n")
+	for _, stage := range stageConfig.GetSelectedStages() {
+		requires := GetRequiredArtifacts(stage)
 		for _, req := range requires {
 			for _, missing := range missingArtifacts {
 				if req == missing {
-					sb.WriteString(fmt.Sprintf("  - %s requires %s\n", phase, req))
+					sb.WriteString(fmt.Sprintf("  - %s requires %s\n", stage, req))
 				}
 			}
 		}
 	}
 
-	sb.WriteString("\nSuggested action: Run earlier phases first to generate the required artifacts.\n")
-	sb.WriteString("For example:\n")
+	sb.WriteString("\nRun earlier stages first to generate the required artifacts:\n")
 
-	// Suggest which phases to run based on what's missing
+	// Suggest which stages to run based on what's missing
 	if containsArtifact(missingArtifacts, "spec.yaml") {
 		sb.WriteString("  autospec run -s \"feature description\"  # Generate spec.yaml\n")
 	}
@@ -289,6 +289,12 @@ func GeneratePrerequisiteWarning(phaseConfig *PhaseConfig, missingArtifacts []st
 	}
 
 	return sb.String()
+}
+
+// GeneratePrerequisiteWarning is an alias for GeneratePrerequisiteError for backward compatibility.
+// Deprecated: Use GeneratePrerequisiteError instead.
+func GeneratePrerequisiteWarning(stageConfig *StageConfig, missingArtifacts []string) string {
+	return GeneratePrerequisiteError(stageConfig, missingArtifacts)
 }
 
 // containsArtifact checks if an artifact is in the list
@@ -318,7 +324,7 @@ type ConstitutionCheckResult struct {
 
 // CheckConstitutionExists checks if the constitution file exists.
 // This is a required project-level artifact that must exist before
-// running any workflow phases (specify, plan, tasks, implement).
+// running any workflow stages (specify, plan, tasks, implement).
 // Checks paths in ConstitutionPaths order (.yaml and .yml extensions supported)
 func CheckConstitutionExists() *ConstitutionCheckResult {
 	result := &ConstitutionCheckResult{}
@@ -343,7 +349,7 @@ func generateConstitutionMissingError() string {
 	var sb strings.Builder
 
 	sb.WriteString("\nError: Project constitution not found.\n\n")
-	sb.WriteString("A constitution is required before running any workflow phases.\n")
+	sb.WriteString("A constitution is required before running any workflow stages.\n")
 	sb.WriteString("The constitution defines your project's principles and guidelines.\n\n")
 	sb.WriteString("To create a constitution, run:\n")
 	sb.WriteString("  autospec constitution\n\n")
@@ -351,4 +357,78 @@ func generateConstitutionMissingError() string {
 	sb.WriteString("run 'autospec init' to copy it to .autospec/memory/constitution.yaml\n")
 
 	return sb.String()
+}
+
+// PrerequisiteValidationResult contains the result of prerequisite validation for a stage.
+type PrerequisiteValidationResult struct {
+	Valid            bool     // Whether all prerequisites are satisfied
+	MissingArtifacts []string // List of missing artifact file names
+	ErrorMessage     string   // User-friendly error with remediation suggestions
+}
+
+// ValidateStagePrerequisites validates that all required artifacts exist for a stage.
+// It checks the artifacts defined in artifactDependencies for the given stage.
+// Returns a PrerequisiteValidationResult indicating if validation passed and any missing files.
+func ValidateStagePrerequisites(stage Stage, specDir string) *PrerequisiteValidationResult {
+	result := &PrerequisiteValidationResult{
+		Valid:            true,
+		MissingArtifacts: make([]string, 0),
+	}
+
+	// Get required artifacts for this specific stage
+	requiredArtifacts := GetRequiredArtifacts(stage)
+
+	// Check each required artifact exists
+	for _, artifact := range requiredArtifacts {
+		artifactPath := filepath.Join(specDir, artifact)
+		if _, err := os.Stat(artifactPath); os.IsNotExist(err) {
+			result.MissingArtifacts = append(result.MissingArtifacts, artifact)
+		}
+	}
+
+	// Generate error message if any artifacts are missing
+	if len(result.MissingArtifacts) > 0 {
+		result.Valid = false
+		result.ErrorMessage = GenerateArtifactMissingError(result.MissingArtifacts)
+	}
+
+	return result
+}
+
+// GenerateArtifactMissingError generates a user-friendly error message for missing artifacts.
+// It includes the missing file names and remediation commands for each.
+func GenerateArtifactMissingError(missingArtifacts []string) string {
+	var sb strings.Builder
+
+	if len(missingArtifacts) == 1 {
+		artifact := missingArtifacts[0]
+		sb.WriteString(fmt.Sprintf("\nError: %s not found.\n\n", artifact))
+		sb.WriteString(fmt.Sprintf("Run '%s' first to create this file.\n", GetRemediationCommand(artifact)))
+	} else {
+		sb.WriteString("\nError: Missing required artifacts:\n")
+		for _, artifact := range missingArtifacts {
+			sb.WriteString(fmt.Sprintf("  - %s\n", artifact))
+		}
+		sb.WriteString("\nRun the following commands to create them:\n")
+		for _, artifact := range missingArtifacts {
+			sb.WriteString(fmt.Sprintf("  %s\n", GetRemediationCommand(artifact)))
+		}
+	}
+
+	return sb.String()
+}
+
+// GetRemediationCommand returns the autospec command that creates the given artifact.
+func GetRemediationCommand(artifact string) string {
+	commands := map[string]string{
+		"constitution.yaml": "autospec constitution",
+		"spec.yaml":         "autospec specify",
+		"plan.yaml":         "autospec plan",
+		"tasks.yaml":        "autospec tasks",
+	}
+
+	if cmd, ok := commands[artifact]; ok {
+		return cmd
+	}
+	return fmt.Sprintf("autospec (unknown artifact: %s)", artifact)
 }

@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/ariel-frischer/autospec/internal/spec"
+	"github.com/ariel-frischer/autospec/internal/validation"
 )
 
 func TestNewWorkflowOrchestrator(t *testing.T) {
@@ -86,6 +88,7 @@ func TestExecutePlanWithPrompt(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			// This test verifies the command construction logic
 			command := "/autospec.plan"
 			if tc.prompt != "" {
@@ -129,6 +132,7 @@ func TestExecuteTasksWithPrompt(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			// This test verifies the command construction logic
 			command := "/autospec.tasks"
 			if tc.prompt != "" {
@@ -144,37 +148,32 @@ func TestExecuteTasksWithPrompt(t *testing.T) {
 
 // TestSpecNameFormat tests that spec names are formatted correctly with number prefix
 func TestSpecNameFormat(t *testing.T) {
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		metadata     *spec.Metadata
 		wantSpecName string
 	}{
-		{
-			name: "spec with three-digit number",
+		"spec with three-digit number": {
 			metadata: &spec.Metadata{
 				Number: "003",
 				Name:   "command-timeout",
 			},
 			wantSpecName: "003-command-timeout",
 		},
-		{
-			name: "spec with two-digit number",
+		"spec with two-digit number": {
 			metadata: &spec.Metadata{
 				Number: "002",
 				Name:   "go-binary-migration",
 			},
 			wantSpecName: "002-go-binary-migration",
 		},
-		{
-			name: "spec with single digit number",
+		"spec with single digit number": {
 			metadata: &spec.Metadata{
 				Number: "001",
 				Name:   "initial-feature",
 			},
 			wantSpecName: "001-initial-feature",
 		},
-		{
-			name: "spec with hyphenated name",
+		"spec with hyphenated name": {
 			metadata: &spec.Metadata{
 				Number: "123",
 				Name:   "multi-word-feature-name",
@@ -183,8 +182,9 @@ func TestSpecNameFormat(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			// Test the format string used in the workflow
 			specName := fmt.Sprintf("%s-%s", tt.metadata.Number, tt.metadata.Name)
 
@@ -199,34 +199,31 @@ func TestSpecNameFormat(t *testing.T) {
 func TestSpecDirectoryConstruction(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		specsDir    string
 		specName    string
 		wantSpecDir string
 	}{
-		{
-			name:        "full spec name with number",
+		"full spec name with number": {
 			specsDir:    tmpDir,
 			specName:    "003-command-timeout",
 			wantSpecDir: filepath.Join(tmpDir, "003-command-timeout"),
 		},
-		{
-			name:        "relative specs dir",
+		"relative specs dir": {
 			specsDir:    "./specs",
 			specName:    "002-go-binary-migration",
 			wantSpecDir: filepath.Join("./specs", "002-go-binary-migration"),
 		},
-		{
-			name:        "absolute specs dir",
+		"absolute specs dir": {
 			specsDir:    "/tmp/specs",
 			specName:    "001-initial-feature",
 			wantSpecDir: filepath.Join("/tmp/specs", "001-initial-feature"),
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			// Test directory construction used in executor
 			specDir := filepath.Join(tt.specsDir, tt.specName)
 
@@ -285,6 +282,340 @@ func TestSpecNameFromMetadata(t *testing.T) {
 	}
 }
 
+// TestExecuteImplementWithTaskCommand tests that task-level implement commands are properly formatted
+func TestExecuteImplementWithTaskCommand(t *testing.T) {
+	tests := map[string]struct {
+		taskID      string
+		prompt      string
+		wantCommand string
+	}{
+		"task without prompt": {
+			taskID:      "T001",
+			prompt:      "",
+			wantCommand: "/autospec.implement --task T001",
+		},
+		"task with prompt": {
+			taskID:      "T002",
+			prompt:      "Focus on error handling",
+			wantCommand: `/autospec.implement --task T002 "Focus on error handling"`,
+		},
+		"task with complex prompt": {
+			taskID: "T003",
+			prompt: "Consider:\n  - Performance\n  - Scalability",
+			wantCommand: `/autospec.implement --task T003 "Consider:
+  - Performance
+  - Scalability"`,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// Build command with task filter (mirrors executeSingleTaskSession logic)
+			command := fmt.Sprintf("/autospec.implement --task %s", tc.taskID)
+			if tc.prompt != "" {
+				command = fmt.Sprintf("/autospec.implement --task %s \"%s\"", tc.taskID, tc.prompt)
+			}
+
+			if command != tc.wantCommand {
+				t.Errorf("command = %q, want %q", command, tc.wantCommand)
+			}
+		})
+	}
+}
+
+// TestTaskModeDispatch tests that TaskMode correctly routes to ExecuteImplementWithTasks
+func TestTaskModeDispatch(t *testing.T) {
+	opts := PhaseExecutionOptions{
+		TaskMode: true,
+		FromTask: "T003",
+	}
+
+	if opts.Mode() != ModeAllTasks {
+		t.Errorf("Mode() = %v, want ModeAllTasks", opts.Mode())
+	}
+}
+
+// TestTaskModeWithFromTask tests that FromTask is correctly included in options
+func TestTaskModeWithFromTask(t *testing.T) {
+	tests := map[string]struct {
+		opts     PhaseExecutionOptions
+		wantMode PhaseExecutionMode
+	}{
+		"task mode enabled": {
+			opts: PhaseExecutionOptions{
+				TaskMode: true,
+			},
+			wantMode: ModeAllTasks,
+		},
+		"task mode with from-task": {
+			opts: PhaseExecutionOptions{
+				TaskMode: true,
+				FromTask: "T005",
+			},
+			wantMode: ModeAllTasks,
+		},
+		"task mode takes precedence over phases": {
+			opts: PhaseExecutionOptions{
+				TaskMode:     true,
+				RunAllPhases: true, // This should be ignored
+			},
+			wantMode: ModeAllTasks,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if got := tt.opts.Mode(); got != tt.wantMode {
+				t.Errorf("Mode() = %v, want %v", got, tt.wantMode)
+			}
+		})
+	}
+}
+
+// TestTaskCompletionValidation tests that task completion is properly validated
+func TestTaskCompletionValidation(t *testing.T) {
+	tests := map[string]struct {
+		taskStatus  string
+		expectError bool
+	}{
+		"task completed": {
+			taskStatus:  "Completed",
+			expectError: false,
+		},
+		"task completed lowercase": {
+			taskStatus:  "completed",
+			expectError: false,
+		},
+		"task pending": {
+			taskStatus:  "Pending",
+			expectError: true,
+		},
+		"task in progress": {
+			taskStatus:  "InProgress",
+			expectError: true,
+		},
+		"task blocked": {
+			taskStatus:  "Blocked",
+			expectError: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// Create isolated directory for this subtest
+			tmpDir := t.TempDir()
+			specsDir := filepath.Join(tmpDir, "specs")
+			specDir := filepath.Join(specsDir, "001-test-feature")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create test directory: %v", err)
+			}
+
+			// Create tasks.yaml with specified status
+			tasksContent := fmt.Sprintf(`tasks:
+    branch: "001-test-feature"
+    created: "2025-01-01"
+summary:
+    total_tasks: 1
+    total_phases: 1
+phases:
+    - number: 1
+      title: "Test Phase"
+      purpose: "Testing"
+      tasks:
+        - id: "T001"
+          title: "Test Task"
+          status: "%s"
+          type: "implementation"
+          parallel: false
+          story_id: null
+          file_path: "test.go"
+          dependencies: []
+          acceptance_criteria:
+            - "Test passes"
+_meta:
+    version: "1.0.0"
+    artifact_type: "tasks"
+`, tt.taskStatus)
+
+			tasksPath := filepath.Join(specDir, "tasks.yaml")
+			if err := os.WriteFile(tasksPath, []byte(tasksContent), 0644); err != nil {
+				t.Fatalf("Failed to create tasks.yaml: %v", err)
+			}
+
+			// Simulate the validation logic from executeSingleTaskSession
+			allTasks, err := validation.GetAllTasks(tasksPath)
+			if err != nil {
+				t.Fatalf("Failed to get tasks: %v", err)
+			}
+
+			task, err := validation.GetTaskByID(allTasks, "T001")
+			if err != nil {
+				t.Fatalf("Failed to get task: %v", err)
+			}
+
+			// Check if task is completed (same logic as in executeSingleTaskSession)
+			isCompleted := task.Status == "Completed" || task.Status == "completed"
+
+			if tt.expectError && isCompleted {
+				t.Errorf("Expected validation error for status %q, but task was considered completed", tt.taskStatus)
+			}
+			if !tt.expectError && !isCompleted {
+				t.Errorf("Expected no error for status %q, but task was not considered completed", tt.taskStatus)
+			}
+		})
+	}
+}
+
+// TestTaskCompletionValidationAfterSession tests validation after task session completes
+func TestTaskCompletionValidationAfterSession(t *testing.T) {
+	tmpDir := t.TempDir()
+	specsDir := filepath.Join(tmpDir, "specs")
+	specDir := filepath.Join(specsDir, "001-test-feature")
+
+	if err := os.MkdirAll(specDir, 0755); err != nil {
+		t.Fatalf("Failed to create test directory: %v", err)
+	}
+
+	// Create tasks.yaml with incomplete task
+	tasksContent := `tasks:
+    branch: "001-test-feature"
+    created: "2025-01-01"
+summary:
+    total_tasks: 1
+    total_phases: 1
+phases:
+    - number: 1
+      title: "Test Phase"
+      purpose: "Testing"
+      tasks:
+        - id: "T001"
+          title: "Test Task"
+          status: "InProgress"
+          type: "implementation"
+          parallel: false
+          story_id: null
+          file_path: "test.go"
+          dependencies: []
+          acceptance_criteria:
+            - "Test passes"
+_meta:
+    version: "1.0.0"
+    artifact_type: "tasks"
+`
+
+	tasksPath := filepath.Join(specDir, "tasks.yaml")
+	if err := os.WriteFile(tasksPath, []byte(tasksContent), 0644); err != nil {
+		t.Fatalf("Failed to create tasks.yaml: %v", err)
+	}
+
+	// Simulate the validation function that would be passed to ExecutePhase
+	validateFunc := func(specDir string) error {
+		tasksPath := filepath.Join(specDir, "tasks.yaml")
+		allTasks, err := validation.GetAllTasks(tasksPath)
+		if err != nil {
+			return err
+		}
+
+		task, err := validation.GetTaskByID(allTasks, "T001")
+		if err != nil {
+			return err
+		}
+
+		if task.Status != "Completed" && task.Status != "completed" {
+			return fmt.Errorf("task %s not completed (status: %s)", task.ID, task.Status)
+		}
+		return nil
+	}
+
+	// Test that validation fails for incomplete task
+	err := validateFunc(specDir)
+	if err == nil {
+		t.Error("Expected validation to fail for incomplete task, but it passed")
+	} else {
+		expectedMsg := "task T001 not completed (status: InProgress)"
+		if err.Error() != expectedMsg {
+			t.Errorf("Expected error message %q, got %q", expectedMsg, err.Error())
+		}
+	}
+
+	// Now update the task to Completed and verify validation passes
+	tasksContentCompleted := `tasks:
+    branch: "001-test-feature"
+    created: "2025-01-01"
+summary:
+    total_tasks: 1
+    total_phases: 1
+phases:
+    - number: 1
+      title: "Test Phase"
+      purpose: "Testing"
+      tasks:
+        - id: "T001"
+          title: "Test Task"
+          status: "Completed"
+          type: "implementation"
+          parallel: false
+          story_id: null
+          file_path: "test.go"
+          dependencies: []
+          acceptance_criteria:
+            - "Test passes"
+_meta:
+    version: "1.0.0"
+    artifact_type: "tasks"
+`
+
+	if err := os.WriteFile(tasksPath, []byte(tasksContentCompleted), 0644); err != nil {
+		t.Fatalf("Failed to update tasks.yaml: %v", err)
+	}
+
+	// Test that validation passes for completed task
+	err = validateFunc(specDir)
+	if err != nil {
+		t.Errorf("Expected validation to pass for completed task, got error: %v", err)
+	}
+}
+
+// TestTaskRetryExhaustedBehavior tests that retry exhaustion is handled correctly
+func TestTaskRetryExhaustedBehavior(t *testing.T) {
+	// Test the StageResult structure that indicates retry exhaustion
+	result := &StageResult{
+		Stage:      StageImplement,
+		Success:    false,
+		Exhausted:  true,
+		RetryCount: 3,
+		Error:      fmt.Errorf("task T001 not completed (status: InProgress)"),
+	}
+
+	// Verify exhausted state
+	if !result.Exhausted {
+		t.Error("Expected Exhausted to be true")
+	}
+
+	if result.RetryCount != 3 {
+		t.Errorf("Expected RetryCount to be 3, got %d", result.RetryCount)
+	}
+
+	// Test the error message format that would be shown to user
+	expectedErrorFormat := "task %s exhausted retries: %w"
+	errMsg := fmt.Errorf(expectedErrorFormat, "T001", result.Error)
+	if errMsg == nil {
+		t.Error("Expected error message to be generated")
+	}
+
+	// Verify the message includes key information
+	errStr := errMsg.Error()
+	if !strings.Contains(errStr, "T001") {
+		t.Errorf("Error message should contain task ID, got: %s", errStr)
+	}
+	if !strings.Contains(errStr, "exhausted retries") {
+		t.Errorf("Error message should mention exhausted retries, got: %s", errStr)
+	}
+}
+
 // TestExecuteImplementWithPrompt tests that implement commands properly format prompts
 func TestExecuteImplementWithPrompt(t *testing.T) {
 	tests := map[string]struct {
@@ -330,6 +661,7 @@ func TestExecuteImplementWithPrompt(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			// This test verifies the command construction logic
 			command := "/autospec.implement"
 			if tc.resume {

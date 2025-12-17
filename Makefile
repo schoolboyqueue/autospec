@@ -1,4 +1,4 @@
-.PHONY: help build build-all install clean test test-go lint lint-go lint-bash fmt vet run dev dev-setup deps snapshot release patch minor major version h b i c t l f r d s p v
+.PHONY: help build build-all install clean test test-go lint lint-go lint-bash fmt vet run dev dev-setup deps snapshot release patch minor major version worktree worktree-list worktree-remove h w b i c t l f r d s p v
 
 # Variables
 BINARY_NAME=autospec
@@ -127,9 +127,15 @@ tidy: ## Tidy go.mod and go.sum
 
 ##@ Testing
 
-test-go: ## Run Go tests
+test-go: ## Run Go tests (excludes integration tests)
 	@echo "Running Go tests..."
 	@go test -v -race -cover ./...
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@go test -v -race -tags=integration ./tests/integration/...
+
+test-all: test-go test-integration ## Run all tests including integration
 
 test: test-go ## Run all tests
 
@@ -140,7 +146,7 @@ lint-go: fmt vet ## Lint Go code (fmt + vet)
 
 lint-bash: ## Lint bash scripts with shellcheck
 	@echo "Linting bash scripts..."
-	@shellcheck scripts/*.sh scripts/hooks/*.sh 2>/dev/null || true
+	@find . -name '*.sh' -type f -not -path './.specify/*' -not -path '*/.autospec/*' | xargs shellcheck -x --severity=warning
 	@echo "Bash linting complete."
 
 lint: lint-go lint-bash ## Run all linters
@@ -196,9 +202,64 @@ major: ## Bump major version (vX.0.0)
 release-build: test lint build-all ## Run tests, linting, and build all platforms (no publish)
 	@echo "Release build complete. Binaries in ${DIST_DIR}/"
 
+##@ Git Worktree
+
+worktree: ## Create a new worktree (make worktree BRANCH=feature-name)
+	@if [ -z "$(BRANCH)" ]; then \
+		echo "Usage: make worktree BRANCH=feature-name"; \
+		echo ""; \
+		echo "This creates a new worktree at ../autospec-<branch>"; \
+		exit 1; \
+	fi
+	@WORKTREE_PATH="../autospec-$(BRANCH)"; \
+	ORIG_DIR="$$(pwd)"; \
+	if [ -d "$$WORKTREE_PATH" ]; then \
+		echo "Worktree already exists at $$WORKTREE_PATH"; \
+		echo ""; \
+		echo "To enter it, run:"; \
+		echo "  cd $$WORKTREE_PATH"; \
+	else \
+		echo "Creating worktree for branch '$(BRANCH)' at $$WORKTREE_PATH..."; \
+		git worktree add "$$WORKTREE_PATH" -b "$(BRANCH)" 2>/dev/null || \
+		git worktree add "$$WORKTREE_PATH" "$(BRANCH)"; \
+		echo ""; \
+		echo "✓ Worktree created at $$WORKTREE_PATH"; \
+		echo ""; \
+		echo "Initializing autospec in worktree..."; \
+		cd "$$WORKTREE_PATH" && autospec init; \
+		echo ""; \
+		echo "Copying .autospec/* to worktree (excluding context/)..."; \
+		mkdir -p "$$WORKTREE_PATH/.autospec"; \
+		find "$$ORIG_DIR/.autospec" -mindepth 1 -maxdepth 1 -not -name "context" -exec cp -rf {} "$$WORKTREE_PATH/.autospec/" \;; \
+		echo "✓ Copied .autospec/ contents (excluding context/)"; \
+		echo ""; \
+		if [ -f "$$ORIG_DIR/.claude/settings.local.json" ]; then \
+			echo "Copying .claude/settings.local.json to worktree..."; \
+			mkdir -p "$$WORKTREE_PATH/.claude"; \
+			cp "$$ORIG_DIR/.claude/settings.local.json" "$$WORKTREE_PATH/.claude/"; \
+			echo "✓ Copied .claude/settings.local.json"; \
+			echo ""; \
+		fi; \
+		echo "To enter it, run:"; \
+		echo "  cd $$WORKTREE_PATH"; \
+	fi
+
+worktree-list: ## List all worktrees
+	@git worktree list
+
+worktree-remove: ## Remove a worktree (make worktree-remove BRANCH=feature-name)
+	@if [ -z "$(BRANCH)" ]; then \
+		echo "Usage: make worktree-remove BRANCH=feature-name"; \
+		exit 1; \
+	fi
+	@WORKTREE_PATH="../autospec-$(BRANCH)"; \
+	git worktree remove --force "$$WORKTREE_PATH" && \
+	echo "✓ Removed worktree at $$WORKTREE_PATH"
+
 ##@ Abbreviations
 
 h: help     ## help
+w: worktree ## worktree
 b: build    ## build
 i: install  ## install
 c: clean    ## clean

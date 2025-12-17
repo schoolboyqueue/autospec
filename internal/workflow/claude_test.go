@@ -49,6 +49,7 @@ func TestShellQuote(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			result := shellQuote(tc.input)
 			assert.Equal(t, tc.want, result)
 		})
@@ -91,6 +92,7 @@ func TestExpandTemplate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			executor := &ClaudeExecutor{
 				CustomClaudeCmd: tc.template,
 			}
@@ -135,6 +137,7 @@ func TestValidateTemplate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			err := ValidateTemplate(tc.template)
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -157,7 +160,6 @@ func TestClaudeExecutor_StreamCommand(t *testing.T) {
 			executor: &ClaudeExecutor{
 				ClaudeCmd:  "echo",
 				ClaudeArgs: []string{},
-				UseAPIKey:  false,
 			},
 			prompt:  "test prompt",
 			wantErr: false,
@@ -165,7 +167,6 @@ func TestClaudeExecutor_StreamCommand(t *testing.T) {
 		"with custom command using echo": {
 			executor: &ClaudeExecutor{
 				CustomClaudeCmd: "echo {{PROMPT}}",
-				UseAPIKey:       false,
 			},
 			prompt:  "test prompt",
 			wantErr: false,
@@ -174,6 +175,7 @@ func TestClaudeExecutor_StreamCommand(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			var stdout, stderr bytes.Buffer
 
 			err := tc.executor.StreamCommand(tc.prompt, &stdout, &stderr)
@@ -212,6 +214,7 @@ func TestParseCustomCommand(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			cmd := executor.parseCustomCommand(tc.cmdStr)
 
 			// Verify command is set up to run via shell
@@ -221,48 +224,11 @@ func TestParseCustomCommand(t *testing.T) {
 	}
 }
 
-// TestClaudeExecutor_EnvironmentSetup tests environment variable handling
-func TestClaudeExecutor_EnvironmentSetup(t *testing.T) {
-	tests := map[string]struct {
-		useAPIKey bool
-		wantEmpty bool // Whether ANTHROPIC_API_KEY should be empty
-	}{
-		"use API key": {
-			useAPIKey: true,
-			wantEmpty: false,
-		},
-		"don't use API key": {
-			useAPIKey: false,
-			wantEmpty: true,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			executor := &ClaudeExecutor{
-				ClaudeCmd:  "echo",
-				ClaudeArgs: []string{},
-				UseAPIKey:  tc.useAPIKey,
-			}
-
-			var stdout, stderr bytes.Buffer
-			err := executor.StreamCommand("test", &stdout, &stderr)
-			require.NoError(t, err)
-
-			// Note: We can't directly test environment variable setting
-			// without modifying the executor to expose the command
-			// This test verifies the executor can be constructed with UseAPIKey
-			assert.Equal(t, tc.useAPIKey, executor.UseAPIKey)
-		})
-	}
-}
-
 // TestClaudeExecutor_FallbackMode tests fallback to simple mode
 func TestClaudeExecutor_FallbackMode(t *testing.T) {
 	executor := &ClaudeExecutor{
 		ClaudeCmd:       "echo",
 		ClaudeArgs:      []string{"arg1", "arg2"},
-		UseAPIKey:       false,
 		CustomClaudeCmd: "", // Empty means use simple mode
 	}
 
@@ -283,7 +249,6 @@ func TestExecuteSpecKitCommand(t *testing.T) {
 	executor := &ClaudeExecutor{
 		ClaudeCmd:  "echo",
 		ClaudeArgs: []string{},
-		UseAPIKey:  false,
 	}
 
 	// Mock execution by using echo
@@ -300,7 +265,6 @@ func TestCustomCommandWithPipeOperator(t *testing.T) {
 	// This test verifies that pipe operators are handled correctly
 	executor := &ClaudeExecutor{
 		CustomClaudeCmd: "echo {{PROMPT}} | grep 'test'",
-		UseAPIKey:       false,
 	}
 
 	expanded := executor.expandTemplate("this is a test")
@@ -315,7 +279,6 @@ func TestCustomCommandWithPipeOperator(t *testing.T) {
 func TestCustomCommandWithEnvVarPrefix(t *testing.T) {
 	executor := &ClaudeExecutor{
 		CustomClaudeCmd: "ANTHROPIC_API_KEY=\"\" claude -p {{PROMPT}}",
-		UseAPIKey:       false,
 	}
 
 	expanded := executor.expandTemplate("/autospec.plan")
@@ -348,7 +311,6 @@ func TestRegressionMultilinePromptWithQuotes(t *testing.T) {
 	// - Multiline feature description with quotes
 	executor := &ClaudeExecutor{
 		CustomClaudeCmd: "ANTHROPIC_API_KEY=\"\" claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | claude-clean",
-		UseAPIKey:       false,
 	}
 
 	featureDescription := `Implement timeout functionality for Claude CLI command execution
@@ -423,6 +385,7 @@ func TestCommandPromptFormats(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			executor := &ClaudeExecutor{
 				CustomClaudeCmd: tc.template,
 			}
@@ -477,6 +440,7 @@ func TestTemplateEdgeCases(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
 			executor := &ClaudeExecutor{
 				CustomClaudeCmd: tc.template,
 			}
@@ -624,6 +588,7 @@ func TestExecute_TimeoutPropagation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			executor := &ClaudeExecutor{
 				ClaudeCmd:  "sleep",
 				ClaudeArgs: []string{},

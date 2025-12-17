@@ -20,6 +20,16 @@ User-facing documentation for the autospec CLI tool.
   - Performance issues
   - Debugging techniques
 
+- **[FAQ](./faq.md)** - Frequently asked questions
+  - Differences from SpecKit
+  - Optional artifact sections
+
+- **[Checklists](./checklists.md)** - Checklist generation and validation
+  - Purpose and quality dimensions
+  - Generating domain-specific checklists
+  - Implementation gating behavior
+  - YAML schema reference
+
 ### Developer Documentation
 
 - **[CLAUDE.md](../CLAUDE.md)** - Development documentation for working with this codebase
@@ -39,8 +49,8 @@ make install
 # Check dependencies
 autospec doctor
 
-# Run workflow
-autospec workflow "Add user authentication feature"
+# Prepare for implementation
+autospec prep "Add user authentication feature"
 ```
 
 ### Common Tasks
@@ -55,6 +65,12 @@ autospec plan
 autospec tasks
 autospec implement
 
+# Implementation execution modes
+autospec implement --phases              # Phase-level isolation
+autospec implement --tasks               # Task-level isolation (maximum)
+autospec implement --tasks --from-task T005  # Resume from task T005
+autospec implement --task T003           # Execute single task only
+
 # Check status
 autospec status
 autospec config show
@@ -65,7 +81,7 @@ autospec config show
 **Local config** (`.autospec/config.yml`):
 ```yaml
 timeout: 600
-max_retries: 3
+max_retries: 0
 claude_cmd: claude
 ```
 

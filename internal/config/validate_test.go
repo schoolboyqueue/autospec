@@ -202,20 +202,19 @@ func TestValidateConfigValues_MissingRequired(t *testing.T) {
 }
 
 func TestValidateConfigValues_InvalidMaxRetries(t *testing.T) {
-	tests := []struct {
-		name       string
+	tests := map[string]struct {
 		maxRetries int
 		wantErr    bool
 	}{
-		{"too low", 0, true},
-		{"minimum valid", 1, false},
-		{"middle valid", 5, false},
-		{"maximum valid", 10, false},
-		{"too high", 11, true},
+		"too low":       {maxRetries: -1, wantErr: true},
+		"minimum valid": {maxRetries: 0, wantErr: false},
+		"middle valid":  {maxRetries: 5, wantErr: false},
+		"maximum valid": {maxRetries: 10, wantErr: false},
+		"too high":      {maxRetries: 11, wantErr: true},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			cfg := &Configuration{
 				ClaudeCmd:  "claude",
 				MaxRetries: tt.maxRetries,
@@ -274,14 +273,85 @@ func TestValidateConfigValues_ValidCustomClaudeCmd(t *testing.T) {
 	}
 }
 
+func TestValidateConfigValues_ImplementMethod(t *testing.T) {
+	tests := map[string]struct {
+		implementMethod string
+		wantErr         bool
+		wantErrContains string
+	}{
+		"valid single-session": {
+			implementMethod: "single-session",
+			wantErr:         false,
+		},
+		"valid phases": {
+			implementMethod: "phases",
+			wantErr:         false,
+		},
+		"valid tasks": {
+			implementMethod: "tasks",
+			wantErr:         false,
+		},
+		"empty string is valid (uses default)": {
+			implementMethod: "",
+			wantErr:         false,
+		},
+		"invalid value": {
+			implementMethod: "invalid-mode",
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+		"invalid value with typo": {
+			implementMethod: "phase", // missing 's'
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+		"invalid value - uppercase": {
+			implementMethod: "PHASES",
+			wantErr:         true,
+			wantErrContains: "single-session, phases, tasks",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			cfg := &Configuration{
+				ClaudeCmd:       "claude",
+				MaxRetries:      3,
+				SpecsDir:        "./specs",
+				StateDir:        "~/.autospec/state",
+				ImplementMethod: tt.implementMethod,
+			}
+
+			err := ValidateConfigValues(cfg, "test.yml")
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateConfigValues() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && err != nil {
+				validationErr, ok := err.(*ValidationError)
+				if !ok {
+					t.Fatalf("Expected ValidationError, got %T", err)
+				}
+
+				if validationErr.Field != "implement_method" {
+					t.Errorf("ValidationError.Field = %q, want %q", validationErr.Field, "implement_method")
+				}
+
+				if tt.wantErrContains != "" && !strings.Contains(validationErr.Message, tt.wantErrContains) {
+					t.Errorf("ValidationError.Message = %q, should contain %q", validationErr.Message, tt.wantErrContains)
+				}
+			}
+		})
+	}
+}
+
 func TestValidationError_Error(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		err      *ValidationError
 		contains []string
 	}{
-		{
-			name: "with line and column",
+		"with line and column": {
 			err: &ValidationError{
 				FilePath: "/path/to/config.yml",
 				Line:     5,
@@ -290,8 +360,7 @@ func TestValidationError_Error(t *testing.T) {
 			},
 			contains: []string{"/path/to/config.yml", "5", "10", "unexpected character"},
 		},
-		{
-			name: "with field",
+		"with field": {
 			err: &ValidationError{
 				FilePath: "/path/to/config.yml",
 				Field:    "max_retries",
@@ -299,8 +368,7 @@ func TestValidationError_Error(t *testing.T) {
 			},
 			contains: []string{"/path/to/config.yml", "max_retries", "must be at least 1"},
 		},
-		{
-			name: "message only",
+		"message only": {
 			err: &ValidationError{
 				FilePath: "/path/to/config.yml",
 				Message:  "general error",
@@ -309,8 +377,8 @@ func TestValidationError_Error(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			errStr := tt.err.Error()
 			for _, want := range tt.contains {
 				if !strings.Contains(errStr, want) {

@@ -27,100 +27,94 @@ func captureOutput(fn func()) string {
 	return buf.String()
 }
 
-// TestProgressDisplay_StartPhase tests phase counter rendering
-func TestProgressDisplay_StartPhase(t *testing.T) {
-	tests := []struct {
-		name         string
+// TestProgressDisplay_StartStage tests stage counter rendering
+func TestProgressDisplay_StartStage(t *testing.T) {
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
-		phase        progress.PhaseInfo
+		stage        progress.StageInfo
 		wantContains []string
 		wantErr      bool
 	}{
-		{
-			name: "TTY mode with Unicode - first phase",
+		"TTY mode with Unicode - first stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "specify",
 				Number:      1,
-				TotalPhases: 3,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 3,
+				Status:      progress.StageInProgress,
 				RetryCount:  0,
 				MaxRetries:  3,
 			},
 			wantContains: []string{"[1/3]", "specify"},
 			wantErr:      false,
 		},
-		{
-			name: "non-TTY mode - second phase",
+		"non-TTY mode - second stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           false,
 				SupportsUnicode: false,
 				SupportsColor:   false,
 				Width:           0,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "plan",
 				Number:      2,
-				TotalPhases: 3,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 3,
+				Status:      progress.StageInProgress,
 				RetryCount:  0,
 				MaxRetries:  3,
 			},
 			wantContains: []string{"[2/3]", "Plan"},
 			wantErr:      false,
 		},
-		{
-			name: "retry attempt - show retry count",
+		"retry attempt - show retry count": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "tasks",
 				Number:      3,
-				TotalPhases: 3,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 3,
+				Status:      progress.StageInProgress,
 				RetryCount:  1,
 				MaxRetries:  3,
 			},
 			wantContains: []string{"[3/3]", "tasks", "(retry 2/3)"},
 			wantErr:      false,
 		},
-		{
-			name: "invalid phase - empty name",
+		"invalid stage - empty name": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "",
 				Number:      1,
-				TotalPhases: 3,
+				TotalStages: 3,
 			},
 			wantErr: true,
 		},
-		{
-			name: "four-phase workflow - implement phase",
+		"four-stage workflow - implement stage": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "implement",
 				Number:      4,
-				TotalPhases: 4,
-				Status:      progress.PhaseInProgress,
+				TotalStages: 4,
+				Status:      progress.StageInProgress,
 				RetryCount:  0,
 				MaxRetries:  3,
 			},
@@ -129,8 +123,8 @@ func TestProgressDisplay_StartPhase(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			var output string
@@ -138,23 +132,23 @@ func TestProgressDisplay_StartPhase(t *testing.T) {
 
 			if tt.capabilities.IsTTY {
 				// For TTY mode, spinner starts, so we just check error
-				err = display.StartPhase(tt.phase)
+				err = display.StartStage(tt.stage)
 			} else {
 				// For non-TTY mode, capture stdout
 				output = captureOutput(func() {
-					err = display.StartPhase(tt.phase)
+					err = display.StartStage(tt.stage)
 				})
 			}
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("StartPhase() error = nil, want error")
+					t.Errorf("StartStage() error = nil, want error")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("StartPhase() unexpected error = %v", err)
+				t.Errorf("StartStage() unexpected error = %v", err)
 				return
 			}
 
@@ -162,7 +156,7 @@ func TestProgressDisplay_StartPhase(t *testing.T) {
 			if !tt.capabilities.IsTTY {
 				for _, want := range tt.wantContains {
 					if !strings.Contains(output, want) {
-						t.Errorf("StartPhase() output = %q, want to contain %q", output, want)
+						t.Errorf("StartStage() output = %q, want to contain %q", output, want)
 					}
 				}
 			}
@@ -178,11 +172,11 @@ func TestProgressDisplay_UpdateRetry(t *testing.T) {
 		SupportsColor:   false,
 	}
 
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "specify",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseInProgress,
+		TotalStages: 3,
+		Status:      progress.StageInProgress,
 		RetryCount:  2,
 		MaxRetries:  3,
 	}
@@ -190,7 +184,7 @@ func TestProgressDisplay_UpdateRetry(t *testing.T) {
 	display := progress.NewProgressDisplay(caps)
 
 	output := captureOutput(func() {
-		_ = display.UpdateRetry(phase)
+		_ = display.UpdateRetry(stage)
 	})
 
 	// Should show retry 3/3 (RetryCount is 0-indexed, display is 1-indexed)
@@ -199,136 +193,129 @@ func TestProgressDisplay_UpdateRetry(t *testing.T) {
 	}
 }
 
-// TestProgressDisplay_CompletePhase tests completion checkmarks (User Story 3)
-func TestProgressDisplay_CompletePhase(t *testing.T) {
-	tests := []struct {
-		name         string
+// TestProgressDisplay_CompleteStage tests completion checkmarks (User Story 3)
+func TestProgressDisplay_CompleteStage(t *testing.T) {
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
-		phase        progress.PhaseInfo
+		stage        progress.StageInfo
 		wantContains []string
 	}{
-		{
-			name: "Unicode checkmark with color",
+		"Unicode checkmark with color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "specify",
 				Number:      1,
-				TotalPhases: 3,
-				Status:      progress.PhaseCompleted,
+				TotalStages: 3,
+				Status:      progress.StageCompleted,
 			},
 			wantContains: []string{"✓", "[1/3]", "Specify", "complete"},
 		},
-		{
-			name: "ASCII checkmark without color",
+		"ASCII checkmark without color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: false,
 				SupportsColor:   false,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "plan",
 				Number:      2,
-				TotalPhases: 3,
-				Status:      progress.PhaseCompleted,
+				TotalStages: 3,
+				Status:      progress.StageCompleted,
 			},
 			wantContains: []string{"[OK]", "[2/3]", "Plan", "complete"},
 		},
-		{
-			name: "non-TTY mode completion",
+		"non-TTY mode completion": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           false,
 				SupportsUnicode: false,
 				SupportsColor:   false,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "tasks",
 				Number:      3,
-				TotalPhases: 3,
-				Status:      progress.PhaseCompleted,
+				TotalStages: 3,
+				Status:      progress.StageCompleted,
 			},
 			wantContains: []string{"[OK]", "[3/3]", "Tasks", "complete"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			output := captureOutput(func() {
-				_ = display.CompletePhase(tt.phase)
+				_ = display.CompleteStage(tt.stage)
 			})
 
 			for _, want := range tt.wantContains {
 				if !strings.Contains(output, want) {
-					t.Errorf("CompletePhase() output = %q, want to contain %q", output, want)
+					t.Errorf("CompleteStage() output = %q, want to contain %q", output, want)
 				}
 			}
 		})
 	}
 }
 
-// TestProgressDisplay_FailPhase tests failure indicators (User Story 3)
-func TestProgressDisplay_FailPhase(t *testing.T) {
-	tests := []struct {
-		name         string
+// TestProgressDisplay_FailStage tests failure indicators (User Story 3)
+func TestProgressDisplay_FailStage(t *testing.T) {
+	tests := map[string]struct {
 		capabilities progress.TerminalCapabilities
-		phase        progress.PhaseInfo
+		stage        progress.StageInfo
 		err          error
 		wantContains []string
 	}{
-		{
-			name: "Unicode failure mark with color",
+		"Unicode failure mark with color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: true,
 				SupportsColor:   true,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "specify",
 				Number:      1,
-				TotalPhases: 3,
-				Status:      progress.PhaseFailed,
+				TotalStages: 3,
+				Status:      progress.StageFailed,
 			},
 			err:          fmt.Errorf("validation failed"),
 			wantContains: []string{"✗", "[1/3]", "Specify", "failed", "validation failed"},
 		},
-		{
-			name: "ASCII failure mark without color",
+		"ASCII failure mark without color": {
 			capabilities: progress.TerminalCapabilities{
 				IsTTY:           true,
 				SupportsUnicode: false,
 				SupportsColor:   false,
 				Width:           80,
 			},
-			phase: progress.PhaseInfo{
+			stage: progress.StageInfo{
 				Name:        "plan",
 				Number:      2,
-				TotalPhases: 3,
-				Status:      progress.PhaseFailed,
+				TotalStages: 3,
+				Status:      progress.StageFailed,
 			},
 			err:          fmt.Errorf("file not found"),
 			wantContains: []string{"[FAIL]", "[2/3]", "Plan", "failed", "file not found"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			display := progress.NewProgressDisplay(tt.capabilities)
 
 			output := captureOutput(func() {
-				_ = display.FailPhase(tt.phase, tt.err)
+				_ = display.FailStage(tt.stage, tt.err)
 			})
 
 			for _, want := range tt.wantContains {
 				if !strings.Contains(output, want) {
-					t.Errorf("FailPhase() output = %q, want to contain %q", output, want)
+					t.Errorf("FailStage() output = %q, want to contain %q", output, want)
 				}
 			}
 		})
@@ -345,28 +332,28 @@ func TestSpinnerLifecycle(t *testing.T) {
 		Width:           80,
 	}
 
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "specify",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseInProgress,
+		TotalStages: 3,
+		Status:      progress.StageInProgress,
 	}
 
 	display := progress.NewProgressDisplay(capsTTY)
 
-	// Start phase - spinner starts
-	err := display.StartPhase(phase)
+	// Start stage - spinner starts
+	err := display.StartStage(stage)
 	if err != nil {
-		t.Fatalf("StartPhase() unexpected error = %v", err)
+		t.Fatalf("StartStage() unexpected error = %v", err)
 	}
 
-	// Complete phase - spinner should stop
+	// Complete stage - spinner should stop
 	output := captureOutput(func() {
-		_ = display.CompletePhase(phase)
+		_ = display.CompleteStage(stage)
 	})
 
 	if !strings.Contains(output, "✓") {
-		t.Errorf("CompletePhase() output = %q, want to contain checkmark", output)
+		t.Errorf("CompleteStage() output = %q, want to contain checkmark", output)
 	}
 }
 
@@ -378,21 +365,21 @@ func TestSpinnerDisabledNonTTY(t *testing.T) {
 		SupportsColor:   false,
 	}
 
-	phase := progress.PhaseInfo{
+	stage := progress.StageInfo{
 		Name:        "plan",
 		Number:      1,
-		TotalPhases: 3,
-		Status:      progress.PhaseInProgress,
+		TotalStages: 3,
+		Status:      progress.StageInProgress,
 	}
 
 	display := progress.NewProgressDisplay(capsNonTTY)
 
 	output := captureOutput(func() {
-		_ = display.StartPhase(phase)
+		_ = display.StartStage(stage)
 	})
 
 	// Non-TTY mode should just print the message, no spinner
 	if !strings.Contains(output, "[1/3]") || !strings.Contains(output, "Plan") {
-		t.Errorf("StartPhase() non-TTY output = %q, want phase message", output)
+		t.Errorf("StartStage() non-TTY output = %q, want stage message", output)
 	}
 }

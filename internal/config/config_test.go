@@ -12,15 +12,28 @@ import (
 )
 
 func TestLoad_Defaults(t *testing.T) {
-	t.Parallel()
+	// Cannot use t.Parallel() because we modify environment and working directory
+	// to isolate from real config files that might exist on the system
+
+	// Save original state
+	originalWd, err := os.Getwd()
+	require.NoError(t, err)
+	defer os.Chdir(originalWd)
+
+	// Create isolated temp directory with no config files
+	tmpDir := t.TempDir()
+	require.NoError(t, os.Chdir(tmpDir))
+
+	// Set HOME and XDG_CONFIG_HOME to isolated directories
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
 
 	// Load with empty config path (defaults only)
 	cfg, err := Load("")
 	require.NoError(t, err)
 	assert.Equal(t, "claude", cfg.ClaudeCmd)
-	assert.Equal(t, 3, cfg.MaxRetries)
+	assert.Equal(t, 0, cfg.MaxRetries)
 	assert.Equal(t, "./specs", cfg.SpecsDir)
-	assert.False(t, cfg.UseAPIKey)
 }
 
 func TestLoad_LocalOverride(t *testing.T) {
@@ -255,22 +268,21 @@ func TestLoad_TimeoutEnvOverride(t *testing.T) {
 func TestLoad_TimeoutValidRange(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		timeout int
 		valid   bool
 	}{
-		{"minimum valid", 1, true},
-		{"mid-range valid", 300, true},
-		{"maximum valid (1 hour)", 3600, true},
-		{"7 days (maximum)", 604800, true},
-		{"zero (no timeout)", 0, true},
-		{"below minimum", -5, false},
-		{"above maximum", 604801, false},
+		"minimum valid":          {timeout: 1, valid: true},
+		"mid-range valid":        {timeout: 300, valid: true},
+		"maximum valid (1 hour)": {timeout: 3600, valid: true},
+		"7 days (maximum)":       {timeout: 604800, valid: true},
+		"zero (no timeout)":      {timeout: 0, valid: true},
+		"below minimum":          {timeout: -5, valid: false},
+		"above maximum":          {timeout: 604801, valid: false},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			tmpDir := t.TempDir()
@@ -341,7 +353,6 @@ specs_dir: "./specs"
 state_dir: "~/.autospec/state"
 skip_preflight: true
 timeout: 300
-show_progress: true
 skip_confirmations: false
 `
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
@@ -356,7 +367,6 @@ skip_confirmations: false
 	assert.Equal(t, []string{"-p", "--verbose"}, cfg.ClaudeArgs)
 	assert.True(t, cfg.SkipPreflight)
 	assert.Equal(t, 300, cfg.Timeout)
-	assert.True(t, cfg.ShowProgress)
 }
 
 func TestLoad_YAMLEmptyFile(t *testing.T) {
@@ -400,7 +410,7 @@ max_retries: 3
 }
 
 func TestLoad_LegacyJSONWithWarning(t *testing.T) {
-	t.Parallel()
+	// Cannot use t.Parallel() because we use os.Chdir which affects the whole process
 
 	tmpDir := t.TempDir()
 	legacyPath := filepath.Join(tmpDir, ".autospec", "config.json")

@@ -1,7 +1,25 @@
+// autospec - Spec-Driven Development Automation
+// Author: Ariel Frischer
+// Source: https://github.com/ariel-frischer/autospec
+
+// Package cli provides Cobra-based CLI commands for the autospec workflow automation tool.
+// It defines all user-facing commands including workflow orchestration (run, all, prep),
+// individual stages (specify, plan, tasks, implement), configuration management (init, config),
+// and utility commands (status, doctor, clean, uninstall).
 package cli
 
 import (
 	"github.com/spf13/cobra"
+)
+
+// Command group IDs for organizing help output
+const (
+	GroupGettingStarted = "getting-started"
+	GroupWorkflows      = "workflows"
+	GroupCoreStages     = "core-stages"
+	GroupOptionalStages = "optional-stages"
+	GroupConfiguration  = "configuration"
+	GroupInternal       = "internal"
 )
 
 var rootCmd = &cobra.Command{
@@ -9,23 +27,28 @@ var rootCmd = &cobra.Command{
 	Short: "autospec workflow automation",
 	Long: `autospec workflow automation
 
-Cross-platform CLI tool for SpecKit workflow validation and orchestration.
-Replaces bash-based scripts with a single, performant Go binary.`,
-	Example: `  # Complete workflow: specify -> plan -> tasks -> implement
+Automated spec-driven development. Define features in YAML, generate implementation
+plans and tasks, then execute with Claude Code.
+
+Source: https://github.com/ariel-frischer/autospec`,
+	Example: `  # Check current feature status
+  autospec status
+
+  # Complete workflow: specify -> plan -> tasks -> implement
   autospec all "Add user authentication feature"
 
-  # Flexible phase selection with run command
-  autospec run -spti "Add user authentication"  # All core phases
-  autospec run -pi                              # Plan + implement on current spec
+  # Prepare for implementation (no code changes)
+  autospec prep "Add dark mode support"
 
-  # Individual phase commands
-  autospec specify "Add dark mode support"
+  # Flexible stage selection
+  autospec run -spti "Add user auth"   # All core stages
+  autospec run -pi                     # Plan + implement on current spec
+
+  # Individual stage commands
+  autospec specify "Add search feature"
   autospec plan
   autospec tasks
-  autospec implement
-
-  # Check system dependencies
-  autospec doctor`,
+  autospec implement`,
 }
 
 // Execute runs the root command
@@ -34,8 +57,20 @@ func Execute() error {
 }
 
 func init() {
+	// Define command groups in display order
+	rootCmd.AddGroup(&cobra.Group{ID: GroupGettingStarted, Title: "Getting Started:"})
+	rootCmd.AddGroup(&cobra.Group{ID: GroupWorkflows, Title: "Workflows:"})
+	rootCmd.AddGroup(&cobra.Group{ID: GroupCoreStages, Title: "Core Stages:"})
+	rootCmd.AddGroup(&cobra.Group{ID: GroupOptionalStages, Title: "Optional Stages:"})
+	rootCmd.AddGroup(&cobra.Group{ID: GroupConfiguration, Title: "Configuration:"})
+	rootCmd.AddGroup(&cobra.Group{ID: GroupInternal, Title: "Internal Commands:"})
+
+	// Assign built-in help and completion to configuration group
+	rootCmd.SetHelpCommandGroupID(GroupConfiguration)
+	rootCmd.SetCompletionCommandGroupID(GroupConfiguration)
+
 	// Global flags
-	rootCmd.PersistentFlags().StringP("config", "c", ".autospec/config.json", "Path to config file")
+	rootCmd.PersistentFlags().StringP("config", "c", ".autospec/config.yml", "Path to config file")
 	rootCmd.PersistentFlags().String("specs-dir", "./specs", "Directory containing feature specs")
 	rootCmd.PersistentFlags().Bool("skip-preflight", false, "Skip pre-flight validation checks")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug logging")

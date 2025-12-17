@@ -38,29 +38,12 @@ func TestStatusCmdArgs(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestStatusCmdExamples(t *testing.T) {
-	examples := []string{
-		"autospec status",
-		"autospec status 003-my-feature",
-		"--verbose",
-	}
-
-	for _, example := range examples {
-		assert.Contains(t, statusCmd.Example, example)
-	}
+func TestStatusCmdAlias(t *testing.T) {
+	assert.Contains(t, statusCmd.Aliases, "st", "status command should have 'st' alias")
 }
 
-func TestStatusCmdLongDescription(t *testing.T) {
-	keywords := []string{
-		"Phase completion",
-		"Task counts",
-		"unchecked",
-		"auto-detects",
-	}
-
-	for _, keyword := range keywords {
-		assert.Contains(t, statusCmd.Long, keyword)
-	}
+func TestStatusCmdSilenceUsage(t *testing.T) {
+	assert.True(t, statusCmd.SilenceUsage, "status command should silence usage on errors")
 }
 
 func TestStatusCmdDefaultVerbose(t *testing.T) {

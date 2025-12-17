@@ -176,21 +176,21 @@ Description here.
 }
 
 func TestDetectArtifactType(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		filename string
 		expected string
 	}{
-		{"spec.md", "spec"},
-		{"plan.md", "plan"},
-		{"tasks.md", "tasks"},
-		{"checklist.md", "checklist"},
-		{"analysis.md", "analysis"},
-		{"constitution.md", "constitution"},
-		{"random.md", "unknown"},
+		"spec.md":         {filename: "spec.md", expected: "spec"},
+		"plan.md":         {filename: "plan.md", expected: "plan"},
+		"tasks.md":        {filename: "tasks.md", expected: "tasks"},
+		"checklist.md":    {filename: "checklist.md", expected: "checklist"},
+		"analysis.md":     {filename: "analysis.md", expected: "analysis"},
+		"constitution.md": {filename: "constitution.md", expected: "constitution"},
+		"random.md":       {filename: "random.md", expected: "unknown"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.filename, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			result := DetectArtifactType(tt.filename)
 			assert.Equal(t, tt.expected, result)
 		})

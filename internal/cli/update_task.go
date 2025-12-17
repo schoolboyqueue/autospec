@@ -45,6 +45,7 @@ Valid status values:
 }
 
 func init() {
+	updateTaskCmd.GroupID = GroupInternal
 	rootCmd.AddCommand(updateTaskCmd)
 }
 
@@ -78,6 +79,7 @@ func runUpdateTask(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to detect spec: %w", err)
 	}
+	PrintSpecInfo(metadata)
 
 	// Find tasks.yaml
 	tasksPath := filepath.Join(metadata.Directory, "tasks.yaml")

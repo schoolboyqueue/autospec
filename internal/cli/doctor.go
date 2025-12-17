@@ -9,13 +9,15 @@ import (
 )
 
 var doctorCmd = &cobra.Command{
-	Use:   "doctor",
-	Short: "Run health checks for autospec dependencies",
+	Use:     "doctor",
+	Aliases: []string{"doc"},
+	Short:   "Run health checks for autospec dependencies (doc)",
 	Long: `Run health checks to verify that all required dependencies are installed and available.
 
 This command checks for:
   - Claude CLI
   - Git
+  - Claude settings (Bash(autospec:*) permission in .claude/settings.local.json)
 
 Each check will display a checkmark if passed or an X with an error message if failed.`,
 	Example: `  # Check all dependencies
@@ -39,5 +41,6 @@ Each check will display a checkmark if passed or an X with an error message if f
 }
 
 func init() {
+	doctorCmd.GroupID = GroupConfiguration
 	rootCmd.AddCommand(doctorCmd)
 }

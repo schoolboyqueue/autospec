@@ -7,13 +7,18 @@ import (
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
+	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
 var planCmd = &cobra.Command{
-	Use:   "plan [optional-prompt]",
-	Short: "Execute the planning phase for the current spec",
+	Use:     "plan [optional-prompt]",
+	Aliases: []string{"p"},
+	Short:   "Execute the planning stage for the current spec (p)",
 	Long: `Execute the /autospec.plan command for the current specification.
 
 The plan command will:
@@ -64,21 +69,48 @@ You can optionally provide a prompt to guide the planning process.`,
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
-			return fmt.Errorf("constitution required")
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
 		}
 
-		// Create workflow orchestrator
-		orch := workflow.NewWorkflowOrchestrator(cfg)
+		// Auto-detect spec directory for prerequisite validation
+		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
+		if err != nil {
+			cmd.SilenceUsage = true
+			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
+		}
+		PrintSpecInfo(metadata)
 
-		// Execute plan phase
-		if err := orch.ExecutePlan("", prompt); err != nil {
-			return err
+		// Validate spec.yaml exists (required for plan stage)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StagePlan, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
 		}
 
-		return nil
+		// Create notification handler and history logger
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
+		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
+
+		// Wrap command execution with lifecycle for timing, notification, and history
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "plan", specName, func() error {
+			// Create workflow orchestrator
+			orch := workflow.NewWorkflowOrchestrator(cfg)
+			orch.Executor.NotificationHandler = notifHandler
+
+			// Execute plan stage
+			if err := orch.ExecutePlan("", prompt); err != nil {
+				return fmt.Errorf("plan stage failed: %w", err)
+			}
+
+			return nil
+		})
 	},
 }
 
 func init() {
+	planCmd.GroupID = GroupCoreStages
 	rootCmd.AddCommand(planCmd)
 }

@@ -1,12 +1,16 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/validation"
 	"github.com/ariel-frischer/autospec/internal/workflow"
@@ -15,25 +19,25 @@ import (
 
 var runCmd = &cobra.Command{
 	Use:   "run [feature-description]",
-	Short: "Run selected workflow phases with flexible phase selection",
-	Long: `Run selected workflow phases with flexible phase selection.
+	Short: "Run selected workflow stages with flexible stage selection",
+	Long: `Run selected workflow stages with flexible stage selection.
 
-Core phase flags:
-  -s, --specify    Include specify phase (requires feature description)
-  -p, --plan       Include plan phase
-  -t, --tasks      Include tasks phase
-  -i, --implement  Include implement phase
-  -a, --all        Run all core phases (equivalent to -spti)
+Core stage flags:
+  -s, --specify    Include specify stage (requires feature description)
+  -p, --plan       Include plan stage
+  -t, --tasks      Include tasks stage
+  -i, --implement  Include implement stage
+  -a, --all        Run all core stages (equivalent to -spti)
 
-Optional phase flags:
-  -n, --constitution  Include constitution phase
-  -r, --clarify       Include clarify phase
-  -l, --checklist     Include checklist phase (note: -c is used for --config)
-  -z, --analyze       Include analyze phase
+Optional stage flags:
+  -n, --constitution  Include constitution stage
+  -r, --clarify       Include clarify stage
+  -l, --checklist     Include checklist stage (note: -c is used for --config)
+  -z, --analyze       Include analyze stage
 
-Phases are always executed in canonical order:
+Stages are always executed in canonical order:
   constitution -> specify -> clarify -> plan -> tasks -> checklist -> analyze -> implement`,
-	Example: `  # Run all core phases for a new feature
+	Example: `  # Run all core stages for a new feature
   autospec run -a "Add user authentication"
 
   # Run only plan and implement on current spec
@@ -42,20 +46,20 @@ Phases are always executed in canonical order:
   # Run tasks and implement on a specific spec
   autospec run -ti --spec 007-yaml-output
 
-  # Preview what phases would run (dry run mode)
+  # Preview what stages would run (dry run mode)
   autospec run -ti --dry-run
 
   # Skip confirmation prompts for CI/CD
   autospec run -ti -y`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Get core phase flags
+		// Get core stage flags
 		specify, _ := cmd.Flags().GetBool("specify")
 		plan, _ := cmd.Flags().GetBool("plan")
 		tasks, _ := cmd.Flags().GetBool("tasks")
 		implement, _ := cmd.Flags().GetBool("implement")
 		all, _ := cmd.Flags().GetBool("all")
 
-		// Get optional phase flags
+		// Get optional stage flags
 		constitution, _ := cmd.Flags().GetBool("constitution")
 		clarify, _ := cmd.Flags().GetBool("clarify")
 		checklist, _ := cmd.Flags().GetBool("checklist")
@@ -69,36 +73,35 @@ Phases are always executed in canonical order:
 		maxRetries, _ := cmd.Flags().GetInt("max-retries")
 		resume, _ := cmd.Flags().GetBool("resume")
 		debug, _ := cmd.Flags().GetBool("debug")
-		progress, _ := cmd.Flags().GetBool("progress")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 
-		// Build PhaseConfig from flags
-		phaseConfig := workflow.NewPhaseConfig()
+		// Build StageConfig from flags
+		stageConfig := workflow.NewStageConfig()
 		if all {
-			phaseConfig.SetAll() // SetAll only sets core phases (specify, plan, tasks, implement)
+			stageConfig.SetAll() // SetAll only sets core stages (specify, plan, tasks, implement)
 		} else {
-			// Core phases
-			phaseConfig.Specify = specify
-			phaseConfig.Plan = plan
-			phaseConfig.Tasks = tasks
-			phaseConfig.Implement = implement
+			// Core stages
+			stageConfig.Specify = specify
+			stageConfig.Plan = plan
+			stageConfig.Tasks = tasks
+			stageConfig.Implement = implement
 		}
-		// Optional phases are always set from flags (can be combined with -a)
-		phaseConfig.Constitution = constitution
-		phaseConfig.Clarify = clarify
-		phaseConfig.Checklist = checklist
-		phaseConfig.Analyze = analyze
+		// Optional stages are always set from flags (can be combined with -a)
+		stageConfig.Constitution = constitution
+		stageConfig.Clarify = clarify
+		stageConfig.Checklist = checklist
+		stageConfig.Analyze = analyze
 
-		// Validate at least one phase is selected
-		if !phaseConfig.HasAnyPhase() {
-			return fmt.Errorf("no phases selected. Use -s/-p/-t/-i flags or -a for all phases\n\nRun 'autospec run --help' for usage")
+		// Validate at least one stage is selected
+		if !stageConfig.HasAnyStage() {
+			return fmt.Errorf("no stages selected. Use -s/-p/-t/-i flags or -a for all stages\n\nRun 'autospec run --help' for usage")
 		}
 
-		// Get feature description from args if specify phase is selected
+		// Get feature description from args if specify stage is selected
 		var featureDescription string
-		if phaseConfig.Specify {
+		if stageConfig.Specify {
 			if len(args) < 1 {
-				return fmt.Errorf("feature description required when using specify phase (-s)\n\nUsage: autospec run -s \"feature description\"")
+				return fmt.Errorf("feature description required when using specify stage (-s)\n\nUsage: autospec run -s \"feature description\"")
 			}
 			featureDescription = args[0]
 		} else if len(args) > 0 {
@@ -121,18 +124,15 @@ Phases are always executed in canonical order:
 		if cmd.Flags().Changed("max-retries") {
 			cfg.MaxRetries = maxRetries
 		}
-		if cmd.Flags().Changed("progress") {
-			cfg.ShowProgress = progress
-		}
 
 		// Resolve skip confirmations (flag > env > config)
 		if skipConfirm || os.Getenv("AUTOSPEC_YES") != "" || cfg.SkipConfirmations {
 			cfg.SkipConfirmations = true
 		}
 
-		// Check if constitution exists (required unless only running constitution phase)
-		if !phaseConfig.Constitution || phaseConfig.Count() > 1 {
-			// Either not running constitution at all, or running other phases too
+		// Check if constitution exists (required unless only running constitution stage)
+		if !stageConfig.Constitution || stageConfig.Count() > 1 {
+			// Either not running constitution at all, or running other stages too
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
 				fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
@@ -142,7 +142,7 @@ Phases are always executed in canonical order:
 
 		// Detect or validate spec name
 		var specMetadata *spec.Metadata
-		if !phaseConfig.Specify {
+		if !stageConfig.Specify {
 			// Need to detect or validate spec if not starting with specify
 			if specName != "" {
 				// Validate explicit spec exists
@@ -160,29 +160,17 @@ Phases are always executed in canonical order:
 				if err != nil {
 					return fmt.Errorf("failed to detect spec: %w\n\nUse --spec flag to specify explicitly or checkout a spec branch", err)
 				}
-				fmt.Printf("Detected spec: %s-%s\n", specMetadata.Number, specMetadata.Name)
+				PrintSpecInfo(specMetadata)
 			}
 		}
 
-		// Check artifact dependencies before execution
-		if !phaseConfig.Specify {
-			preflightResult := workflow.CheckArtifactDependencies(phaseConfig, specMetadata.Directory)
-			if preflightResult.RequiresConfirmation {
+		// Check artifact dependencies before execution - hard fail if missing
+		// These are artifacts that no earlier selected stage will produce
+		if !stageConfig.Specify {
+			preflightResult := workflow.CheckArtifactDependencies(stageConfig, specMetadata.Directory)
+			if len(preflightResult.MissingArtifacts) > 0 {
 				fmt.Fprint(os.Stderr, preflightResult.WarningMessage)
-
-				if !cfg.SkipConfirmations {
-					// Prompt for confirmation
-					fmt.Fprint(os.Stderr, "\nDo you want to continue anyway? [y/N]: ")
-					shouldContinue, promptErr := workflow.PromptUserToContinue("")
-					if promptErr != nil {
-						return promptErr
-					}
-					if !shouldContinue {
-						return fmt.Errorf("operation cancelled by user")
-					}
-				} else {
-					fmt.Fprintln(os.Stderr, "\nProceeding (skip_confirmations enabled)...")
-				}
+				return NewExitError(ExitInvalidArguments)
 			}
 		}
 
@@ -194,32 +182,35 @@ Phases are always executed in canonical order:
 		if debug {
 			fmt.Println("[DEBUG] Debug mode enabled")
 			fmt.Printf("[DEBUG] Config: %+v\n", cfg)
-			fmt.Printf("[DEBUG] PhaseConfig: %+v\n", phaseConfig)
+			fmt.Printf("[DEBUG] StageConfig: %+v\n", stageConfig)
 		}
 
 		// Handle dry run mode - preview without execution
 		if dryRun {
-			return printDryRunPreview(phaseConfig, featureDescription, specMetadata)
+			return printDryRunPreview(stageConfig, featureDescription, specMetadata)
 		}
 
-		// Execute phases in canonical order
-		return executePhases(orchestrator, phaseConfig, featureDescription, specMetadata, resume, debug)
+		// Create history logger
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
+
+		// Execute stages in canonical order with context for cancellation support
+		return executeStages(cmd.Context(), orchestrator, stageConfig, featureDescription, specMetadata, resume, debug, cfg.ImplementMethod, historyLogger)
 	},
 }
 
 // printDryRunPreview shows what would be executed without actually running
-func printDryRunPreview(phaseConfig *workflow.PhaseConfig, featureDescription string, specMetadata *spec.Metadata) error {
-	phases := phaseConfig.GetCanonicalOrder()
+func printDryRunPreview(stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata) error {
+	stages := stageConfig.GetCanonicalOrder()
 
 	fmt.Println("Dry Run Preview")
 	fmt.Println("===============")
 	fmt.Println()
-	fmt.Printf("Phases to execute: %d\n", len(phases))
+	fmt.Printf("Stages to execute: %d\n", len(stages))
 	fmt.Println()
 
 	fmt.Println("Execution order:")
-	for i, phase := range phases {
-		fmt.Printf("  %d. %s\n", i+1, phase)
+	for i, stage := range stages {
+		fmt.Printf("  %d. %s\n", i+1, stage)
 	}
 	fmt.Println()
 
@@ -232,23 +223,23 @@ func printDryRunPreview(phaseConfig *workflow.PhaseConfig, featureDescription st
 
 	// Show what artifacts would be created/modified
 	fmt.Println("Artifacts that would be created/modified:")
-	for _, phase := range phases {
-		switch phase {
-		case workflow.PhaseConstitution:
+	for _, stage := range stages {
+		switch stage {
+		case workflow.StageConstitution:
 			fmt.Println("  - .autospec/constitution.yaml")
-		case workflow.PhaseSpecify:
+		case workflow.StageSpecify:
 			fmt.Println("  - specs/<new-spec>/spec.yaml")
-		case workflow.PhaseClarify:
+		case workflow.StageClarify:
 			fmt.Println("  - specs/*/spec.yaml (updated)")
-		case workflow.PhasePlan:
+		case workflow.StagePlan:
 			fmt.Println("  - specs/*/plan.yaml")
-		case workflow.PhaseTasks:
+		case workflow.StageTasks:
 			fmt.Println("  - specs/*/tasks.yaml")
-		case workflow.PhaseChecklist:
+		case workflow.StageChecklist:
 			fmt.Println("  - specs/*/checklists/*.yaml")
-		case workflow.PhaseAnalyze:
+		case workflow.StageAnalyze:
 			fmt.Println("  - (analysis output, no file changes)")
-		case workflow.PhaseImplement:
+		case workflow.StageImplement:
 			fmt.Println("  - (implementation changes to codebase)")
 		}
 	}
@@ -258,86 +249,152 @@ func printDryRunPreview(phaseConfig *workflow.PhaseConfig, featureDescription st
 	return nil
 }
 
-// executePhases executes the selected phases in order
-func executePhases(orchestrator *workflow.WorkflowOrchestrator, phaseConfig *workflow.PhaseConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool) error {
-	phases := phaseConfig.GetCanonicalOrder()
-	totalPhases := len(phases)
-	orchestrator.Executor.TotalPhases = totalPhases
+// stageExecutionContext holds state during stage execution
+type stageExecutionContext struct {
+	orchestrator        *workflow.WorkflowOrchestrator
+	notificationHandler *notify.Handler
+	featureDescription  string
+	resume              bool
+	implementMethod     string
+	specName            string
+	specDir             string
+	ranImplement        bool
+}
 
-	var specName string
-	var specDir string
-	if specMetadata != nil {
-		specName = fmt.Sprintf("%s-%s", specMetadata.Number, specMetadata.Name)
-		specDir = specMetadata.Directory
+// executeStages executes the selected stages in order
+func executeStages(cmdCtx context.Context, orchestrator *workflow.WorkflowOrchestrator, stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool, implementMethod string, historyLogger *history.Writer) error {
+	stages := stageConfig.GetCanonicalOrder()
+	orchestrator.Executor.TotalStages = len(stages)
+
+	// Create notification handler from config
+	notifHandler := notify.NewHandler(orchestrator.Config.Notifications)
+	orchestrator.Executor.NotificationHandler = notifHandler
+
+	ctx := &stageExecutionContext{
+		orchestrator:        orchestrator,
+		notificationHandler: notifHandler,
+		featureDescription:  featureDescription,
+		resume:              resume,
+		implementMethod:     implementMethod,
 	}
 
-	ranImplement := false
+	if specMetadata != nil {
+		ctx.specName = fmt.Sprintf("%s-%s", specMetadata.Number, specMetadata.Name)
+		ctx.specDir = specMetadata.Directory
+	}
 
-	for i, phase := range phases {
-		fmt.Printf("[Phase %d/%d] %s...\n", i+1, totalPhases, phase)
-
-		switch phase {
-		// Core phases
-		case workflow.PhaseSpecify:
-			name, err := orchestrator.ExecuteSpecify(featureDescription)
-			if err != nil {
-				return fmt.Errorf("specify phase failed: %w", err)
-			}
-			specName = name
-			specDir = filepath.Join(orchestrator.SpecsDir, name)
-			// Update specMetadata for subsequent phases
-			specMetadata = &spec.Metadata{
-				Name:      name,
-				Directory: specDir,
-			}
-
-		case workflow.PhasePlan:
-			if err := orchestrator.ExecutePlan(specName, featureDescription); err != nil {
-				return fmt.Errorf("plan phase failed: %w", err)
-			}
-
-		case workflow.PhaseTasks:
-			if err := orchestrator.ExecuteTasks(specName, featureDescription); err != nil {
-				return fmt.Errorf("tasks phase failed: %w", err)
-			}
-
-		case workflow.PhaseImplement:
-			if err := orchestrator.ExecuteImplement(specName, featureDescription, resume); err != nil {
-				return fmt.Errorf("implement phase failed: %w", err)
-			}
-			ranImplement = true
-
-		// Optional phases
-		case workflow.PhaseConstitution:
-			if err := orchestrator.ExecuteConstitution(featureDescription); err != nil {
-				return fmt.Errorf("constitution phase failed: %w", err)
-			}
-
-		case workflow.PhaseClarify:
-			if err := orchestrator.ExecuteClarify(specName, featureDescription); err != nil {
-				return fmt.Errorf("clarify phase failed: %w", err)
-			}
-
-		case workflow.PhaseChecklist:
-			if err := orchestrator.ExecuteChecklist(specName, featureDescription); err != nil {
-				return fmt.Errorf("checklist phase failed: %w", err)
-			}
-
-		case workflow.PhaseAnalyze:
-			if err := orchestrator.ExecuteAnalyze(specName, featureDescription); err != nil {
-				return fmt.Errorf("analyze phase failed: %w", err)
+	// Wrap stage execution with lifecycle for timing, notification, and history
+	// Use RunWithHistoryContext to support context cancellation (e.g., Ctrl+C)
+	// Note: spec name may be empty if starting with specify stage
+	return lifecycle.RunWithHistoryContext(cmdCtx, notifHandler, historyLogger, "run", ctx.specName, func(_ context.Context) error {
+		for i, stage := range stages {
+			fmt.Printf("[Stage %d/%d] %s...\n", i+1, len(stages), stage)
+			if err := ctx.executeStage(stage); err != nil {
+				return fmt.Errorf("executing stage %s: %w", stage, err)
 			}
 		}
+
+		printWorkflowSummary(stages, ctx.specName, ctx.specDir, ctx.ranImplement)
+		return nil
+	})
+}
+
+// executeStage dispatches to the appropriate stage handler
+func (ctx *stageExecutionContext) executeStage(stage workflow.Stage) error {
+	switch stage {
+	case workflow.StageSpecify:
+		return ctx.executeSpecify()
+	case workflow.StagePlan:
+		return ctx.executePlan()
+	case workflow.StageTasks:
+		return ctx.executeTasks()
+	case workflow.StageImplement:
+		return ctx.executeImplement()
+	case workflow.StageConstitution:
+		return ctx.executeConstitution()
+	case workflow.StageClarify:
+		return ctx.executeClarify()
+	case workflow.StageChecklist:
+		return ctx.executeChecklist()
+	case workflow.StageAnalyze:
+		return ctx.executeAnalyze()
+	default:
+		return fmt.Errorf("unknown stage: %s", stage)
 	}
+}
 
-	// Print summary
-	printWorkflowSummary(phases, specName, specDir, ranImplement)
+func (ctx *stageExecutionContext) executeSpecify() error {
+	name, err := ctx.orchestrator.ExecuteSpecify(ctx.featureDescription)
+	if err != nil {
+		return fmt.Errorf("specify stage failed: %w", err)
+	}
+	ctx.specName = name
+	ctx.specDir = filepath.Join(ctx.orchestrator.SpecsDir, name)
+	return nil
+}
 
+func (ctx *stageExecutionContext) executePlan() error {
+	if err := ctx.orchestrator.ExecutePlan(ctx.specName, ctx.featureDescription); err != nil {
+		return fmt.Errorf("plan stage failed: %w", err)
+	}
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeTasks() error {
+	if err := ctx.orchestrator.ExecuteTasks(ctx.specName, ctx.featureDescription); err != nil {
+		return fmt.Errorf("tasks stage failed: %w", err)
+	}
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeImplement() error {
+	// Build phase options from config's implement_method setting
+	phaseOpts := workflow.PhaseExecutionOptions{}
+	switch ctx.implementMethod {
+	case "phases":
+		phaseOpts.RunAllPhases = true
+	case "tasks":
+		phaseOpts.TaskMode = true
+	case "single-session":
+		// Legacy behavior: no phase/task mode (default state)
+	}
+	if err := ctx.orchestrator.ExecuteImplement(ctx.specName, ctx.featureDescription, ctx.resume, phaseOpts); err != nil {
+		return fmt.Errorf("implement stage failed: %w", err)
+	}
+	ctx.ranImplement = true
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeConstitution() error {
+	if err := ctx.orchestrator.ExecuteConstitution(ctx.featureDescription); err != nil {
+		return fmt.Errorf("constitution stage failed: %w", err)
+	}
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeClarify() error {
+	if err := ctx.orchestrator.ExecuteClarify(ctx.specName, ctx.featureDescription); err != nil {
+		return fmt.Errorf("clarify stage failed: %w", err)
+	}
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeChecklist() error {
+	if err := ctx.orchestrator.ExecuteChecklist(ctx.specName, ctx.featureDescription); err != nil {
+		return fmt.Errorf("checklist stage failed: %w", err)
+	}
+	return nil
+}
+
+func (ctx *stageExecutionContext) executeAnalyze() error {
+	if err := ctx.orchestrator.ExecuteAnalyze(ctx.specName, ctx.featureDescription); err != nil {
+		return fmt.Errorf("analyze stage failed: %w", err)
+	}
 	return nil
 }
 
 // printWorkflowSummary prints a comprehensive summary after workflow completion
-func printWorkflowSummary(phases []workflow.Phase, specName, specDir string, ranImplement bool) {
+func printWorkflowSummary(stages []workflow.Stage, specName, specDir string, ranImplement bool) {
 	fmt.Println()
 
 	// If implement ran, show task completion stats
@@ -351,21 +408,21 @@ func printWorkflowSummary(phases []workflow.Phase, specName, specDir string, ran
 		}
 	}
 
-	// Show workflow phases completed
-	fmt.Printf("Completed %d workflow phase(s): ", len(phases))
-	phaseNames := make([]string, len(phases))
-	for i, p := range phases {
-		phaseNames[i] = string(p)
+	// Show workflow stages completed
+	fmt.Printf("Completed %d workflow stage(s): ", len(stages))
+	stageNames := make([]string, len(stages))
+	for i, s := range stages {
+		stageNames[i] = string(s)
 	}
-	fmt.Println(joinPhaseNames(phaseNames))
+	fmt.Println(joinStageNames(stageNames))
 
 	if specName != "" {
 		fmt.Printf("Spec: specs/%s/\n", specName)
 	}
 }
 
-// joinPhaseNames joins phase names with arrows for display
-func joinPhaseNames(names []string) string {
+// joinStageNames joins stage names with arrows for display
+func joinStageNames(names []string) string {
 	if len(names) == 0 {
 		return ""
 	}
@@ -381,21 +438,22 @@ func joinPhaseNames(names []string) string {
 }
 
 func init() {
+	runCmd.GroupID = GroupWorkflows
 	rootCmd.AddCommand(runCmd)
 
-	// Core phase selection flags
-	runCmd.Flags().BoolP("specify", "s", false, "Include specify phase")
-	runCmd.Flags().BoolP("plan", "p", false, "Include plan phase")
-	runCmd.Flags().BoolP("tasks", "t", false, "Include tasks phase")
-	runCmd.Flags().BoolP("implement", "i", false, "Include implement phase")
-	runCmd.Flags().BoolP("all", "a", false, "Run all core phases (equivalent to -spti)")
+	// Core stage selection flags
+	runCmd.Flags().BoolP("specify", "s", false, "Include specify stage")
+	runCmd.Flags().BoolP("plan", "p", false, "Include plan stage")
+	runCmd.Flags().BoolP("tasks", "t", false, "Include tasks stage")
+	runCmd.Flags().BoolP("implement", "i", false, "Include implement stage")
+	runCmd.Flags().BoolP("all", "a", false, "Run all core stages (equivalent to -spti)")
 
-	// Optional phase selection flags
+	// Optional stage selection flags
 	// Note: -c is already used globally for --config, so checklist uses -l
-	runCmd.Flags().BoolP("constitution", "n", false, "Include constitution phase")
-	runCmd.Flags().BoolP("clarify", "r", false, "Include clarify phase")
-	runCmd.Flags().BoolP("checklist", "l", false, "Include checklist phase")
-	runCmd.Flags().BoolP("analyze", "z", false, "Include analyze phase")
+	runCmd.Flags().BoolP("constitution", "n", false, "Include constitution stage")
+	runCmd.Flags().BoolP("clarify", "r", false, "Include clarify stage")
+	runCmd.Flags().BoolP("checklist", "l", false, "Include checklist stage")
+	runCmd.Flags().BoolP("analyze", "z", false, "Include analyze stage")
 
 	// Spec selection
 	runCmd.Flags().String("spec", "", "Specify which spec to work with (overrides branch detection)")
@@ -406,6 +464,5 @@ func init() {
 	// Other flags (NOTE: max-retries is now long-only, -r is used for clarify)
 	runCmd.Flags().Int("max-retries", 0, "Override max retry attempts (0 = use config)")
 	runCmd.Flags().Bool("resume", false, "Resume implementation from where it left off")
-	runCmd.Flags().Bool("progress", false, "Show progress indicators (spinners) during execution")
-	runCmd.Flags().Bool("dry-run", false, "Preview what phases would run without executing")
+	runCmd.Flags().Bool("dry-run", false, "Preview what stages would run without executing")
 }

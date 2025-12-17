@@ -9,7 +9,7 @@
 **Problem**: Commands fail with exit code 5 and timeout error message.
 
 ```
-Error: command timed out after 5m0s: claude /autospec.workflow ...
+Error: command timed out after 5m0s: claude /autospec.prep ...
 ```
 
 **Causes**:
@@ -229,7 +229,160 @@ autospec doctor
 
 **Problem**: Claude blocks commands (can't respond to approval prompts).
 
-**Solutions**: Allow commands in `~/.claude/settings.json`: `{"permissions":{"allow":["Bash(mkdir:*)", "Edit", "Write", "Read"]}}`. Or add `--dangerously-skip-permissions` to `claude_args` (sandbox recommended). **WARNING**: bypasses ALL safety checks—never use with API keys/credentials/production data.
+**Solutions**: Allow commands in `~/.claude/settings.json`: `{"permissions":{"allow":["Bash(mkdir:*)", "Edit", "Write", "Read"]}}`. Or add `--dangerously-skip-permissions` to `claude_args`—enable Claude's sandbox first (`/sandbox`, uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux). **WARNING**: bypasses ALL safety checks—never use with API keys/credentials/production data.
+
+### Prerequisite Validation Errors
+
+Autospec validates that required artifacts exist before executing commands. This prevents wasted API costs when prerequisites are missing.
+
+#### Missing constitution error
+
+**Problem**: Command fails immediately with constitution error.
+
+**Symptoms**:
+```
+Error: Project constitution not found.
+
+A constitution is required before running any workflow stages.
+The constitution defines your project's principles and guidelines.
+
+To create a constitution, run:
+  autospec constitution
+```
+
+**Solution**:
+```bash
+# Create a constitution for your project
+autospec constitution
+```
+
+The constitution defines your project's coding standards, architectural principles, and guidelines. It must exist before running any other stage commands.
+
+#### Missing spec.yaml error
+
+**Problem**: Commands like `plan`, `clarify`, or `checklist` fail because spec.yaml is missing.
+
+**Symptoms**:
+```
+Error: spec.yaml not found.
+
+Run 'autospec specify' first to create this file.
+```
+
+**Solution**:
+```bash
+# Create the specification first
+autospec specify "your feature description"
+
+# Or run the full prep workflow
+autospec prep "your feature description"
+```
+
+#### Missing plan.yaml error
+
+**Problem**: `tasks` command fails because plan.yaml is missing.
+
+**Symptoms**:
+```
+Error: plan.yaml not found.
+
+Run 'autospec plan' first to create this file.
+```
+
+**Solution**:
+```bash
+# Create the plan first
+autospec plan
+
+# Or run spec and plan together
+autospec run -sp
+```
+
+#### Missing tasks.yaml error
+
+**Problem**: `implement` command fails because tasks.yaml is missing.
+
+**Symptoms**:
+```
+Error: tasks.yaml not found.
+
+Run 'autospec tasks' first to create this file.
+```
+
+**Solution**:
+```bash
+# Create tasks first
+autospec tasks
+
+# Or run the full prep workflow
+autospec prep "feature"
+
+# Or run spec, plan, and tasks together
+autospec run -spt
+```
+
+#### Multiple missing artifacts (analyze command)
+
+**Problem**: `analyze` command lists multiple missing files.
+
+**Symptoms**:
+```
+Error: Missing required artifacts:
+  - spec.yaml
+  - plan.yaml
+  - tasks.yaml
+
+Run the following commands to create them:
+  autospec specify
+  autospec plan
+  autospec tasks
+```
+
+**Solution**:
+```bash
+# Run the full prep workflow to create all artifacts
+autospec prep "feature description"
+
+# Or run stages individually
+autospec specify "feature"
+autospec plan
+autospec tasks
+```
+
+#### Stage Dependency Diagram
+
+The following diagram shows which artifacts each stage requires and produces:
+
+```
+constitution ──> constitution.yaml
+      ↓
+   specify ────> spec.yaml
+      ↓
+    plan ──────> plan.yaml
+      ↓
+    tasks ─────> tasks.yaml
+      ↓
+  implement
+
+Optional stages:
+- clarify:   requires spec.yaml
+- checklist: requires spec.yaml
+- analyze:   requires spec.yaml, plan.yaml, tasks.yaml
+```
+
+#### Understanding run command validation
+
+The `run` command performs "smart" validation. It only checks for artifacts that won't be created by earlier stages in your selection:
+
+| Command | What's Validated | Why |
+|---------|-----------------|-----|
+| `autospec run -spt` | Constitution only | `specify` creates spec.yaml, `plan` creates plan.yaml |
+| `autospec run -pti` | spec.yaml | `plan` needs spec.yaml, but produces plan.yaml |
+| `autospec run -ti` | plan.yaml | `tasks` needs plan.yaml, produces tasks.yaml |
+| `autospec run -i` | tasks.yaml | `implement` needs tasks.yaml |
+| `autospec run -a` | Constitution only | Full chain produces all artifacts |
+
+**Tip**: Use `autospec run -spt` to go from nothing to tasks.yaml in one command.
 
 ### Performance Issues
 
@@ -332,13 +485,13 @@ git status
 **Solutions**:
 ```bash
 # Enable verbose output
-autospec --verbose workflow "feature"
+autospec --verbose prep "feature"
 
 # Enable debug logging
-autospec --debug workflow "feature"
+autospec --debug prep "feature"
 
 # Check if output is being redirected
-autospec workflow "feature" 2>&1 | tee output.log
+autospec prep "feature" 2>&1 | tee output.log
 ```
 
 #### Error messages unclear
@@ -363,7 +516,7 @@ cat ~/.autospec/state/retry.json | jq .
 
 ```bash
 # Global debug flag
-autospec --debug workflow "feature"
+autospec --debug prep "feature"
 
 # Per-command debugging
 autospec -d plan
@@ -409,10 +562,10 @@ ls .claude/commands/autospec.*.md
 
 ```bash
 # Capture stdout and stderr
-autospec workflow "feature" 2>&1 | tee full-output.log
+autospec prep "feature" 2>&1 | tee full-output.log
 
 # Capture with timestamps
-autospec workflow "feature" 2>&1 | ts '[%Y-%m-%d %H:%M:%S]' | tee output.log
+autospec prep "feature" 2>&1 | ts '[%Y-%m-%d %H:%M:%S]' | tee output.log
 ```
 
 ## Getting Help
@@ -451,6 +604,208 @@ autospec workflow "feature" 2>&1 | ts '[%Y-%m-%d %H:%M:%S]' | tee output.log
 - **Documentation**: Check [CLAUDE.md](../CLAUDE.md) and [docs/](.)
 - **Issues**: Report bugs at repository issues page
 - **Logs**: Check `~/.autospec/state/` for state files
+
+## Notification Issues
+
+### Notifications not appearing
+
+**Problem**: Notifications are enabled but don't appear.
+
+**Diagnostics**:
+```bash
+# 1. Check if notifications are enabled in config
+autospec config show | grep -A10 notifications
+
+# 2. Verify you're in an interactive session
+tty && echo "Interactive" || echo "Non-interactive"
+
+# 3. Check for CI environment variables
+env | grep -E "^(CI|GITHUB_ACTIONS|GITLAB_CI|JENKINS)="
+```
+
+**Solutions**:
+
+1. **Ensure notifications are enabled**:
+   ```yaml
+   # .autospec/config.yml
+   notifications:
+     enabled: true
+   ```
+
+2. **Check platform-specific tools**:
+   - **macOS**: `osascript` and `afplay` (standard on all versions)
+   - **Linux**: Install `notify-send` (`sudo apt install libnotify-bin` or equivalent)
+   - **Windows**: PowerShell (standard on all versions)
+
+3. **Verify display environment (Linux)**:
+   ```bash
+   echo $DISPLAY    # X11
+   echo $WAYLAND_DISPLAY  # Wayland
+   ```
+   At least one must be set for notifications to work.
+
+### No sound notifications
+
+**Problem**: Visual notifications work but no sound plays.
+
+**Platform-specific solutions**:
+
+#### macOS
+```bash
+# Check if afplay is available
+which afplay
+
+# Test default sound
+afplay /System/Library/Sounds/Glass.aiff
+```
+
+#### Linux
+```bash
+# Check if paplay is available (PulseAudio/PipeWire)
+which paplay
+
+# Test a sound file (must provide custom file)
+paplay /path/to/your/sound.wav
+```
+
+**Note**: Linux has no default notification sound. You must configure `sound_file` for audio notifications.
+
+#### Windows
+```powershell
+# Test system beep
+[Console]::Beep(800, 200)
+```
+
+### Custom sound file not playing
+
+**Problem**: Configured custom sound file doesn't play.
+
+**Diagnostics**:
+```bash
+# Check if file exists
+ls -la /path/to/your/sound.wav
+
+# Check file extension is supported
+# Supported: .wav, .mp3, .aiff, .aif, .ogg, .flac, .m4a
+```
+
+**Solutions**:
+1. Verify the file path is absolute
+2. Ensure file format is supported
+3. Check file permissions (must be readable)
+4. If file is invalid, autospec falls back to system default (or no sound on Linux)
+
+### Notifications in CI/CD pipelines
+
+**Problem**: Notifications trigger unexpectedly in CI environment.
+
+**Behavior**: autospec automatically detects CI environments and disables notifications. The following environment variables are checked:
+- `CI`
+- `GITHUB_ACTIONS`
+- `GITLAB_CI`
+- `CIRCLECI`
+- `TRAVIS`
+- `JENKINS_URL`
+- `BUILDKITE`
+- `DRONE`
+- `TEAMCITY_VERSION`
+- `TF_BUILD` (Azure DevOps)
+- `BITBUCKET_PIPELINES`
+- `CODEBUILD_BUILD_ID` (AWS CodeBuild)
+- And others
+
+**Solution**: If you need to force enable notifications in CI (not recommended):
+```bash
+# Temporarily unset CI variable
+unset CI
+autospec full "feature"
+```
+
+### Notifications in headless/SSH sessions
+
+**Problem**: No notifications when running over SSH or in headless mode.
+
+**Behavior**: autospec checks for TTY availability. Non-interactive sessions skip notifications to avoid errors.
+
+**Diagnostics**:
+```bash
+# Check if session is interactive
+if [ -t 0 ]; then echo "Interactive"; else echo "Non-interactive"; fi
+```
+
+**Solutions**:
+1. For SSH sessions that need notifications, use `ssh -t` for pseudo-terminal allocation
+2. On headless servers, notifications are intentionally skipped (no display to show them)
+
+### Windows PowerShell execution policy
+
+**Problem**: Toast notifications fail on Windows.
+
+**Error**: `Running scripts is disabled on this system`
+
+**Solutions**:
+```powershell
+# Option 1: Run as administrator and enable scripts
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Option 2: autospec uses -ExecutionPolicy Bypass, which should work
+# If still failing, check for group policy restrictions
+Get-ExecutionPolicy -List
+```
+
+### Notifications not appearing on Linux
+
+**Problem**: Linux desktop doesn't show notifications.
+
+**Solutions**:
+
+1. **Install notify-send**:
+   ```bash
+   # Debian/Ubuntu
+   sudo apt install libnotify-bin
+
+   # Fedora
+   sudo dnf install libnotify
+
+   # Arch
+   sudo pacman -S libnotify
+   ```
+
+2. **Verify notification daemon is running**:
+   ```bash
+   # Check for notification daemon
+   pgrep -l notification
+   # or
+   pgrep -l dunst  # if using dunst
+   ```
+
+3. **Check display environment**:
+   ```bash
+   # For X11
+   export DISPLAY=:0
+
+   # For Wayland
+   # Ensure WAYLAND_DISPLAY is set by your compositor
+   ```
+
+### Notification timeout/latency
+
+**Problem**: Command execution seems slow due to notifications.
+
+**Behavior**: Notifications dispatch asynchronously with a 100ms timeout. They should not block command execution.
+
+**Diagnostics**:
+```bash
+# Run with debug to see notification timing
+autospec --debug full "test"
+```
+
+**Solutions**:
+- If notifications are causing delays, switch to `type: visual` (sound playback can take longer)
+- Disable notifications for time-critical operations:
+  ```bash
+  AUTOSPEC_NOTIFICATIONS_ENABLED=false autospec full "feature"
+  ```
 
 ## Quick Reference
 

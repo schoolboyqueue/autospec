@@ -7,13 +7,17 @@ import (
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
 var specifyCmd = &cobra.Command{
-	Use:   "specify <feature-description>",
-	Short: "Execute the specification phase for a new feature",
+	Use:     "specify <feature-description>",
+	Aliases: []string{"spec", "s"},
+	Short:   "Execute the specification stage for a new feature (spec, s)",
 	Long: `Execute the /autospec.specify command to create a new feature specification.
 
 The specify command will:
@@ -55,38 +59,48 @@ The feature description should be a clear, concise description of what you want 
 			return cliErr
 		}
 
-		// Override skip-preflight from flag if set
-		if cmd.Flags().Changed("skip-preflight") {
-			cfg.SkipPreflight = skipPreflight
-		}
+		// Create notification handler and history logger
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 
-		// Override max-retries from flag if set
-		if cmd.Flags().Changed("max-retries") {
-			cfg.MaxRetries = maxRetries
-		}
+		// Wrap command execution with lifecycle for timing, notification, and history
+		// Note: spec name is empty for specify since we're creating a new spec
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "specify", "", func() error {
+			// Override skip-preflight from flag if set
+			if cmd.Flags().Changed("skip-preflight") {
+				cfg.SkipPreflight = skipPreflight
+			}
 
-		// Check if constitution exists (required for specify)
-		constitutionCheck := workflow.CheckConstitutionExists()
-		if !constitutionCheck.Exists {
-			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
-			return fmt.Errorf("constitution required")
-		}
+			// Override max-retries from flag if set
+			if cmd.Flags().Changed("max-retries") {
+				cfg.MaxRetries = maxRetries
+			}
 
-		// Create workflow orchestrator
-		orch := workflow.NewWorkflowOrchestrator(cfg)
+			// Check if constitution exists (required for specify)
+			constitutionCheck := workflow.CheckConstitutionExists()
+			if !constitutionCheck.Exists {
+				fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+				return NewExitError(ExitInvalidArguments)
+			}
 
-		// Execute specify phase
-		specName, err := orch.ExecuteSpecify(featureDescription)
-		if err != nil {
-			return err
-		}
+			// Create workflow orchestrator
+			orch := workflow.NewWorkflowOrchestrator(cfg)
+			orch.Executor.NotificationHandler = notifHandler
 
-		fmt.Printf("\nSpec created: %s\n", specName)
-		return nil
+			// Execute specify stage
+			specName, execErr := orch.ExecuteSpecify(featureDescription)
+			if execErr != nil {
+				return fmt.Errorf("specify stage failed: %w", execErr)
+			}
+
+			fmt.Printf("\nSpec created: %s\n", specName)
+			return nil
+		})
 	},
 }
 
 func init() {
+	specifyCmd.GroupID = GroupCoreStages
 	rootCmd.AddCommand(specifyCmd)
 
 	// Command-specific flags

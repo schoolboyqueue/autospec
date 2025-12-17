@@ -1,17 +1,22 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
 var constitutionCmd = &cobra.Command{
-	Use:   "constitution [optional-prompt]",
-	Short: "Create or update the project constitution",
+	Use:     "constitution [optional-prompt]",
+	Aliases: []string{"const"},
+	Short:   "Create or update the project constitution (const)",
 	Long: `Execute the /autospec.constitution command to create or update the project constitution.
 
 The constitution command will:
@@ -48,28 +53,38 @@ This command has no prerequisites - it can be run at any time.`,
 			return cliErr
 		}
 
-		// Override skip-preflight from flag if set
-		if cmd.Flags().Changed("skip-preflight") {
-			cfg.SkipPreflight = skipPreflight
-		}
+		// Create notification handler and history logger
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 
-		// Override max-retries from flag if set
-		if cmd.Flags().Changed("max-retries") {
-			cfg.MaxRetries = maxRetries
-		}
+		// Wrap command execution with lifecycle for timing, notification, and history
+		// Note: constitution is project-level, no spec name
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "constitution", "", func() error {
+			// Override skip-preflight from flag if set
+			if cmd.Flags().Changed("skip-preflight") {
+				cfg.SkipPreflight = skipPreflight
+			}
 
-		// Create workflow orchestrator
-		orch := workflow.NewWorkflowOrchestrator(cfg)
+			// Override max-retries from flag if set
+			if cmd.Flags().Changed("max-retries") {
+				cfg.MaxRetries = maxRetries
+			}
 
-		// Execute constitution phase
-		if err := orch.ExecuteConstitution(prompt); err != nil {
-			return err
-		}
+			// Create workflow orchestrator
+			orch := workflow.NewWorkflowOrchestrator(cfg)
+			orch.Executor.NotificationHandler = notifHandler
 
-		return nil
+			// Execute constitution stage
+			if err := orch.ExecuteConstitution(prompt); err != nil {
+				return fmt.Errorf("constitution stage failed: %w", err)
+			}
+
+			return nil
+		})
 	},
 }
 
 func init() {
+	constitutionCmd.GroupID = GroupCoreStages
 	rootCmd.AddCommand(constitutionCmd)
 }

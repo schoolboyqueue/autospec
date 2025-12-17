@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"gopkg.in/yaml.v3"
 )
 
@@ -126,12 +127,12 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 		}
 	}
 
-	// MaxRetries: min=1, max=10
-	if cfg.MaxRetries < 1 || cfg.MaxRetries > 10 {
+	// MaxRetries: min=0, max=10
+	if cfg.MaxRetries < 0 || cfg.MaxRetries > 10 {
 		return &ValidationError{
 			FilePath: filePath,
 			Field:    "max_retries",
-			Message:  "must be between 1 and 10",
+			Message:  "must be between 0 and 10",
 		}
 	}
 
@@ -152,6 +153,67 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 			Message:  "must contain {{PROMPT}} placeholder",
 		}
 	}
+
+	// ImplementMethod: must be one of "single-session", "phases", "tasks", or empty (uses default)
+	if cfg.ImplementMethod != "" {
+		validMethods := []string{"single-session", "phases", "tasks"}
+		isValid := false
+		for _, m := range validMethods {
+			if cfg.ImplementMethod == m {
+				isValid = true
+				break
+			}
+		}
+		if !isValid {
+			return &ValidationError{
+				FilePath: filePath,
+				Field:    "implement_method",
+				Message:  "must be one of: single-session, phases, tasks",
+			}
+		}
+	}
+
+	// Validate notification settings
+	if err := validateNotificationConfig(&cfg.Notifications, filePath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateNotificationConfig validates notification configuration values.
+// Returns nil if valid, or a ValidationError with field information if invalid.
+func validateNotificationConfig(nc *notify.NotificationConfig, filePath string) error {
+	// Validate Type: must be one of sound, visual, both (or empty for default)
+	if nc.Type != "" && !notify.ValidOutputType(string(nc.Type)) {
+		return &ValidationError{
+			FilePath: filePath,
+			Field:    "notifications.type",
+			Message:  "must be one of: sound, visual, both",
+		}
+	}
+
+	// Validate SoundFile: if specified, must exist
+	if nc.SoundFile != "" {
+		if _, err := os.Stat(nc.SoundFile); err != nil {
+			if os.IsNotExist(err) {
+				return &ValidationError{
+					FilePath: filePath,
+					Field:    "notifications.sound_file",
+					Message:  fmt.Sprintf("file does not exist: %s", nc.SoundFile),
+				}
+			}
+			// Permission or other errors
+			return &ValidationError{
+				FilePath: filePath,
+				Field:    "notifications.sound_file",
+				Message:  fmt.Sprintf("cannot access file: %s", err),
+			}
+		}
+	}
+
+	// Note: LongRunningThreshold of 0 or negative is valid and means "always notify"
+	// This is documented behavior per the spec, so no validation error is needed.
 
 	return nil
 }

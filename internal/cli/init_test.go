@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	claudepkg "github.com/ariel-frischer/autospec/internal/claude"
 	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
@@ -97,37 +98,6 @@ func TestCountResults(t *testing.T) {
 	}
 }
 
-func TestCountScriptResults(t *testing.T) {
-	tests := map[string]struct {
-		results     []commands.ScriptInstallResult
-		wantInstall int
-		wantUpdate  int
-	}{
-		"empty": {
-			results:     []commands.ScriptInstallResult{},
-			wantInstall: 0,
-			wantUpdate:  0,
-		},
-		"mixed actions": {
-			results: []commands.ScriptInstallResult{
-				{Action: "installed"},
-				{Action: "updated"},
-				{Action: "skipped"},
-			},
-			wantInstall: 1,
-			wantUpdate:  1,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			installed, updated := countScriptResults(tc.results)
-			assert.Equal(t, tc.wantInstall, installed)
-			assert.Equal(t, tc.wantUpdate, updated)
-		})
-	}
-}
-
 func TestCopyConstitution(t *testing.T) {
 	t.Run("copy success", func(t *testing.T) {
 		srcDir := t.TempDir()
@@ -187,7 +157,6 @@ func TestInitCmdExamples(t *testing.T) {
 func TestInitCmdLongDescription(t *testing.T) {
 	keywords := []string{
 		"command templates",
-		"helper scripts",
 		"user-level",
 		"Configuration precedence",
 	}
@@ -197,6 +166,10 @@ func TestInitCmdLongDescription(t *testing.T) {
 	}
 }
 
+// TestRunInit_CreateUserConfig tests user config creation.
+// NOTE: This test cannot use t.Parallel() because it uses os.Chdir() which modifies
+// global state (the current working directory). Parallel subtests would race for
+// the working directory.
 func TestRunInit_CreateUserConfig(t *testing.T) {
 	// Setup temp directories
 	tmpDir := t.TempDir()
@@ -229,10 +202,13 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 
 	output := buf.String()
 	assert.Contains(t, output, "Commands:")
-	assert.Contains(t, output, "Scripts:")
 	assert.Contains(t, output, "Config:")
 }
 
+// TestRunInit_ProjectConfig tests project config creation.
+// NOTE: This test cannot use t.Parallel() because it uses os.Chdir() which modifies
+// global state (the current working directory). Parallel subtests would race for
+// the working directory.
 func TestRunInit_ProjectConfig(t *testing.T) {
 	// Setup temp directory
 	tmpDir := t.TempDir()
@@ -267,6 +243,10 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 	assert.FileExists(t, projectConfig)
 }
 
+// TestRunInit_ForceOverwrite tests force overwrite behavior.
+// NOTE: This test cannot use t.Parallel() because it uses os.Chdir() which modifies
+// global state (the current working directory). Parallel subtests would race for
+// the working directory.
 func TestRunInit_ForceOverwrite(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -310,6 +290,10 @@ func TestRunInit_ForceOverwrite(t *testing.T) {
 	assert.NotContains(t, string(data), "max_retries: 99") // Should be default now
 }
 
+// TestHandleConstitution tests constitution handling.
+// NOTE: This test cannot use t.Parallel() because it uses os.Chdir() which modifies
+// global state (the current working directory). Parallel subtests would race for
+// the working directory.
 func TestHandleConstitution(t *testing.T) {
 	t.Run("no constitution found", func(t *testing.T) {
 		// Use temp directory with no constitution files
@@ -326,6 +310,10 @@ func TestHandleConstitution(t *testing.T) {
 	})
 }
 
+// TestCheckGitignore tests gitignore checking.
+// NOTE: This test cannot use t.Parallel() because it uses os.Chdir() which modifies
+// global state (the current working directory). Parallel subtests would race for
+// the working directory.
 func TestCheckGitignore(t *testing.T) {
 	t.Run("no gitignore file", func(t *testing.T) {
 		tmpDir := t.TempDir()
@@ -404,4 +392,136 @@ func TestCheckGitignore(t *testing.T) {
 		// Should not print anything - subdirectory pattern counts
 		assert.Empty(t, buf.String())
 	})
+}
+
+func TestConfigureClaudeSettings(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup             func(t *testing.T, dir string)
+		wantMsgContains   []string
+		wantMsgNotContain []string
+		wantFileExists    bool
+		wantInAllowList   bool
+	}{
+		"creates settings when missing": {
+			setup: func(t *testing.T, dir string) {
+				// No setup - no .claude directory
+			},
+			wantMsgContains: []string{"Claude settings:", "created", "permissions"},
+			wantFileExists:  true,
+			wantInAllowList: true,
+		},
+		"adds permission to existing settings": {
+			setup: func(t *testing.T, dir string) {
+				createClaudeSettingsFile(t, dir, `{"permissions": {"allow": ["Bash(other:*)"]}}`)
+			},
+			wantMsgContains: []string{"Claude settings:", "added", "Bash(autospec:*)"},
+			wantFileExists:  true,
+			wantInAllowList: true,
+		},
+		"skips when permission already present": {
+			setup: func(t *testing.T, dir string) {
+				createClaudeSettingsFile(t, dir, `{"permissions": {"allow": ["Bash(autospec:*)"]}}`)
+			},
+			wantMsgContains: []string{"Claude settings:", "already configured"},
+			wantFileExists:  true,
+			wantInAllowList: true,
+		},
+		"warns when permission is denied": {
+			setup: func(t *testing.T, dir string) {
+				createClaudeSettingsFile(t, dir, `{"permissions": {"deny": ["Bash(autospec:*)"]}}`)
+			},
+			wantMsgContains:   []string{"Warning", "Bash(autospec:*)", "deny list"},
+			wantMsgNotContain: []string{"created", "added"},
+			wantFileExists:    true,
+			wantInAllowList:   false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			dir := t.TempDir()
+			if tt.setup != nil {
+				tt.setup(t, dir)
+			}
+
+			var buf bytes.Buffer
+			configureClaudeSettings(&buf, dir)
+
+			output := buf.String()
+			for _, want := range tt.wantMsgContains {
+				assert.Contains(t, output, want, "output should contain %q", want)
+			}
+			for _, notWant := range tt.wantMsgNotContain {
+				assert.NotContains(t, output, notWant, "output should not contain %q", notWant)
+			}
+
+			settingsPath := filepath.Join(dir, ".claude", "settings.local.json")
+			if tt.wantFileExists {
+				assert.FileExists(t, settingsPath)
+
+				// Check if permission is in the allow list (use claude package)
+				settings, err := claudepkg.Load(dir)
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantInAllowList, settings.HasPermission(claudepkg.RequiredPermission))
+			}
+		})
+	}
+}
+
+func TestConfigureClaudeSettings_PreservesExistingFields(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	createClaudeSettingsFile(t, dir, `{
+		"permissions": {
+			"allow": ["Bash(existing:*)"],
+			"ask": ["Write(*)"],
+			"deny": ["Bash(rm:*)"]
+		},
+		"sandbox": {"enabled": true}
+	}`)
+
+	var buf bytes.Buffer
+	configureClaudeSettings(&buf, dir)
+
+	// Verify all existing fields are preserved
+	settingsPath := filepath.Join(dir, ".claude", "settings.local.json")
+	data, err := os.ReadFile(settingsPath)
+	require.NoError(t, err)
+
+	content := string(data)
+	assert.Contains(t, content, "Bash(existing:*)")
+	assert.Contains(t, content, "Bash(autospec:*)")
+	assert.Contains(t, content, "Write(*)")
+	assert.Contains(t, content, "Bash(rm:*)")
+	assert.Contains(t, content, "sandbox")
+}
+
+func TestConfigureClaudeSettings_MalformedJSON(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	createClaudeSettingsFile(t, dir, `{invalid json}`)
+
+	var buf bytes.Buffer
+	configureClaudeSettings(&buf, dir)
+
+	output := buf.String()
+	assert.Contains(t, output, "Claude settings:")
+	assert.Contains(t, output, "parsing")
+}
+
+// createClaudeSettingsFile is a helper to create a .claude/settings.local.json file
+func createClaudeSettingsFile(t *testing.T, dir, content string) {
+	t.Helper()
+	claudeDir := filepath.Join(dir, ".claude")
+	err := os.MkdirAll(claudeDir, 0755)
+	require.NoError(t, err)
+
+	settingsPath := filepath.Join(claudeDir, "settings.local.json")
+	err = os.WriteFile(settingsPath, []byte(content), 0644)
+	require.NoError(t, err)
 }

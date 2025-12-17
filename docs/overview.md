@@ -12,7 +12,7 @@ The tool automates the SpecKit methodology—a systematic approach to feature de
 
 - **Automated Workflow Orchestration**: Execute the complete specify → plan → tasks → implement workflow with a single command
 - **Intelligent Retry Management**: Automatic retry with persistent state tracking when validation fails
-- **Multi-Phase Execution**: Run individual phases (specify, plan, tasks, implement) or complete workflows
+- **Multi-Stage Execution**: Run individual stages (specify, plan, tasks, implement) or complete workflows
 - **Smart Spec Detection**: Automatically detects current feature from git branch or directory structure
 - **Flexible Configuration**: Hierarchical configuration system supporting global, local, and environment-based settings
 - **Health Checks**: Built-in dependency verification and system health diagnostics
@@ -39,7 +39,7 @@ The tool automates the SpecKit methodology—a systematic approach to feature de
 ### 1. Feature Development
 Transform a feature idea into a complete specification, technical plan, and task breakdown:
 ```bash
-autospec workflow "Add user authentication with OAuth support"
+autospec prep "Add user authentication with OAuth support"
 ```
 
 ### 2. Full Implementation

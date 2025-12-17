@@ -20,10 +20,10 @@ You **MUST** consider the user input before proceeding (if not empty).
 
 ## Outline
 
-1. **Setup**: Run the prerequisites script to get feature paths:
+1. **Setup**: Run the prerequisites command to get feature paths:
 
    ```bash
-   .autospec/scripts/check-prerequisites.sh --json --require-plan
+   autospec prereqs --json --require-plan
    ```
 
    Parse the JSON output for:
@@ -31,6 +31,8 @@ You **MUST** consider the user input before proceeding (if not empty).
    - `FEATURE_SPEC`: Path to the spec file
    - `IMPL_PLAN`: Path to the plan file
    - `AVAILABLE_DOCS`: List of optional documents found
+   - `AUTOSPEC_VERSION`: The autospec version (for _meta section)
+   - `CREATED_DATE`: ISO 8601 timestamp (for _meta section)
 
    If the script fails, it will output an error message instructing the user to run `/autospec.plan` first.
 
@@ -189,18 +191,18 @@ You **MUST** consider the user input before proceeding (if not empty).
    _meta:
      version: "1.0.0"
      generator: "autospec"
-     generator_version: "<run autospec version to get this>"
-     created: "<ISO 8601 timestamp>"
+     generator_version: "<AUTOSPEC_VERSION from step 1>"
+     created: "<CREATED_DATE from step 1>"
      artifact_type: "tasks"
    ```
 
 5. **Write the tasks** to `FEATURE_DIR/tasks.yaml`
 
-6. **Validate the YAML**:
+6. **Validate the artifact**:
    ```bash
-   autospec yaml check FEATURE_DIR/tasks.yaml
+   autospec artifact FEATURE_DIR/tasks.yaml
    ```
-   - If validation fails: fix YAML syntax errors and retry
+   - If validation fails: fix schema errors (missing required fields, invalid types, invalid dependencies) and retry
    - If validation passes: proceed to report
 
 7. **Report**: Output:

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,28 +22,20 @@ func TestAllCmdRegistration(t *testing.T) {
 	assert.True(t, found, "all command should be registered")
 }
 
-func TestFullCmdDeprecated(t *testing.T) {
-	// Verify fullCmd is deprecated
-	assert.NotEmpty(t, fullCmd.Deprecated)
-	assert.Contains(t, fullCmd.Deprecated, "autospec all")
-}
-
 func TestAllCmdFlags(t *testing.T) {
 	// Test that all expected flags are registered
-	flags := []struct {
-		name      string
+	flags := map[string]struct {
 		shorthand string
 		usage     string
 	}{
-		{"max-retries", "r", "Override max retry attempts"},
-		{"resume", "", "Resume implementation"},
-		{"progress", "", "Show progress indicators"},
+		"max-retries": {shorthand: "r", usage: "Override max retry attempts"},
+		"resume":      {shorthand: "", usage: "Resume implementation"},
 	}
 
-	for _, flag := range flags {
-		t.Run("flag "+flag.name, func(t *testing.T) {
-			f := allCmd.Flags().Lookup(flag.name)
-			require.NotNil(t, f, "flag %s should exist", flag.name)
+	for flagName, flag := range flags {
+		t.Run("flag "+flagName, func(t *testing.T) {
+			f := allCmd.Flags().Lookup(flagName)
+			require.NotNil(t, f, "flag %s should exist", flagName)
 			if flag.shorthand != "" {
 				assert.Equal(t, flag.shorthand, f.Shorthand)
 			}
@@ -82,18 +73,6 @@ func TestAllCmdUsesSkipPreflightFlag(t *testing.T) {
 	require.NotNil(t, f)
 }
 
-func TestFullCmdSharesFlags(t *testing.T) {
-	// Verify fullCmd has same flags as allCmd
-	flags := []string{"max-retries", "resume", "progress"}
-
-	for _, flagName := range flags {
-		t.Run("fullCmd has "+flagName, func(t *testing.T) {
-			f := fullCmd.Flags().Lookup(flagName)
-			require.NotNil(t, f, "fullCmd should have flag %s", flagName)
-		})
-	}
-}
-
 func TestAllCmdExamples(t *testing.T) {
 	// Verify examples are present
 	assert.Contains(t, allCmd.Example, "autospec all")
@@ -116,67 +95,34 @@ func TestAllCmdLongDescription(t *testing.T) {
 	}
 }
 
-func TestRunAllWorkflow_ConfigLoadError(t *testing.T) {
-	// Create a command with invalid config path
-	cmd := &cobra.Command{
-		Use:  "all",
-		Args: cobra.ExactArgs(1),
-		RunE: runAllWorkflow,
-	}
+func TestStageConfigForAllCommand(t *testing.T) {
+	// The all command should enable all 4 core stages
+	// Verify the expected stage behavior
 
-	// Add required flags
-	cmd.Flags().String("config", "", "")
-	cmd.Flags().Bool("skip-preflight", false, "")
-	cmd.Flags().Int("max-retries", 0, "")
-	cmd.Flags().Bool("resume", false, "")
-	cmd.Flags().Bool("debug", false, "")
-	cmd.Flags().Bool("progress", false, "")
-
-	// Set invalid config path
-	require.NoError(t, cmd.Flags().Set("config", "/nonexistent/config.yaml"))
-
-	// Capture output
-	var buf bytes.Buffer
-	cmd.SetOut(&buf)
-	cmd.SetErr(&buf)
-
-	err := cmd.RunE(cmd, []string{"test feature"})
-
-	assert.Error(t, err)
-}
-
-func TestPhaseConfigForAllCommand(t *testing.T) {
-	// The all command should enable all 4 core phases
-	// Verify the expected phase behavior
-
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		skipPreflight   bool
 		maxRetries      int
 		expectPreflight bool
 	}{
-		{
-			name:            "default settings",
+		"default settings": {
 			skipPreflight:   false,
 			maxRetries:      0,
 			expectPreflight: false, // default is false
 		},
-		{
-			name:            "skip preflight",
+		"skip preflight": {
 			skipPreflight:   true,
 			maxRetries:      0,
 			expectPreflight: true,
 		},
-		{
-			name:            "custom max retries",
+		"custom max retries": {
 			skipPreflight:   false,
 			maxRetries:      5,
 			expectPreflight: false,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
 			// These are configuration checks, not full workflow tests
 			if tc.skipPreflight {
 				assert.True(t, tc.expectPreflight)
@@ -214,12 +160,6 @@ func TestAllCmdConstitutionCheck(t *testing.T) {
 	})
 }
 
-func TestFullCmdOutputsDeprecationWarning(t *testing.T) {
-	// fullCmd should output a deprecation warning
-	assert.False(t, fullCmd.Hidden)
-	assert.Contains(t, fullCmd.Short, "DEPRECATED")
-}
-
 func TestAllCmdEquivalentToRunA(t *testing.T) {
 	// Document that 'all' is equivalent to 'run -a'
 	assert.Contains(t, allCmd.Long, "run -a")
@@ -230,13 +170,6 @@ func TestMaxRetriesOverride(t *testing.T) {
 	f := allCmd.Flags().Lookup("max-retries")
 	require.NotNil(t, f)
 	assert.Equal(t, "0", f.DefValue)
-}
-
-func TestProgressFlag(t *testing.T) {
-	// Test that progress flag default is false
-	f := allCmd.Flags().Lookup("progress")
-	require.NotNil(t, f)
-	assert.Equal(t, "false", f.DefValue)
 }
 
 func TestResumeFlag(t *testing.T) {

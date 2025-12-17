@@ -25,10 +25,10 @@ Identify inconsistencies, duplications, ambiguities, and underspecified items ac
 
 ### 1. Initialize Analysis Context
 
-Run the prerequisites script to get feature paths:
+Run the prerequisites command to get feature paths:
 
 ```bash
-.autospec/scripts/check-prerequisites.sh --json --require-tasks --include-tasks
+autospec prereqs --json --require-tasks --include-tasks
 ```
 
 Parse the JSON output for:
@@ -37,6 +37,8 @@ Parse the JSON output for:
 - `IMPL_PLAN`: Path to the plan file (plan.yaml)
 - `TASKS`: Path to the tasks file (tasks.yaml)
 - `AVAILABLE_DOCS`: List of optional documents found
+- `AUTOSPEC_VERSION`: The autospec version (for _meta section)
+- `CREATED_DATE`: ISO 8601 timestamp (for _meta section)
 
 If the script fails, it will output an error message instructing the user to run the missing prerequisite command.
 
@@ -218,19 +220,19 @@ summary:
 _meta:
   version: "1.0.0"
   generator: "autospec"
-  generator_version: "<run autospec version to get this>"
-  created: "<ISO 8601 timestamp>"
+  generator_version: "<AUTOSPEC_VERSION from step 1>"
+  created: "<CREATED_DATE from step 1>"
   artifact_type: "analysis"
 ```
 
 ### 7. Write the analysis to `FEATURE_DIR/analysis.yaml`
 
-### 8. Validate the YAML
+### 8. Validate the artifact
 
 ```bash
-autospec yaml check FEATURE_DIR/analysis.yaml
+autospec artifact FEATURE_DIR/analysis.yaml
 ```
-- If validation fails: fix YAML syntax errors and retry
+- If validation fails: fix schema errors (missing required fields, invalid types/enums) and retry
 - If validation passes: proceed to report
 
 ### 9. Report Next Actions

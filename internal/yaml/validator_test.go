@@ -9,39 +9,31 @@ import (
 )
 
 func TestValidateSyntax_ValidYAML(t *testing.T) {
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		input string
 	}{
-		{
-			name:  "simple key-value",
+		"simple key-value": {
 			input: "key: value",
 		},
-		{
-			name:  "nested structure",
+		"nested structure": {
 			input: "parent:\n  child: value",
 		},
-		{
-			name:  "array",
+		"array": {
 			input: "items:\n  - one\n  - two",
 		},
-		{
-			name: "meta section",
+		"meta section": {
 			input: `_meta:
   version: "1.0.0"
   generator: "autospec"
   artifact_type: "spec"`,
 		},
-		{
-			name:  "empty document",
+		"empty document": {
 			input: "",
 		},
-		{
-			name:  "document with comment",
+		"document with comment": {
 			input: "# comment\nkey: value",
 		},
-		{
-			name: "multi-document",
+		"multi-document": {
 			input: `---
 doc1: value1
 ---
@@ -49,8 +41,8 @@ doc2: value2`,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := ValidateSyntax(strings.NewReader(tt.input))
 			assert.NoError(t, err, "valid YAML should not error")
 		})
@@ -58,40 +50,34 @@ doc2: value2`,
 }
 
 func TestValidateSyntax_InvalidYAML(t *testing.T) {
-	tests := []struct {
-		name        string
+	tests := map[string]struct {
 		input       string
 		wantLineNum bool
 	}{
-		{
-			name:        "bad indentation",
+		"bad indentation": {
 			input:       "parent:\n child: value\n  grandchild: bad",
 			wantLineNum: true,
 		},
-		{
-			name:        "duplicate key",
+		"duplicate key": {
 			input:       "key: value1\nkey: value2",
 			wantLineNum: false, // yaml.v3 allows duplicate keys by default
 		},
-		{
-			name:        "invalid character",
+		"invalid character": {
 			input:       "key: @invalid",
 			wantLineNum: false, // @ is valid in unquoted strings
 		},
-		{
-			name:        "tabs instead of spaces",
+		"tabs instead of spaces": {
 			input:       "parent:\n\tchild: value",
 			wantLineNum: true,
 		},
-		{
-			name:        "mapping value in wrong context",
+		"mapping value in wrong context": {
 			input:       "key: value: nested",
 			wantLineNum: true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			err := ValidateSyntax(strings.NewReader(tt.input))
 			// Some "invalid" YAML is actually valid in yaml.v3
 			if tt.wantLineNum && err != nil {

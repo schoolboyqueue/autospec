@@ -1,183 +1,248 @@
-# 🚀 autospec
+<div align="center">
 
-[![CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
+```
+▄▀█ █ █ ▀█▀ █▀█ █▀ █▀█ █▀▀ █▀▀
+█▀█ █▄█  █  █▄█ ▄█ █▀▀ ██▄ █▄▄
+```
+
+**Spec-Driven Development Automation**
+
+[![GitHub CI](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml/badge.svg)](https://github.com/ariel-frischer/autospec/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ariel-frischer/autospec)](https://goreportcard.com/report/github.com/ariel-frischer/autospec)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Release](https://img.shields.io/github/v/release/ariel-frischer/autospec)](https://github.com/ariel-frischer/autospec/releases/latest)
 
-**Automated feature development workflows with structured YAML output for AI-powered code generation.**
+🏗️ Build features systematically with AI-powered specification workflows.
 
-Inspired by [GitHub SpecKit](https://github.com/github/spec-kit), autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access, validation, and CI/CD integration.
+</div>
 
-## ✨ What Makes autospec Different?
+**Stop AI slop.** Autospec brings structure to AI coding: spec → plan → tasks → implement - all in one command.
 
-Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), autospec is now a **fully standalone tool** with its own embedded commands and workflows.
+Built for Claude Code and inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access and validation. These principles ensure reliable, performant, and maintainable software that developers 
+can trust for their critical development workflows.
 
-| Feature | GitHub SpecKit | autospec |
-|---------|---------------|----------|
-| Output Format | Markdown | **YAML** (machine-readable) |
-| Validation | Manual review | **Automatic** with retry logic |
-| CI/CD Integration | Limited | **First-class** with exit codes |
-| Phase Orchestration | Manual | **Automated** with dependencies |
-| Progress Tracking | None | **Built-in** status & task updates |
-| Dependencies | Requires SpecKit CLI | **Self-contained** (only needs Claude CLI) |
+## 📦 Installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
+```
 
 ## 🎯 Key Features
 
-- 🔄 **Automated Workflow Orchestration** — Runs phases in dependency order with automatic retry on failure
+- 🔄 **Automated Workflow Orchestration** — Runs stages in dependency order with automatic retry on failure
 - 📝 **YAML-First Artifacts** — Machine-readable `spec.yaml`, `plan.yaml`, `tasks.yaml` for programmatic access
 - ✅ **Smart Validation** — Validates artifacts exist and meet completeness criteria before proceeding
 - 🔁 **Configurable Retry Logic** — Automatic retries with persistent state tracking
 - ⚡ **Performance Optimized** — Sub-second validation (<10ms per check), <50ms startup
 - 🖥️ **Cross-Platform** — Native binaries for Linux, macOS (Intel/Apple Silicon), and Windows
-- 🎛️ **Flexible Phase Selection** — Mix and match phases with intuitive flags (`-spti`, `-a`, etc.)
+- 🎛️ **Flexible Stage Selection** — Mix and match stages with intuitive flags (`-spti`, `-a`, etc.)
 - 🏗️ **Constitution Support** — Project-level principles that guide all specifications
 - 🔍 **Cross-Artifact Analysis** — Consistency checks across spec, plan, and tasks
 - 📋 **Custom Checklists** — Auto-generated validation checklists per feature
 - 🧪 **Comprehensive Testing** — Unit tests, benchmarks, and integration tests
 - 🐚 **Shell Completion** — Tab completion for bash, zsh, fish, and PowerShell
+- 🔔 **OS Notifications** — Native desktop notifications with custom sound support
+- 📜 **History Tracking** — View and filter command execution history with status, duration, and exit codes
+
+## ✨ What Makes Autospec Different?
+
+Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec is now a **fully standalone tool** with its own embedded commands and workflows.
+
+| Feature | GitHub SpecKit | Autospec |
+|---------|---------------|----------|
+| Output Format | Markdown | **YAML** (machine-readable) |
+| Validation | Manual review | **Automatic** with retry logic |
+| Context Efficiency | Full prompt each time | **Smart YAML injection** + **phase-isolated sessions** |
+| Status Updates | Manual | **Auto-updates** spec.yaml & tasks.yaml |
+| Phase Orchestration | Manual | **Automated** with dependencies |
+| Session Isolation | Single session | **Per-phase/task** (80%+ cost savings) |
+| Dependencies | Requires SpecKit CLI | **Self-contained** (only needs Claude CLI) |
 
 ## 📦 Quick Start
 
 ### Prerequisites
 
-**Required:**
-- [Claude Code CLI](https://claude.ai/download)
-- Git
-
-**Optional:**
-- Go 1.21+ (for building from source)
-- make (for Makefile commands)
-
-### Installation
-
-#### Option 1: Pre-Built Binary (Recommended)
-
-```bash
-# Linux (amd64)
-curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-linux-amd64 -o autospec
-chmod +x autospec && sudo mv autospec /usr/local/bin/
-
-# macOS (Apple Silicon)
-curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-darwin-arm64 -o autospec
-chmod +x autospec && sudo mv autospec /usr/local/bin/
-
-# macOS (Intel)
-curl -L https://github.com/ariel-frischer/autospec/releases/latest/download/autospec-darwin-amd64 -o autospec
-chmod +x autospec && sudo mv autospec /usr/local/bin/
-
-# Verify
-autospec version
-```
-
-#### Option 2: Go Install
-
-```bash
-go install github.com/ariel-frischer/autospec/cmd/autospec@latest
-```
-
-#### Option 3: Build from Source
-
-```bash
-git clone https://github.com/ariel-frischer/autospec.git
-cd autospec
-make build && make install
-```
+| Name | Description |
+|------|-------------|
+| [Claude Code CLI](https://code.claude.com/docs/en/setup) | AI-powered coding assistant |
+| Git | Version control |
+| [claude-clean](https://github.com/ariel-frischer/claude-clean) (cclean) (optional) | Beautiful terminal parser for Claude Code's streaming JSON output |
+| [bubblewrap](https://github.com/containers/bubblewrap) (Linux) / Seatbelt (macOS) (optional) | OS-level sandboxing for Claude Code. See [Claude Settings](docs/claude-settings.md) |
+| Go 1.21+ (optional) | For building from source |
+| make (optional) | For Makefile commands |
 
 ### Initialize Your Project
 
-```bash
-# Check dependencies
-autospec doctor
+Navigate to your git repo/project directory, then check dependencies:
 
-# Initialize autospec (config, commands, and scripts)
+```bash
+autospec doctor
+```
+
+Initialize Autospec (config, commands, and scripts):
+
+```bash
 autospec init
+```
+
+Create project constitution (triggers Claude session):
+
+```bash
+autospec constitution
 ```
 
 ## 🎮 Usage
 
-### Flexible Phase Selection with `run`
+### Recommended Workflow
+
+1. Generate the specification
+2. Review and edit `specs/001-user-auth/spec.yaml` as needed
+3. Continue with plan → tasks → implement
 
 ```bash
-# 🚀 Run all core phases (specify → plan → tasks → implement)
+autospec run -s "Add user authentication with OAuth"
+autospec run -pti
+```
+
+> ⚠️ **Note:** New specs automatically create and checkout a feature branch (e.g., `spec/001-user-auth`). This iterative approach lets you review and refine the spec before committing to implementation.
+
+### Flexible Stage Selection with `run`
+
+```bash
+# All core stages: specify → plan → tasks → implement
 autospec run -a "Add user authentication with OAuth"
 
-# 📝 Run specific phases
-autospec run -sp "Add caching layer"        # Specify + plan only
-autospec run -ti --spec 007-feature         # Tasks + implement on specific spec
-autospec run -p "Focus on security"         # Plan with guidance
+# Specify + plan
+autospec run -sp "Add caching layer"
 
-# ✨ Include optional phases
-autospec run -sr "Add payments"             # Specify + clarify
-autospec run -a -l                          # All + checklist
-autospec run -tlzi                          # Tasks + checklist + analyze + implement
+# Tasks + implement
+autospec run -ti --spec 007-feature
 
-# 🏃 Skip confirmations for automation
+# Specify + clarify
+autospec run -sr "Add payments"
+
+# All core + checklist
+autospec run -a -l
+
+# Tasks + checklist + analyze + implement
+autospec run -tlzi
+
+# All core with skip confirmations (-y)
 autospec run -a -y "Feature description"
 ```
 
-### Phase Flags Reference
+### Stage Flags Reference
 
-| Flag | Phase | Description |
+| Flag | Stage | Description |
 |------|-------|-------------|
 | `-s` | specify | Generate feature specification |
 | `-p` | plan | Generate implementation plan |
 | `-t` | tasks | Generate task breakdown |
 | `-i` | implement | Execute implementation |
-| `-a` | all | All core phases (`-spti`) |
+| `-a` | all | All core stages (`-spti`) |
 | `-n` | constitution | Create/update project constitution |
 | `-r` | clarify | Refine spec with Q&A |
 | `-l` | checklist | Generate validation checklist |
 | `-z` | analyze | Cross-artifact consistency check |
 
-> 📌 Phases always execute in canonical order regardless of flag order:
+> 📌 Stages always execute in canonical order regardless of flag order:
 > `constitution → specify → clarify → plan → tasks → checklist → analyze → implement`
 
 ### Shortcut Commands
 
 ```bash
-# 🎯 Complete workflow (all phases)
+# All core stages: specify → plan → tasks → implement
 autospec all "Add feature description"
 
-# 📋 Planning only (no implementation)
-autospec workflow "Add feature description"
+# Planning only: specify → plan → tasks (no implementation)
+autospec prep "Add feature description"
 
-# 🔨 Implementation only
+# Implementation only
 autospec implement
 autospec implement 003-feature "Focus on tests"
 
-# 📊 Check status
+# Show artifacts and task progress
 autospec status
+autospec st
+autospec st -v
 ```
 
-### Optional Phase Commands
+### Implementation Execution Modes
+
+Control how implementation runs with different levels of context isolation:
+
+| Mode | Flag | Isolation | Use Case |
+|------|------|-----------|----------|
+| Phase | (default) | 1 session per phase | Balanced cost/context |
+| Task | `--tasks` | 1 session per task | Complex tasks, max isolation |
+| Single | `--single-session` | 1 session for all | Small specs, simple tasks |
 
 ```bash
-# 🏛️ Constitution - project principles
+# Default: one session per phase
+autospec implement
+
+# Resume from phase 3 onwards
+autospec implement --from-phase 3
+
+# Run only phase 3
+autospec implement --phase 3
+
+# One session per task (max isolation)
+autospec implement --tasks
+
+# Resume from task T005 onwards
+autospec implement --from-task T005
+
+# Run only task T003
+autospec implement --task T003
+
+# Single session for all tasks
+autospec implement --single-session
+```
+
+> 📌 `--tasks`, `--phases`, and `--single-session` are mutually exclusive. Task-level execution respects dependency order and validates each task completes before proceeding.
+
+> 💡 **Why isolate sessions?** Context accumulation causes LLM performance degradation and higher API costs (each turn bills the entire context). Phase/task isolation can reduce costs by **80%+** on large specs. See [FAQ](docs/faq.md#why-use---phases-or---tasks-instead-of-running-everything-in-one-session) for details.
+
+### Optional Stage Commands
+
+```bash
+# Create/update project principles
 autospec constitution "Emphasize security"
 
-# ❓ Clarify - refine spec with questions
+# Refine spec with Q&A
 autospec clarify "Focus on edge cases"
 
-# ✅ Checklist - validation checklist
+# Generate validation checklist
 autospec checklist "Include a11y checks"
 
-# 🔍 Analyze - consistency analysis
+# Cross-artifact consistency analysis
 autospec analyze "Verify API contracts"
 ```
 
 ### Task Management
 
+Claude automatically updates task status during implementation. Manual updates:
+
 ```bash
-# Update task status during implementation
 autospec update-task T001 InProgress
 autospec update-task T001 Completed
 autospec update-task T001 Blocked
 ```
 
+### History Tracking
+
+View command execution history with filtering and status tracking. See [docs/reference.md](docs/reference.md#autospec-history) for details.
+
+```bash
+autospec history              # View all history
+autospec history -n 10        # Last 10 entries
+autospec history --status failed
+```
+
 ## 📁 Output Structure
 
-autospec generates structured YAML artifacts:
+Autospec generates structured YAML artifacts:
 
 ```
 specs/
@@ -215,107 +280,130 @@ tasks:
 
 Priority: Environment vars > Project config > User config > Defaults
 
-### Key Settings
+### All Settings
 
 ```yaml
 # .autospec/config.yml
-claude_cmd: claude
-max_retries: 3
-specs_dir: ./specs
-timeout: 600  # seconds (0 = no timeout)
-skip_confirmations: false
+claude_cmd: claude                    # Claude CLI command
+claude_args:                          # Arguments passed to Claude CLI
+  - -p
+  - --verbose
+  - --output-format
+  - stream-json
+custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
+max_retries: 0                        # Max retry attempts (0-10)
+specs_dir: ./specs                    # Directory for feature specs
+state_dir: ~/.autospec/state          # Directory for state files
+skip_preflight: false                 # Skip preflight checks
+timeout: 2400                         # Timeout in seconds (40 min default, 0 = no timeout)
+skip_confirmations: false             # Skip confirmation prompts
+implement_method: phases              # Default: phases | tasks | single-session
+
+# Notifications (all platforms)
+notifications:
+  enabled: false                      # Enable notifications (opt-in)
+  type: both                          # sound | visual | both
+  sound_file: ""                      # Custom sound file (empty = system default)
+  on_command_complete: true           # Notify when command finishes
+  on_stage_complete: false            # Notify on each stage
+  on_error: true                      # Notify on failures
+  on_long_running: false              # Notify after threshold
+  long_running_threshold: 30s         # Duration threshold
 ```
 
 ### Environment Variables
 
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTOSPEC_MAX_RETRIES` | `0` | No retries |
+| `AUTOSPEC_SPECS_DIR` | `./specs` | Specs directory |
+| `AUTOSPEC_TIMEOUT` | `2400` | 40 minutes |
+| `AUTOSPEC_YES` | `false` | Prompts enabled |
+
 ```bash
-export AUTOSPEC_MAX_RETRIES=5
-export AUTOSPEC_SPECS_DIR="./features"
-export AUTOSPEC_TIMEOUT=600
-export AUTOSPEC_YES=true  # Skip confirmations
+export AUTOSPEC_MAX_RETRIES=0
+export AUTOSPEC_SPECS_DIR="./specs"
+export AUTOSPEC_TIMEOUT=2400
+export AUTOSPEC_YES=false
 ```
 
 ### Commands
 
 ```bash
-# Initialize config
-autospec init              # User-level
-autospec init --project    # Project-level
-
-# View config
+autospec init
+autospec init --project
 autospec config show
 autospec config show --json
-
-# Migrate legacy JSON config
 autospec config migrate
 autospec config migrate --dry-run
 ```
 
+## 🐚 Shell Completion
+
+The easiest way to set up shell completions (auto-detects your shell):
+
+```bash
+autospec completion install
+```
+
+Or install for a specific shell:
+
+```bash
+autospec completion install bash
+autospec completion install zsh
+autospec completion install fish
+autospec completion install powershell
+```
+
+See [docs/SHELL-COMPLETION.md](docs/SHELL-COMPLETION.md) for detailed setup and manual instructions.
+
 ## 🔧 Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | Validation failed (retryable) |
-| 2 | Retry limit exhausted |
-| 3 | Invalid arguments |
-| 4 | Missing dependencies |
-| 5 | Command timeout |
-
-Perfect for CI/CD integration:
+Uses standardized exit codes (0-5) for CI/CD integration. See [docs/reference.md](docs/reference.md#exit-codes) for full details.
 
 ```bash
 autospec run -a "feature" && echo "✅ Success" || echo "❌ Failed: $?"
 ```
 
-## 🐚 Shell Completion
-
-```bash
-# Zsh
-autospec completion zsh > ~/.zsh_completions/_autospec
-
-# Bash
-autospec completion bash > /etc/bash_completion.d/autospec
-
-# Fish
-autospec completion fish > ~/.config/fish/completions/autospec.fish
-```
-
-See [docs/SHELL-COMPLETION.md](docs/SHELL-COMPLETION.md) for detailed setup.
-
 ## 🔍 Troubleshooting
 
 ```bash
-# First step: check dependencies
 autospec doctor
-
-# Debug mode
 autospec --debug run -a "feature"
-
-# View config
 autospec config show
 ```
 
-**Common issues:**
+See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and solutions.
 
-| Problem | Solution |
-|---------|----------|
-| `claude` not found | Install from [claude.ai/download](https://claude.ai/download) |
-| Retry limit hit | Increase: `autospec run -a "feature" --max-retries 5` |
-| Command timeout | Set `AUTOSPEC_TIMEOUT=600` or update config |
-| Commands not found | Run `autospec init` to install commands and scripts |
-| Claude permission denied | Allow commands in `~/.claude/settings.json` (see [troubleshooting](docs/troubleshooting.md#claude-permission-denied--command-blocked)) |
+## 💡 Pro Tips
 
-> ⚠️ **Note:** You can add `--dangerously-skip-permissions` to `claude_args` in config, but sandbox recommended. Bypasses ALL safety checks—never use with credentials or production data.
+### Readable Streaming Output with claude-clean
 
-## 📝 Issue Templates
+[claude-clean](https://github.com/ariel-frischer/claude-clean) makes Claude's `stream-json` output readable in real-time:
 
-When creating issues, use our templates:
+```bash
+curl -fsSL https://raw.githubusercontent.com/ariel-frischer/claude-clean/main/install.sh | sh
+```
 
-- **🐛 Bug Report** — For defects with reproduction steps
-- **💡 Feature Request** — For new feature suggestions
+Then configure a custom command in `~/.config/autospec/config.yml`:
 
-Templates auto-apply labels and guide you through providing useful information.
+```yaml
+custom_claude_cmd: "claude -p --verbose --output-format stream-json {{PROMPT}} | cclean"
+```
+
+> ⚠️ **DANGER:** Adding `--dangerously-skip-permissions` bypasses ALL Claude safety checks. Never use with credentials, API keys, or production data. Your system becomes fully exposed to any command Claude generates.
+>
+> **Recommended:** Enable Claude Code's sandbox first (`/sandbox` command) which uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux or Seatbelt on macOS for OS-level isolation. See [Claude Settings docs](docs/claude-settings.md) for configuration via settings.json.
+
+## 📥 Build from Source
+
+Requires Go 1.21+
+
+```bash
+git clone https://github.com/ariel-frischer/autospec.git
+cd autospec
+make install
+```
 
 ## 🤝 Contributing
 
@@ -331,4 +419,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **🐛 Issues:** [github.com/ariel-frischer/autospec/issues](https://github.com/ariel-frischer/autospec/issues)
 
-**⭐ Star us on GitHub if you find autospec useful!**
+**⭐ Star us on GitHub if you find Autospec useful!**

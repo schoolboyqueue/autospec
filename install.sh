@@ -1,4 +1,5 @@
 #!/bin/sh
+# shellcheck disable=SC3043  # 'local' is widely supported in practice (dash, ash, busybox)
 # AutoSpec Installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
 #
@@ -192,7 +193,7 @@ check_path() {
 # Main installation function
 main() {
     echo ""
-    printf "${GREEN}autospec Installer${NC}\n"
+    printf '%s%s%s\n' "${GREEN}" "autospec Installer" "${NC}"
     echo "================================"
     echo ""
 

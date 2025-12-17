@@ -1,10 +1,13 @@
 package health
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestCheckClaudeCLI tests the Claude CLI health check
@@ -30,7 +33,7 @@ func TestCheckGit(t *testing.T) {
 func TestRunHealthChecks(t *testing.T) {
 	report := RunHealthChecks()
 	assert.NotNil(t, report)
-	assert.Equal(t, 2, len(report.Checks), "Should have 2 health checks")
+	assert.Equal(t, 3, len(report.Checks), "Should have 3 health checks")
 
 	// Verify all checks are present
 	checkNames := make(map[string]bool)
@@ -40,17 +43,16 @@ func TestRunHealthChecks(t *testing.T) {
 
 	assert.True(t, checkNames["Claude CLI"], "Should check Claude CLI")
 	assert.True(t, checkNames["Git"], "Should check Git")
+	assert.True(t, checkNames["Claude settings"], "Should check Claude settings")
 }
 
 // TestFormatReport tests the report formatting
 func TestFormatReport(t *testing.T) {
-	tests := []struct {
-		name     string
+	tests := map[string]struct {
 		report   *HealthReport
 		expected []string
 	}{
-		{
-			name: "All checks pass",
+		"All checks pass": {
 			report: &HealthReport{
 				Checks: []CheckResult{
 					{Name: "Claude CLI", Passed: true, Message: "Claude CLI found"},
@@ -59,12 +61,11 @@ func TestFormatReport(t *testing.T) {
 				Passed: true,
 			},
 			expected: []string{
-				"✓ Claude CLI found",
-				"✓ Git found",
+				"✓ Claude CLI: Claude CLI found",
+				"✓ Git: Git found",
 			},
 		},
-		{
-			name: "One check fails",
+		"One check fails": {
 			report: &HealthReport{
 				Checks: []CheckResult{
 					{Name: "Claude CLI", Passed: false, Message: "Claude CLI not found in PATH"},
@@ -73,12 +74,11 @@ func TestFormatReport(t *testing.T) {
 				Passed: false,
 			},
 			expected: []string{
-				"✗ Error: Claude CLI not found in PATH",
-				"✓ Git found",
+				"✗ Claude CLI: Claude CLI not found in PATH",
+				"✓ Git: Git found",
 			},
 		},
-		{
-			name: "All checks fail",
+		"All checks fail": {
 			report: &HealthReport{
 				Checks: []CheckResult{
 					{Name: "Claude CLI", Passed: false, Message: "Claude CLI not found in PATH"},
@@ -87,14 +87,14 @@ func TestFormatReport(t *testing.T) {
 				Passed: false,
 			},
 			expected: []string{
-				"✗ Error: Claude CLI not found in PATH",
-				"✗ Error: Git not found in PATH",
+				"✗ Claude CLI: Claude CLI not found in PATH",
+				"✗ Git: Git not found in PATH",
 			},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			output := FormatReport(tt.report)
 			for _, expected := range tt.expected {
 				assert.Contains(t, output, expected, "Output should contain: %s", expected)
@@ -123,4 +123,124 @@ func TestFormatReportStructure(t *testing.T) {
 
 	// Should have error markers for failed tests
 	assert.True(t, strings.Contains(output, "✗"), "Output should contain error markers")
+}
+
+// TestCheckClaudeSettingsInDir tests Claude settings health check with various scenarios
+func TestCheckClaudeSettingsInDir(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setupFunc       func(t *testing.T, dir string)
+		expectedPassed  bool
+		expectedMessage string
+	}{
+		"passes with correct settings": {
+			setupFunc: func(t *testing.T, dir string) {
+				claudeDir := filepath.Join(dir, ".claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				settingsContent := `{
+					"permissions": {
+						"allow": ["Bash(autospec:*)"]
+					}
+				}`
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), []byte(settingsContent), 0644))
+			},
+			expectedPassed:  true,
+			expectedMessage: "Bash(autospec:*) permission configured",
+		},
+		"fails with missing settings file": {
+			setupFunc:       func(t *testing.T, dir string) {},
+			expectedPassed:  false,
+			expectedMessage: ".claude/settings.local.json not found (run 'autospec init' to configure)",
+		},
+		"fails with missing permission": {
+			setupFunc: func(t *testing.T, dir string) {
+				claudeDir := filepath.Join(dir, ".claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				settingsContent := `{
+					"permissions": {
+						"allow": ["Bash(other:*)"]
+					}
+				}`
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), []byte(settingsContent), 0644))
+			},
+			expectedPassed:  false,
+			expectedMessage: "missing Bash(autospec:*) permission (run 'autospec init' to fix)",
+		},
+		"fails with denied permission": {
+			setupFunc: func(t *testing.T, dir string) {
+				claudeDir := filepath.Join(dir, ".claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				settingsContent := `{
+					"permissions": {
+						"deny": ["Bash(autospec:*)"]
+					}
+				}`
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), []byte(settingsContent), 0644))
+			},
+			expectedPassed:  false,
+			expectedMessage: "is explicitly denied",
+		},
+		"fails with empty allow list": {
+			setupFunc: func(t *testing.T, dir string) {
+				claudeDir := filepath.Join(dir, ".claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				settingsContent := `{
+					"permissions": {
+						"allow": []
+					}
+				}`
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), []byte(settingsContent), 0644))
+			},
+			expectedPassed:  false,
+			expectedMessage: "missing Bash(autospec:*) permission",
+		},
+		"passes with multiple permissions including autospec": {
+			setupFunc: func(t *testing.T, dir string) {
+				claudeDir := filepath.Join(dir, ".claude")
+				require.NoError(t, os.MkdirAll(claudeDir, 0755))
+				settingsContent := `{
+					"permissions": {
+						"allow": ["Bash(git:*)", "Bash(autospec:*)", "Read(*)"]
+					}
+				}`
+				require.NoError(t, os.WriteFile(filepath.Join(claudeDir, "settings.local.json"), []byte(settingsContent), 0644))
+			},
+			expectedPassed:  true,
+			expectedMessage: "Bash(autospec:*) permission configured",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// Create temp directory for this test
+			tmpDir := t.TempDir()
+			tt.setupFunc(t, tmpDir)
+
+			result := CheckClaudeSettingsInDir(tmpDir)
+
+			assert.Equal(t, "Claude settings", result.Name)
+			assert.Equal(t, tt.expectedPassed, result.Passed, "Expected Passed=%v, got %v", tt.expectedPassed, result.Passed)
+			assert.Contains(t, result.Message, tt.expectedMessage, "Expected message to contain %q", tt.expectedMessage)
+		})
+	}
+}
+
+// TestRunHealthChecksIncludesClaudeSettings verifies Claude settings check is included
+func TestRunHealthChecksIncludesClaudeSettings(t *testing.T) {
+	report := RunHealthChecks()
+	assert.NotNil(t, report)
+	assert.GreaterOrEqual(t, len(report.Checks), 3, "Should have at least 3 health checks (Claude CLI, Git, Claude settings)")
+
+	// Verify Claude settings check is present
+	hasClaudeSettings := false
+	for _, check := range report.Checks {
+		if check.Name == "Claude settings" {
+			hasClaudeSettings = true
+			break
+		}
+	}
+	assert.True(t, hasClaudeSettings, "Should include Claude settings check")
 }

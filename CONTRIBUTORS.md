@@ -34,8 +34,8 @@ The tool is built as a **cross-platform Go binary** with the following component
 - Global flags for configuration, debugging, and spec directory override
 
 #### 2. Workflow Orchestration (`internal/workflow/`)
-- `WorkflowOrchestrator`: Executes multi-phase workflows (specify → plan → tasks)
-- `Executor`: Handles phase execution with automatic retry logic
+- `WorkflowOrchestrator`: Executes multi-stage workflows (specify → plan → tasks)
+- `Executor`: Handles stage execution with automatic retry logic
 - `ClaudeExecutor`: Interfaces with Claude CLI or API
 - Pre-flight dependency checking
 
@@ -87,7 +87,7 @@ Autospec uses YAML config files with hierarchical loading:
 claude_cmd: claude
 claude_args:
   - -p
-  - --dangerously-skip-permissions
+  - --dangerously-skip-permissions  # Enable sandbox first: /sandbox (uses bubblewrap on Linux)
   - --verbose
   - --output-format
   - stream-json
@@ -106,7 +106,7 @@ timeout: 300
 | `claude_cmd` | string | `"claude"` | Claude CLI command |
 | `claude_args` | array | `[]` | Arguments passed to Claude CLI |
 | `custom_claude_cmd` | string | `""` | Custom command with `{{PROMPT}}` placeholder |
-| `max_retries` | int | `3` | Maximum retry attempts (1-10) |
+| `max_retries` | int | `0` | Maximum retry attempts (0-10) |
 | `specs_dir` | string | `"./specs"` | Directory for feature specs |
 | `state_dir` | string | `"~/.autospec/state"` | Retry state storage |
 | `skip_preflight` | bool | `false` | Skip dependency checks |
@@ -233,12 +233,12 @@ This supports programmatic composition and CI/CD integration.
 4. Add unit tests with table-driven approach
 5. Add benchmark test if performance-critical
 
-### Adding a New Workflow Phase
+### Adding a New Workflow Stage
 
-1. Define phase constant in `internal/workflow/executor.go`
+1. Define stage constant in `internal/workflow/executor.go`
 2. Add validation function in `internal/validation/`
 3. Create CLI command in `internal/cli/`
-4. Update `WorkflowOrchestrator` to include phase
+4. Update `WorkflowOrchestrator` to include stage
 5. Add tests for validation and execution
 6. Update documentation
 

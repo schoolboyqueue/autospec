@@ -4,12 +4,67 @@ autospec provides built-in shell completion support for `bash`, `zsh`, `fish`, a
 
 ## Features
 
-- **Automatic command completion**: Tab-complete all commands (`full`, `workflow`, `specify`, `plan`, `tasks`, `implement`, etc.)
+- **Automatic command completion**: Tab-complete all commands (`full`, `prep`, `specify`, `plan`, `tasks`, `implement`, etc.)
 - **Flag completion**: Complete command flags (e.g., `--max-retries`, `--debug`, `--specs-dir`)
 - **Stays in sync**: Automatically updates as commands change
 - **Multiple shells**: Works with bash, zsh, fish, and powershell
+- **One-command installation**: Use `autospec completion install` to automatically configure your shell
 
-## Zsh Setup (Recommended)
+## Quick Start (Recommended)
+
+The easiest way to set up shell completions is using the install command:
+
+```bash
+# Auto-detect your shell and install completions
+autospec completion install
+
+# Or specify a shell explicitly
+autospec completion install bash
+autospec completion install zsh
+autospec completion install fish
+autospec completion install powershell
+```
+
+This command:
+1. Auto-detects your shell from the `$SHELL` environment variable
+2. Creates a backup of your shell configuration file (e.g., `~/.bashrc.autospec-backup-YYYYMMDD-HHMMSS`)
+3. Appends the completion configuration to your rc file
+4. Provides instructions for activating the completions
+
+### Options
+
+```bash
+# Show manual installation instructions without modifying files
+autospec completion install --manual
+
+# Show manual instructions for a specific shell
+autospec completion install bash --manual
+```
+
+### How It Works
+
+- **Bash/Zsh/PowerShell**: Appends a sourcing block to your rc file that loads completions dynamically
+- **Fish**: Writes a completion file directly to `~/.config/fish/completions/autospec.fish`
+
+The installed completions use eval/source style, meaning they automatically stay up-to-date when you upgrade autospec - no need to regenerate completion files!
+
+### Backup Files
+
+Before modifying any rc file, a timestamped backup is created:
+- Format: `~/.bashrc.autospec-backup-20231215-143022`
+- Backups are retained permanently for easy recovery
+
+### Idempotency
+
+The install command is idempotent - running it multiple times won't add duplicate entries. If completions are already installed, the command detects the existing configuration and skips installation.
+
+---
+
+## Manual Setup
+
+If you prefer manual control or the automatic installation doesn't work for your setup, follow the shell-specific instructions below.
+
+## Zsh Setup (Manual)
 
 ### 1. Generate Completion File
 
@@ -50,7 +105,7 @@ autospec <tab>
 
 You should see all available subcommands with descriptions. If you have `fzf` installed, you'll get fuzzy filtering!
 
-## Bash Setup
+## Bash Setup (Manual)
 
 ### 1. Generate Completion File
 
@@ -80,7 +135,7 @@ fi
 source ~/.bashrc
 ```
 
-## Fish Setup
+## Fish Setup (Manual)
 
 ### 1. Generate Completion File
 
@@ -95,7 +150,7 @@ source ~/.config/fish/config.fish
 # or just start a new shell
 ```
 
-## PowerShell Setup
+## PowerShell Setup (Manual)
 
 ### 1. Generate Completion Script
 
@@ -120,7 +175,7 @@ autospec <TAB>
 
 # Should show:
 # full       -- Run complete workflow: specify → plan → tasks → implement
-# workflow   -- Run workflow: specify → plan → tasks (no implementation)
+# prep       -- Prepare for implementation: specify → plan → tasks
 # specify    -- Generate feature specification
 # plan       -- Generate implementation plan
 # tasks      -- Generate task list
@@ -141,7 +196,7 @@ autospec <TAB>
 Complete flags for any command:
 
 ```bash
-autospec workflow --<TAB>
+autospec prep --<TAB>
 
 # Shows:
 # --max-retries    -- Maximum number of retry attempts

@@ -5,22 +5,24 @@ import (
 )
 
 func TestErrorCategoryString(t *testing.T) {
-	tests := []struct {
+	tests := map[string]struct {
 		category ErrorCategory
 		expected string
 	}{
-		{Argument, "Argument Error"},
-		{Configuration, "Configuration Error"},
-		{Prerequisite, "Prerequisite Error"},
-		{Runtime, "Runtime Error"},
-		{ErrorCategory(99), "Error"}, // Unknown category
+		"Argument":      {category: Argument, expected: "Argument Error"},
+		"Configuration": {category: Configuration, expected: "Configuration Error"},
+		"Prerequisite":  {category: Prerequisite, expected: "Prerequisite Error"},
+		"Runtime":       {category: Runtime, expected: "Runtime Error"},
+		"Unknown":       {category: ErrorCategory(99), expected: "Error"},
 	}
 
-	for _, test := range tests {
-		result := test.category.String()
-		if result != test.expected {
-			t.Errorf("Expected %q, got %q", test.expected, result)
-		}
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			result := test.category.String()
+			if result != test.expected {
+				t.Errorf("Expected %q, got %q", test.expected, result)
+			}
+		})
 	}
 }
 
@@ -86,6 +88,7 @@ func TestNewRuntimeError(t *testing.T) {
 
 func TestWrap(t *testing.T) {
 	t.Run("nil error returns nil", func(t *testing.T) {
+		t.Parallel()
 		result := Wrap(nil, Runtime)
 		if result != nil {
 			t.Error("Expected nil for nil input")
@@ -93,6 +96,7 @@ func TestWrap(t *testing.T) {
 	})
 
 	t.Run("wraps error with category", func(t *testing.T) {
+		t.Parallel()
 		original := &CLIError{Message: "original error"}
 		result := Wrap(original, Runtime, "fix it")
 
@@ -107,6 +111,7 @@ func TestWrap(t *testing.T) {
 
 func TestWrapWithMessage(t *testing.T) {
 	t.Run("nil error returns nil", func(t *testing.T) {
+		t.Parallel()
 		result := WrapWithMessage(nil, Runtime, "wrapper")
 		if result != nil {
 			t.Error("Expected nil for nil input")
@@ -114,6 +119,7 @@ func TestWrapWithMessage(t *testing.T) {
 	})
 
 	t.Run("wraps error with message", func(t *testing.T) {
+		t.Parallel()
 		original := &CLIError{Message: "inner"}
 		result := WrapWithMessage(original, Runtime, "outer")
 
@@ -129,6 +135,7 @@ func TestWrapWithMessage(t *testing.T) {
 
 func TestIsCLIError(t *testing.T) {
 	t.Run("returns true for CLIError", func(t *testing.T) {
+		t.Parallel()
 		err := NewArgumentError("test")
 		if !IsCLIError(err) {
 			t.Error("Expected true for CLIError")
@@ -136,6 +143,7 @@ func TestIsCLIError(t *testing.T) {
 	})
 
 	t.Run("returns false for other errors", func(t *testing.T) {
+		t.Parallel()
 		err := &testError{}
 		if IsCLIError(err) {
 			t.Error("Expected false for non-CLIError")
@@ -145,6 +153,7 @@ func TestIsCLIError(t *testing.T) {
 
 func TestAsCLIError(t *testing.T) {
 	t.Run("returns CLIError for CLIError", func(t *testing.T) {
+		t.Parallel()
 		original := NewArgumentError("test")
 		result := AsCLIError(original)
 		if result != original {
@@ -153,6 +162,7 @@ func TestAsCLIError(t *testing.T) {
 	})
 
 	t.Run("returns nil for other errors", func(t *testing.T) {
+		t.Parallel()
 		err := &testError{}
 		result := AsCLIError(err)
 		if result != nil {

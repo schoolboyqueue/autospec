@@ -8,7 +8,8 @@ The YAML structured output feature introduces:
 
 - **YAML Artifacts**: Structured output files (`spec.yaml`, `plan.yaml`, `tasks.yaml`, etc.) with consistent schemas
 - **Command Templates**: Claude Code slash commands (`/autospec.specify`, `/autospec.plan`, etc.) that generate YAML artifacts
-- **Validation**: Built-in YAML syntax checking with `autospec yaml check`
+- **Schema Validation**: Full schema validation with `autospec artifact` (required fields, types, enums, cross-references)
+- **Syntax Checking**: Simple YAML syntax checking with `autospec yaml check`
 - **Command Management**: Install, check, and manage command templates with `autospec commands`
 
 ## Quick Start
@@ -21,7 +22,7 @@ Install the YAML-based command templates into your project:
 autospec commands install
 ```
 
-This creates command templates in `.claude/commands/` and helper scripts in `.autospec/scripts/`.
+This creates command templates in `.claude/commands/`.
 
 ### 2. Check Installation
 
@@ -47,19 +48,17 @@ Each command generates a corresponding YAML file in `specs/<feature-name>/`.
 
 ### autospec commands install
 
-Installs command templates and helper scripts:
+Installs command templates:
 
 ```bash
-autospec commands install [--target <dir>] [--scripts-target <dir>]
+autospec commands install [--target <dir>]
 ```
 
 **Options**:
 - `--target`: Directory for command templates (default: `.claude/commands`)
-- `--scripts-target`: Directory for helper scripts (default: `.autospec/scripts`)
 
 **Output**:
 - Creates 7 command templates: `autospec.specify.md`, `autospec.plan.md`, `autospec.tasks.md`, `autospec.implement.md`, `autospec.checklist.md`, `autospec.analyze.md`, `autospec.constitution.md`
-- Creates helper scripts: `common.sh`, `check-prerequisites.sh`, `create-new-feature.sh`
 
 ### autospec commands check
 
@@ -82,9 +81,36 @@ Displays version metadata for installed commands:
 autospec commands info [--target <dir>]
 ```
 
-### autospec yaml check
+### autospec artifact (Schema Validation)
 
-Validates YAML syntax:
+Validates artifacts against their schemas:
+
+```bash
+# Path-only format (preferred) - type inferred from filename
+autospec artifact specs/001-feature/spec.yaml
+autospec artifact specs/001-feature/plan.yaml
+autospec artifact specs/001-feature/tasks.yaml
+autospec artifact specs/001-feature/analysis.yaml
+autospec artifact .autospec/memory/constitution.yaml
+
+# Checklist requires explicit type (filename varies)
+autospec artifact checklist specs/001-feature/checklists/ux.yaml
+```
+
+**Validates**:
+- Valid YAML syntax
+- Required fields present
+- Field types correct (strings, lists, enums)
+- Cross-references valid (e.g., task dependencies)
+
+**Exit codes**:
+- `0`: Valid artifact
+- `1`: Validation failed (with detailed errors)
+- `3`: Invalid arguments
+
+### autospec yaml check (Syntax Only)
+
+Validates YAML syntax without schema checking:
 
 ```bash
 autospec yaml check <file>
@@ -141,6 +167,14 @@ requirements:
     - id: "NFR-001"
       description: "Login response time MUST be under 500ms"
 ```
+
+**Status field values:**
+- `Draft` - Initial state when spec is created
+- `Completed` - Automatically set when all implementation tasks finish
+
+**Automatic completion:** When implementation completes (all tasks done), autospec automatically updates the spec.yaml:
+- Sets `status` to `Completed`
+- Adds `completed_at` with ISO 8601 timestamp (e.g., `2025-12-16T14:30:00Z`)
 
 ### plan.yaml
 
@@ -265,7 +299,7 @@ The typical YAML-based workflow:
 5. **Analyze** (optional): `/autospec.analyze` checks consistency across artifacts
 6. **Implement**: `/autospec.implement` executes tasks, validates checklists first
 
-Each command validates its output with `autospec yaml check` before completing.
+Each command validates its output with `autospec artifact` for schema compliance before completing.
 
 ## SpecKit vs AutoSpec: Artifact Consolidation
 
@@ -345,37 +379,35 @@ implementation_strategy:
 
 The `autospec.*` commands read and write YAML; `speckit.*` commands use markdown.
 
-### Helper Scripts
+### CLI Commands for Workflow Support
 
-The helper scripts in `.autospec/scripts/` are designed for the YAML workflow:
+The following CLI commands support the YAML workflow (replacing legacy shell scripts):
 
-**check-prerequisites.sh**
+**autospec prereqs**
 
-Returns YAML artifacts in `AVAILABLE_DOCS`:
+Returns YAML artifact paths in JSON format:
 
 ```bash
-# SpecKit (old) - checked for separate markdown files
-{"AVAILABLE_DOCS":["research.md","data-model.md","contracts/","tasks.md"]}
-
-# AutoSpec (new) - returns YAML artifacts only
-{"AVAILABLE_DOCS":["spec.yaml","plan.yaml","tasks.yaml","checklists/"]}
+autospec prereqs --json --require-plan
+# Output: {"FEATURE_DIR":"specs/<feature>","FEATURE_SPEC":"specs/<feature>/spec.yaml","IMPL_PLAN":"specs/<feature>/plan.yaml",...}
 ```
 
-**common.sh**
+**autospec new-feature**
 
-Provides path variables for YAML artifacts only:
+Creates feature branches and directories:
+
+```bash
+autospec new-feature --json "Add user authentication"
+# Output: {"BRANCH_NAME":"008-user-auth","FEATURE_DIR":"specs/008-user-auth",...}
+```
+
+Key variables returned:
 
 | Variable       | Value                          |
 |----------------|--------------------------------|
 | `FEATURE_SPEC` | `specs/<feature>/spec.yaml`    |
 | `IMPL_PLAN`    | `specs/<feature>/plan.yaml`    |
 | `TASKS`        | `specs/<feature>/tasks.yaml`   |
-
-Legacy variables removed (now embedded in plan.yaml):
-- `RESEARCH` → `plan.yaml` `research_findings`
-- `DATA_MODEL` → `plan.yaml` `data_model`
-- `CONTRACTS_DIR` → `plan.yaml` `api_contracts`
-- `QUICKSTART` → `plan.yaml` `implementation_strategy`
 
 ## Updating Task Status
 
@@ -439,12 +471,23 @@ When the autospec binary version is newer than the artifact version, commands pr
 
 Ensure you're on a feature branch (e.g., `007-feature-name`) and have run `/autospec.specify` first.
 
-### YAML syntax errors
+### YAML validation errors
 
-Run `autospec yaml check <file>` to identify the line number with the error. Common issues:
+For schema errors (missing fields, wrong types):
+```bash
+autospec artifact specs/001-feature/plan.yaml
+```
+
+For syntax errors only:
+```bash
+autospec yaml check <file>
+```
+
+Common issues:
 - Tabs instead of spaces
 - Missing quotes around strings with special characters
 - Incorrect indentation
+- Missing required fields (use `autospec artifact` for details)
 
 ### Commands not found in Claude Code
 

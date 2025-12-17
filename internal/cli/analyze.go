@@ -3,19 +3,22 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
 var analyzeCmd = &cobra.Command{
-	Use:   "analyze [optional-prompt]",
-	Short: "Perform cross-artifact consistency and quality analysis",
+	Use:     "analyze [optional-prompt]",
+	Aliases: []string{"az"},
+	Short:   "Perform cross-artifact consistency and quality analysis (az)",
 	Long: `Execute the /autospec.analyze command for the current specification.
 
 The analyze command will:
@@ -66,44 +69,52 @@ Prerequisites:
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Check if constitution exists (required for analyze)
+		constitutionCheck := workflow.CheckConstitutionExists()
+		if !constitutionCheck.Exists {
+			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
+		}
+
 		// Auto-detect current spec and verify all required artifacts exist
 		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
 		if err != nil {
+			cmd.SilenceUsage = true
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
+		PrintSpecInfo(metadata)
 
-		// Check that all required artifacts exist
-		var missingArtifacts []string
-		specFile := filepath.Join(metadata.Directory, "spec.yaml")
-		if _, err := os.Stat(specFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "spec.yaml")
-		}
-		planFile := filepath.Join(metadata.Directory, "plan.yaml")
-		if _, err := os.Stat(planFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "plan.yaml")
-		}
-		tasksFile := filepath.Join(metadata.Directory, "tasks.yaml")
-		if _, err := os.Stat(tasksFile); os.IsNotExist(err) {
-			missingArtifacts = append(missingArtifacts, "tasks.yaml")
+		// Validate all required artifacts exist (spec.yaml, plan.yaml, tasks.yaml)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageAnalyze, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
 		}
 
-		if len(missingArtifacts) > 0 {
-			return fmt.Errorf("missing required artifacts in %s: %v\n\nRun the following commands first:\n  - autospec specify (for spec.yaml)\n  - autospec plan (for plan.yaml)\n  - autospec tasks (for tasks.yaml)", metadata.Directory, missingArtifacts)
-		}
-
-		// Create workflow orchestrator
-		orch := workflow.NewWorkflowOrchestrator(cfg)
-
-		// Execute analyze phase
+		// Create notification handler and history logger
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
-		if err := orch.ExecuteAnalyze(specName, prompt); err != nil {
-			return err
-		}
 
-		return nil
+		// Wrap command execution with lifecycle for timing, notification, and history
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "analyze", specName, func() error {
+			// Create workflow orchestrator
+			orch := workflow.NewWorkflowOrchestrator(cfg)
+			orch.Executor.NotificationHandler = notifHandler
+
+			// Execute analyze stage
+			if err := orch.ExecuteAnalyze(specName, prompt); err != nil {
+				return fmt.Errorf("analyze stage failed: %w", err)
+			}
+
+			return nil
+		})
 	},
 }
 
 func init() {
+	analyzeCmd.GroupID = GroupOptionalStages
 	rootCmd.AddCommand(analyzeCmd)
 }

@@ -28,20 +28,20 @@ autospec full "Export data to CSV" --skip-preflight
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
 
-### autospec workflow
+### autospec prep
 
-Execute planning workflow: specify → plan → tasks (no implementation)
+Prepare for implementation: specify → plan → tasks (no implementation)
 
-**Syntax**: `autospec workflow "<feature description>" [flags]`
+**Syntax**: `autospec prep "<feature description>" [flags]`
 
-**Description**: Creates specification and generates plan/tasks without executing implementation.
+**Description**: Creates specification and generates plan/tasks for review before implementation.
 
 **Flags**: Same as `autospec full`
 
 **Examples**:
 ```bash
-autospec workflow "Add user profile page"
-autospec workflow "Implement caching layer" --max-retries 5
+autospec prep "Add user profile page"
+autospec prep "Implement caching layer" --max-retries 5
 ```
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
@@ -51,6 +51,8 @@ autospec workflow "Implement caching layer" --max-retries 5
 Create feature specification from natural language description
 
 **Syntax**: `autospec specify "<feature description>" ["<guidance>"] [flags]`
+
+**Alias**: `autospec spec`, `autospec s`
 
 **Description**: Generate detailed specification with requirements, acceptance criteria, and success metrics.
 
@@ -69,6 +71,8 @@ autospec specify "Add API rate limiting" "Focus on security"
 Generate technical implementation plan from specification
 
 **Syntax**: `autospec plan ["<guidance>"] [flags]`
+
+**Alias**: `autospec p`
 
 **Description**: Create technical plan with architecture, file structure, and design decisions.
 
@@ -89,6 +93,8 @@ Generate task breakdown from implementation plan
 
 **Syntax**: `autospec tasks ["<guidance>"] [flags]`
 
+**Alias**: `autospec t`
+
 **Description**: Break down plan into ordered, actionable tasks with dependencies.
 
 **Flags**: Same as `autospec full`
@@ -107,16 +113,44 @@ Execute implementation phase using tasks breakdown
 
 **Syntax**: `autospec implement [<spec-name>] ["<guidance>"] [flags]`
 
-**Description**: Execute tasks with Claude's assistance, validating progress.
+**Alias**: `autospec impl`, `autospec i`
 
-**Flags**: Same as `autospec full`
+**Description**: Execute tasks with Claude's assistance, validating progress. Supports multiple execution modes for context isolation.
+
+**Flags**:
+- `--phases`: Run each phase in a separate Claude session (fresh context per phase)
+- `--phase <N>`: Run only the specified phase number
+- `--from-phase <N>`: Run phases N and onwards, each in separate session
+- `--tasks`: Run each task in a separate Claude session (maximum context isolation)
+- `--from-task <ID>`: Resume from specific task ID
+- `--single-session`: Run all tasks in one Claude session (legacy mode)
+- Plus all flags from `autospec full`
+
+**Execution Modes**:
+
+| Mode | Flag | Sessions | Use Case |
+|------|------|----------|----------|
+| Phase-level | (default) | 1 per phase | Balanced cost/context |
+| Task-level | `--tasks` | 1 per task | Large specs, maximum isolation |
+| Single-session | `--single-session` | 1 | Small specs, quick iterations |
 
 **Examples**:
 ```bash
+# Default: phase-level isolation (1 session per phase)
 autospec implement
 autospec implement 001-dark-mode
-autospec implement "Focus on documentation tasks"
-autospec implement 001-dark-mode "Complete tests first"
+autospec implement --phase 2             # Run only phase 2
+autospec implement --from-phase 3        # Run phases 3+ sequentially
+
+# Task-level isolation (maximum granularity)
+autospec implement --tasks               # Each task in separate session
+autospec implement --from-task T005      # Resume from task T005
+
+# Single-session (all tasks in one session)
+autospec implement --single-session
+
+# With guidance
+autospec implement --phases "Focus on tests first"
 ```
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
@@ -126,6 +160,8 @@ autospec implement 001-dark-mode "Complete tests first"
 Run health checks and verify dependencies
 
 **Syntax**: `autospec doctor [flags]`
+
+**Alias**: `autospec doc`
 
 **Description**: Verify Claude CLI installed, authenticated, and directories accessible.
 
@@ -139,20 +175,107 @@ autospec doctor --debug
 
 **Exit Codes**: 0 (all checks passed), 4 (dependencies missing)
 
+### autospec history
+
+View command execution history
+
+**Syntax**: `autospec history [flags]`
+
+**Description**: Display a log of all autospec command executions with timestamp, unique ID, status, command name, spec, exit code, and duration.
+
+**Automatic Logging**: All workflow commands are automatically logged to history:
+- Core stages: `specify`, `plan`, `tasks`, `implement`
+- Optional stages: `clarify`, `analyze`, `checklist`, `constitution`
+- Workflows: `run`, `prep`, `all`
+
+**Two-Phase Logging**: History entries are written **immediately when commands start** (with status `running`) and updated when commands complete. This ensures:
+- Running commands are visible in history
+- No history data is lost if a command crashes or is interrupted
+- Each entry has a unique, memorable ID for tracking
+
+**Flags**:
+- `-s, --spec <name>`: Filter by spec name
+- `-n, --limit <count>`: Limit to last N entries (most recent)
+- `--status <value>`: Filter by status (`running`, `completed`, `failed`, `cancelled`)
+- `--clear`: Clear all history
+
+**Output Format**:
+```
+TIMESTAMP            ID                              STATUS      COMMAND       SPEC              EXIT  DURATION
+2024-01-15 10:30:00  brave_fox_20240115_103000       completed   specify       -                 0     2m30s
+2024-01-15 10:35:00  calm_river_20240115_103500      completed   plan          001-test-feature  0     1m15s
+2024-01-15 10:40:00  swift_falcon_20240115_104000    failed      tasks         001-test-feature  1     45s
+2024-01-15 10:45:00  gentle_owl_20240115_104500      running     implement     001-test-feature  0
+```
+
+**Columns**:
+- **ID**: Unique identifier in `adjective_noun_YYYYMMDD_HHMMSS` format (memorable and sortable)
+- **STATUS**: Current state with color coding:
+  - Green: `completed` (successful execution)
+  - Yellow: `running` (currently executing)
+  - Red: `failed` (error occurred) or `cancelled` (user interrupted)
+  - `-`: Old entries without status (backward compatibility)
+
+Note: Commands that create new specs (`specify`, `prep`, `all`, `run -s`) log with an empty spec name since the spec doesn't exist yet when the command starts.
+
+**Examples**:
+```bash
+# View all history
+autospec history
+
+# View last 10 entries
+autospec history -n 10
+
+# Filter by spec name
+autospec history --spec 001-feature
+
+# Filter by status (see running commands)
+autospec history --status running
+
+# Filter by failed commands
+autospec history --status failed
+
+# Combine filters
+autospec history --spec 001-feature --status completed
+
+# Clear all history
+autospec history --clear
+```
+
+**Exit Codes**: 0 (success), 3 (invalid arguments, e.g., negative limit)
+
+**File Location**: `~/.autospec/state/history.yaml`
+
+**Storage Limit**: History is automatically pruned to `max_history_entries` (default: 500). Oldest entries are removed first when the limit is exceeded. See [Configuration](#max_history_entries) to customize.
+
 ### autospec status
 
 Check current feature status and progress
 
-**Syntax**: `autospec status [flags]`
+**Syntax**: `autospec status [spec-name] [flags]`
 
-**Description**: Display detected spec, phase progress, and retry state.
+**Alias**: `autospec st`
 
-**Flags**: None (uses global flags only)
+**Description**: Display detected spec, which artifact files exist (spec.yaml, plan.yaml, tasks.yaml), and task completion progress.
+
+**Flags**:
+- `-v, --verbose`: Show phase-by-phase breakdown
 
 **Examples**:
 ```bash
-autospec status
-autospec status --verbose
+autospec status              # Current spec status
+autospec st                  # Short alias
+autospec st -v               # Verbose with phase details
+autospec status 003-feature  # Specific spec
+```
+
+**Output**:
+```
+015-artifact-validation
+  artifacts: [spec.yaml plan.yaml tasks.yaml]
+  25/38 tasks completed (66%)
+  7/10 task phases completed
+  (1 in progress)
 ```
 
 **Exit Codes**: 0 (success), 3 (invalid args)
@@ -185,23 +308,107 @@ Initialize configuration files and directories
 
 **Syntax**: `autospec init [flags]`
 
-**Description**: Create `~/.config/autospec/config.yml` with default settings.
+**Description**: Create `~/.config/autospec/config.yml` with default settings. If config already exists, it is left unchanged (use `--force` to overwrite).
 
-**Flags**: `--force`: Overwrite existing configuration
+**Flags**:
+- `--project, -p`: Create project-level config (`.autospec/config.yml`)
+- `--force, -f`: Overwrite existing configuration with defaults
 
 **Examples**:
 ```bash
-autospec init
-autospec init --force
+autospec init              # Create user config if missing
+autospec init --project    # Create project-level config
+autospec init --force      # Overwrite existing config with defaults
 ```
 
 **Exit Codes**: 0 (success)
+
+### autospec update-agent-context
+
+Update AI agent context files with technology information from plan.yaml
+
+**Syntax**: `autospec update-agent-context [flags]`
+
+**Description**: Updates AI agent context files (CLAUDE.md, GEMINI.md, etc.) with technology information extracted from the current feature's plan.yaml file. Updates the Active Technologies and Recent Changes sections.
+
+**Flags**:
+- `--agent <name>`: Update only the specified agent's context file (e.g., claude, gemini, copilot, cursor)
+- `--json`: Output results as JSON for programmatic consumption
+
+**Supported Agents**: claude, gemini, copilot, cursor, qwen, opencode, codex, windsurf, kilocode, auggie, roo, codebuddy, qoder, amp, shai, q, bob
+
+**Examples**:
+```bash
+autospec update-agent-context                    # Update all existing agent files
+autospec update-agent-context --agent claude     # Update only CLAUDE.md
+autospec update-agent-context --agent cursor     # Create/update Cursor context file
+autospec update-agent-context --json             # JSON output for integration
+```
+
+**Exit Codes**: 0 (success), 1 (validation failed), 3 (invalid args)
+
+### autospec artifact
+
+Validate YAML artifacts against their schemas
+
+**Syntax**: `autospec artifact <path>` or `autospec artifact <type> <path>`
+
+**Description**: Validates artifacts against their schemas, checking required fields, types, enums, and cross-references (e.g., task dependencies).
+
+**Supported Types**:
+- `spec` - Feature specification (spec.yaml)
+- `plan` - Implementation plan (plan.yaml)
+- `tasks` - Task breakdown (tasks.yaml)
+- `analysis` - Cross-artifact analysis (analysis.yaml)
+- `checklist` - Feature quality checklist (checklists/*.yaml)
+- `constitution` - Project constitution (constitution.yaml)
+
+**Flags**:
+- `--schema` - Print the expected schema for an artifact type
+- `--fix` - Auto-fix common issues (missing optional fields, formatting)
+
+**Examples**:
+```bash
+# Path-only (preferred) - type inferred from filename
+autospec artifact specs/001-feature/spec.yaml
+autospec artifact specs/001-feature/plan.yaml
+autospec artifact specs/001-feature/tasks.yaml
+autospec artifact .autospec/memory/constitution.yaml
+
+# Checklist requires explicit type (filename varies)
+autospec artifact checklist specs/001-feature/checklists/ux.yaml
+
+# Show schema
+autospec artifact spec --schema
+
+# Auto-fix issues
+autospec artifact specs/001-feature/plan.yaml --fix
+```
+
+**Exit Codes**: 0 (valid), 1 (validation failed), 3 (invalid args)
+
+### autospec yaml check
+
+Validate YAML syntax
+
+**Syntax**: `autospec yaml check <file>`
+
+**Description**: Quick syntax validation without schema checking. Use `autospec artifact` for full schema validation.
+
+**Examples**:
+```bash
+autospec yaml check specs/001-feature/spec.yaml
+```
+
+**Exit Codes**: 0 (valid syntax), 1 (syntax error)
 
 ### autospec version
 
 Display version information
 
 **Syntax**: `autospec version`
+
+**Alias**: `autospec v`
 
 **Description**: Show autospec version number and build info.
 
@@ -301,6 +508,27 @@ skip_preflight: true
 
 **Environment**: `AUTOSPEC_SKIP_PREFLIGHT`
 
+### implement_method
+
+**Type**: string (enum)
+**Default**: `"phases"`
+**Values**: `"phases"` | `"tasks"` | `"single-session"`
+**Description**: Default execution method for the implement command
+
+**Example**:
+```yaml
+implement_method: tasks  # Each task in separate Claude session
+```
+
+**Environment**: `AUTOSPEC_IMPLEMENT_METHOD`
+
+**Behavior**:
+- `phases`: Each phase runs in separate session (fresh context per phase) — **default**
+- `tasks`: Each task runs in separate session (maximum context isolation)
+- `single-session`: All tasks in single Claude session (legacy)
+
+**Note**: CLI flags (`--phases`, `--tasks`, `--single-session`) override this config setting.
+
 ### custom_claude_cmd
 
 **Type**: string
@@ -313,6 +541,189 @@ custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
 ```
 
 **Environment**: `AUTOSPEC_CUSTOM_CLAUDE_CMD`
+
+### max_history_entries
+
+**Type**: integer
+**Default**: `500`
+**Description**: Maximum number of command history entries to retain. Oldest entries are pruned when this limit is exceeded.
+
+**Example**:
+```yaml
+max_history_entries: 1000
+```
+
+**Environment**: `AUTOSPEC_MAX_HISTORY_ENTRIES`
+
+### notifications
+
+**Type**: object
+**Default**: `{ enabled: false, type: "both", ... }`
+**Description**: Configuration for desktop notifications when commands complete
+
+#### notifications.enabled
+
+**Type**: boolean
+**Default**: `false`
+**Description**: Master switch for all notifications (opt-in)
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_ENABLED`
+
+#### notifications.type
+
+**Type**: string (enum)
+**Default**: `"both"`
+**Values**: `"sound"` | `"visual"` | `"both"`
+**Description**: Type of notification to send
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  type: visual  # Only show desktop notification, no sound
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_TYPE`
+
+#### notifications.sound_file
+
+**Type**: string
+**Default**: `""` (uses system default)
+**Description**: Custom sound file path for audio notifications
+
+**Supported formats**: `.wav`, `.mp3`, `.aiff`, `.aif`, `.ogg`, `.flac`, `.m4a`
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  type: sound
+  sound_file: /path/to/custom/notification.wav
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_SOUND_FILE`
+
+**Notes**:
+- If the file doesn't exist, falls back to system default sound
+- macOS default: `/System/Library/Sounds/Glass.aiff`
+- Linux: No default sound (requires custom file)
+- Windows: System beep when no custom file
+
+#### notifications.on_command_complete
+
+**Type**: boolean
+**Default**: `true` (when notifications enabled)
+**Description**: Notify when any autospec command finishes
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  on_command_complete: true
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_ON_COMMAND_COMPLETE`
+
+#### notifications.on_stage_complete
+
+**Type**: boolean
+**Default**: `false`
+**Description**: Notify after each workflow stage (specify, plan, tasks, implement)
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  on_stage_complete: true  # Get notified after each stage
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_ON_STAGE_COMPLETE`
+
+#### notifications.on_error
+
+**Type**: boolean
+**Default**: `true` (when notifications enabled)
+**Description**: Notify when a command or stage fails
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  on_error: true
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_ON_ERROR`
+
+#### notifications.on_long_running
+
+**Type**: boolean
+**Default**: `false`
+**Description**: Only notify if command duration exceeds threshold
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  on_long_running: true
+  long_running_threshold: 60s  # Only notify if command takes > 60 seconds
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_ON_LONG_RUNNING`
+
+#### notifications.long_running_threshold
+
+**Type**: duration
+**Default**: `30s`
+**Description**: Threshold for `on_long_running` hook. Set to 0 for "always notify".
+
+**Example**:
+```yaml
+notifications:
+  enabled: true
+  on_long_running: true
+  long_running_threshold: 5m  # 5 minutes
+```
+
+**Environment**: `AUTOSPEC_NOTIFICATIONS_LONG_RUNNING_THRESHOLD`
+
+### Full Notification Configuration Example
+
+```yaml
+# Project config: .autospec/config.yml
+notifications:
+  enabled: true              # Master switch - must be true
+  type: both                 # "sound", "visual", or "both"
+  sound_file: ""             # Optional custom sound file path
+  on_command_complete: true  # Notify when command finishes
+  on_stage_complete: false   # Notify after each stage
+  on_error: true             # Notify on failures
+  on_long_running: false     # Only notify for long commands
+  long_running_threshold: 30s # Threshold for on_long_running
+```
+
+### Hook Combinations
+
+Hooks are composable - enable multiple to customize notification behavior:
+
+| Use Case | Configuration |
+|----------|---------------|
+| Notify on completion only | `on_command_complete: true`, others: false |
+| Notify on errors only | `on_error: true`, `on_command_complete: false` |
+| Notify per stage | `on_stage_complete: true` |
+| Notify for long tasks | `on_long_running: true`, `long_running_threshold: 60s` |
+| Full notifications | All hooks enabled |
+
+**Notes**:
+- Multiple hooks can fire for the same event (e.g., command completes with error after long time)
+- Each enabled hook fires independently
+- Notifications are disabled automatically in CI environments
+- Notifications are skipped in non-interactive sessions (no TTY)
 
 ## Exit Codes
 
@@ -330,7 +741,7 @@ Standardized exit codes for programmatic composition and CI/CD integration:
 **Examples**:
 ```bash
 # Check exit code in bash
-autospec workflow "feature"
+autospec prep "feature"
 if [ $? -eq 0 ]; then
     echo "Success"
 elif [ $? -eq 2 ]; then
@@ -340,6 +751,83 @@ fi
 
 # Use in CI/CD
 autospec full "feature" || exit 1
+```
+
+## Prerequisite Validation
+
+Before executing any stage command, autospec validates that required artifacts exist. This provides immediate feedback when prerequisites are missing, avoiding wasted API costs and time.
+
+### Constitution Requirement
+
+All stage commands (except `constitution` itself) require a project constitution:
+
+| Command | Requires Constitution |
+|---------|----------------------|
+| `specify` | Yes |
+| `plan` | Yes |
+| `tasks` | Yes |
+| `implement` | Yes |
+| `clarify` | Yes |
+| `checklist` | Yes |
+| `analyze` | Yes |
+| `constitution` | No (creates it) |
+
+If constitution is missing, you'll see:
+```
+Error: Project constitution not found.
+
+A constitution is required before running any workflow stages.
+The constitution defines your project's principles and guidelines.
+
+To create a constitution, run:
+  autospec constitution
+```
+
+### Artifact Prerequisites
+
+Each command validates that its required artifacts exist in the spec directory:
+
+| Command | Required Artifacts | Remediation |
+|---------|-------------------|-------------|
+| `specify` | (none) | - |
+| `plan` | `spec.yaml` | Run `autospec specify` first |
+| `tasks` | `plan.yaml` | Run `autospec plan` first |
+| `implement` | `tasks.yaml` | Run `autospec tasks` first |
+| `clarify` | `spec.yaml` | Run `autospec specify` first |
+| `checklist` | `spec.yaml` | Run `autospec specify` first |
+| `analyze` | `spec.yaml`, `plan.yaml`, `tasks.yaml` | Run missing stages first |
+
+**Example error**:
+```
+Error: spec.yaml not found.
+
+Run 'autospec specify' first to create this file.
+```
+
+### Run Command Smart Validation
+
+The `run` command performs "smart" validation - it only checks for artifacts that won't be produced by earlier selected stages:
+
+| Flags | Validates | Reason |
+|-------|-----------|--------|
+| `-spt` | constitution only | `specify` produces `spec.yaml`, `plan` produces `plan.yaml` |
+| `-pti` | `spec.yaml` | `plan` needs `spec.yaml`, but produces `plan.yaml`; `tasks` produces `tasks.yaml` |
+| `-ti` | `plan.yaml` | `tasks` needs `plan.yaml`, produces `tasks.yaml` |
+| `-i` | `tasks.yaml` | `implement` needs `tasks.yaml` |
+| `-a` | constitution only | Full chain (`-spti`) produces all intermediate artifacts |
+
+This allows running `autospec run -spt` without having `spec.yaml` present, since `specify` will create it.
+
+### Exit Code for Missing Prerequisites
+
+Missing prerequisites return exit code **3** (`ExitInvalidArguments`), the same code used for other argument validation failures.
+
+```bash
+# Check if prerequisite validation failed
+autospec plan
+if [ $? -eq 3 ]; then
+    echo "Missing prerequisites - run autospec specify first"
+fi
 ```
 
 ## File Locations
@@ -356,6 +844,7 @@ autospec full "feature" || exit 1
 | File | Purpose |
 |------|---------|
 | `~/.autospec/state/retry.json` | Persistent retry state tracking |
+| `~/.autospec/state/history.yaml` | Command execution history log |
 
 ### Specification Directories
 
@@ -424,9 +913,9 @@ Use exit codes for automated workflows:
 
 ```yaml
 # GitHub Actions example
-- name: Run autospec workflow
+- name: Run autospec prep
   run: |
-    autospec workflow "feature" || exit 1
+    autospec prep "feature" || exit 1
 
 - name: Check status
   run: autospec status
@@ -444,7 +933,7 @@ AUTOSPEC_TIMEOUT=60 autospec doctor
 AUTOSPEC_TIMEOUT=3600 autospec full "complex feature"
 
 # No timeout (default)
-AUTOSPEC_TIMEOUT=0 autospec workflow "feature"
+AUTOSPEC_TIMEOUT=0 autospec prep "feature"
 ```
 
 ## Further Reading

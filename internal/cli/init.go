@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/claude"
 	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/spf13/cobra"
@@ -16,13 +17,14 @@ import (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize autospec configuration, commands, and scripts",
+	Short: "Initialize autospec configuration and commands",
 	Long: `Initialize autospec with everything needed to get started.
 
 This command:
   1. Installs command templates to .claude/commands/ (automatic)
-  2. Installs helper scripts to .autospec/scripts/ (automatic)
-  3. Creates user-level configuration at ~/.config/autospec/config.yml
+  2. Creates user-level configuration at ~/.config/autospec/config.yml
+
+If config already exists, it is left unchanged (use --force to overwrite).
 
 By default, creates user-level config which applies to all your projects.
 Use --project to create project-specific config that overrides user settings.
@@ -38,15 +40,16 @@ Configuration precedence (highest to lowest):
   # Create project-specific config (overrides user config)
   autospec init --project
 
-  # Overwrite existing config without prompting
+  # Overwrite existing config with defaults
   autospec init --force`,
 	RunE: runInit,
 }
 
 func init() {
+	initCmd.GroupID = GroupGettingStarted
 	rootCmd.AddCommand(initCmd)
 	initCmd.Flags().BoolP("project", "p", false, "Create project-level config (.autospec/config.yml)")
-	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config without prompting")
+	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config with defaults")
 	// Keep --global as hidden alias for backward compatibility
 	initCmd.Flags().BoolP("global", "g", false, "Deprecated: use default behavior instead (creates user-level config)")
 	initCmd.Flags().MarkHidden("global")
@@ -55,10 +58,27 @@ func init() {
 func runInit(cmd *cobra.Command, args []string) error {
 	project, _ := cmd.Flags().GetBool("project")
 	force, _ := cmd.Flags().GetBool("force")
-
 	out := cmd.OutOrStdout()
 
-	// Step 1: Install commands (silent, no prompt)
+	if err := installCommandTemplates(out); err != nil {
+		return fmt.Errorf("installing command templates: %w", err)
+	}
+
+	if err := initializeConfig(out, project, force); err != nil {
+		return fmt.Errorf("initializing config: %w", err)
+	}
+
+	// Configure Claude Code permissions (errors are warnings, don't block init)
+	configureClaudeSettings(out, ".")
+
+	constitutionExists := handleConstitution(out)
+	checkGitignore(out)
+	printSummary(out, constitutionExists)
+	return nil
+}
+
+// installCommandTemplates installs command templates and prints status
+func installCommandTemplates(out io.Writer) error {
 	cmdDir := commands.GetDefaultCommandsDir()
 	cmdResults, err := commands.InstallTemplates(cmdDir)
 	if err != nil {
@@ -71,114 +91,117 @@ func runInit(cmd *cobra.Command, args []string) error {
 	} else {
 		fmt.Fprintf(out, "✓ Commands: up to date\n")
 	}
-
-	// Step 2: Install scripts (silent, no prompt)
-	scriptsDir := commands.GetDefaultScriptsDir()
-	scriptResults, err := commands.InstallScripts(scriptsDir)
-	if err != nil {
-		return fmt.Errorf("failed to install scripts: %w", err)
-	}
-
-	scriptInstalled, scriptUpdated := countScriptResults(scriptResults)
-	if scriptInstalled+scriptUpdated > 0 {
-		fmt.Fprintf(out, "✓ Scripts: %d installed, %d updated → %s/\n", scriptInstalled, scriptUpdated, scriptsDir)
-	} else {
-		fmt.Fprintf(out, "✓ Scripts: up to date\n")
-	}
-
-	// Step 3: Handle config
-	var configPath string
-	var configLabel string
-
-	if project {
-		// Project-level config
-		configPath = config.ProjectConfigPath()
-		configLabel = "project"
-	} else {
-		// User-level config (default)
-		var err error
-		configPath, err = config.UserConfigPath()
-		if err != nil {
-			return fmt.Errorf("failed to get user config path: %w", err)
-		}
-		configLabel = "user"
-	}
-
-	configExists := false
-	var existingConfig map[string]interface{}
-	if data, err := os.ReadFile(configPath); err == nil {
-		configExists = true
-		yaml.Unmarshal(data, &existingConfig)
-	}
-
-	if configExists && !force {
-		// Prompt user
-		label := configLabel
-		if len(label) > 0 {
-			label = strings.ToUpper(label[:1]) + label[1:]
-		}
-		fmt.Fprintf(out, "\n%s config exists at %s\n", label, configPath)
-		if !promptYesNo(cmd, "Update config?") {
-			fmt.Fprintf(out, "✓ Config: unchanged\n")
-			// Still handle constitution even if config unchanged
-			constitutionExists := handleConstitution(out)
-			printSummary(out, constitutionExists)
-			return nil
-		}
-
-		// Interactive config update
-		if err := updateConfigInteractiveYAML(cmd, configPath, existingConfig); err != nil {
-			return err
-		}
-		fmt.Fprintf(out, "✓ Config: updated\n")
-	} else {
-		// Create new config with defaults
-		if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
-			return fmt.Errorf("failed to create config directory: %w", err)
-		}
-
-		defaults := config.GetDefaults()
-		data, err := yaml.Marshal(defaults)
-		if err != nil {
-			return fmt.Errorf("failed to serialize config: %w", err)
-		}
-
-		// Add a header comment to the YAML file
-		header := "# Autospec Configuration\n# See 'autospec config show' for all available options\n\n"
-		if err := os.WriteFile(configPath, []byte(header+string(data)), 0644); err != nil {
-			return fmt.Errorf("failed to write config: %w", err)
-		}
-
-		if configExists {
-			fmt.Fprintf(out, "✓ Config: overwritten at %s\n", configPath)
-		} else {
-			fmt.Fprintf(out, "✓ Config: created at %s\n", configPath)
-		}
-	}
-
-	// Step 4: Handle constitution
-	constitutionExists := handleConstitution(out)
-
-	// Step 5: Check .gitignore for .autospec
-	checkGitignore(out)
-
-	printSummary(out, constitutionExists)
 	return nil
 }
 
-func countResults(results []commands.InstallResult) (installed, updated int) {
-	for _, r := range results {
-		switch r.Action {
-		case "installed":
-			installed++
-		case "updated":
-			updated++
-		}
+// initializeConfig creates or updates config file
+func initializeConfig(out io.Writer, project, force bool) error {
+	configPath, err := getConfigPath(project)
+	if err != nil {
+		return fmt.Errorf("getting config path: %w", err)
 	}
-	return
+
+	configExists := fileExistsCheck(configPath)
+
+	if configExists && !force {
+		fmt.Fprintf(out, "✓ Config: exists at %s\n", configPath)
+		return nil
+	}
+
+	if err := writeDefaultConfig(configPath); err != nil {
+		return fmt.Errorf("writing default config: %w", err)
+	}
+
+	if configExists {
+		fmt.Fprintf(out, "✓ Config: overwritten at %s\n", configPath)
+	} else {
+		fmt.Fprintf(out, "✓ Config: created at %s\n", configPath)
+	}
+	return nil
 }
 
-func countScriptResults(results []commands.ScriptInstallResult) (installed, updated int) {
+// getConfigPath returns the appropriate config path based on project flag
+func getConfigPath(project bool) (string, error) {
+	if project {
+		return config.ProjectConfigPath(), nil
+	}
+	configPath, err := config.UserConfigPath()
+	if err != nil {
+		return "", fmt.Errorf("failed to get user config path: %w", err)
+	}
+	return configPath, nil
+}
+
+// writeDefaultConfig writes the default configuration to the given path
+func writeDefaultConfig(configPath string) error {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+
+	defaults := config.GetDefaults()
+	data, err := yaml.Marshal(defaults)
+	if err != nil {
+		return fmt.Errorf("failed to serialize config: %w", err)
+	}
+
+	header := "# Autospec Configuration\n# See 'autospec config show' for all available options\n\n"
+	if err := os.WriteFile(configPath, []byte(header+string(data)), 0644); err != nil {
+		return fmt.Errorf("failed to write config: %w", err)
+	}
+	return nil
+}
+
+// configureClaudeSettings configures Claude Code permissions for autospec.
+// It loads existing settings, checks for deny list conflicts, and adds the
+// required permission if not already present. Outputs status messages for
+// all scenarios: created, added, already configured, or deny conflict warning.
+func configureClaudeSettings(out io.Writer, projectDir string) {
+	settings, err := claude.Load(projectDir)
+	if err != nil {
+		fmt.Fprintf(out, "⚠ Claude settings: %v\n", err)
+		return
+	}
+
+	if settings.CheckDenyList(claude.RequiredPermission) {
+		printDenyWarning(out, settings.FilePath())
+		return
+	}
+
+	if settings.HasPermission(claude.RequiredPermission) {
+		fmt.Fprintf(out, "✓ Claude settings: permissions already configured\n")
+		return
+	}
+
+	saveClaudeSettings(out, settings)
+}
+
+// printDenyWarning outputs a warning when the required permission is in the deny list.
+func printDenyWarning(out io.Writer, filePath string) {
+	fmt.Fprintf(out, "⚠ Warning: %s is in your deny list in %s. "+
+		"Remove it from permissions.deny to allow autospec commands.\n",
+		claude.RequiredPermission, filePath)
+}
+
+// saveClaudeSettings adds the required permission and saves the settings file.
+func saveClaudeSettings(out io.Writer, settings *claude.Settings) {
+	existed := settings.Exists()
+	settings.AddPermission(claude.RequiredPermission)
+
+	if err := settings.Save(); err != nil {
+		fmt.Fprintf(out, "⚠ Claude settings: failed to save: %v\n", err)
+		return
+	}
+
+	if existed {
+		fmt.Fprintf(out, "✓ Claude settings: added %s permission to %s\n",
+			claude.RequiredPermission, settings.FilePath())
+	} else {
+		fmt.Fprintf(out, "✓ Claude settings: created %s with permissions for autospec\n",
+			settings.FilePath())
+	}
+}
+
+func countResults(results []commands.InstallResult) (installed, updated int) {
 	for _, r := range results {
 		switch r.Action {
 		case "installed":
@@ -198,64 +221,6 @@ func promptYesNo(cmd *cobra.Command, question string) bool {
 	answer = strings.TrimSpace(strings.ToLower(answer))
 
 	return answer == "y" || answer == "yes"
-}
-
-func updateConfigInteractiveYAML(cmd *cobra.Command, configPath string, existing map[string]interface{}) error {
-	out := cmd.OutOrStdout()
-	defaults := config.GetDefaults()
-
-	// Merge existing with defaults (existing takes precedence)
-	for k, v := range defaults {
-		if _, exists := existing[k]; !exists {
-			existing[k] = v
-		}
-	}
-
-	fmt.Fprintf(out, "\nCurrent settings (press Enter to keep, or type new value):\n")
-
-	// Key settings to prompt for
-	settings := []struct {
-		key     string
-		desc    string
-		current interface{}
-	}{
-		{"specs_dir", "Specs directory", existing["specs_dir"]},
-		{"max_retries", "Max retries (1-10)", existing["max_retries"]},
-		{"timeout", "Timeout in seconds (0=disabled)", existing["timeout"]},
-		{"skip_preflight", "Skip preflight checks (true/false)", existing["skip_preflight"]},
-		{"show_progress", "Show progress indicators (true/false)", existing["show_progress"]},
-	}
-
-	reader := bufio.NewReader(cmd.InOrStdin())
-
-	for _, s := range settings {
-		fmt.Fprintf(out, "  %s [%v]: ", s.desc, s.current)
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
-
-		if input != "" {
-			// Parse based on type
-			switch s.current.(type) {
-			case bool:
-				existing[s.key] = input == "true" || input == "yes" || input == "1"
-			case float64, int:
-				var num int
-				fmt.Sscanf(input, "%d", &num)
-				existing[s.key] = num
-			default:
-				existing[s.key] = input
-			}
-		}
-	}
-
-	// Write updated config as YAML
-	data, err := yaml.Marshal(existing)
-	if err != nil {
-		return fmt.Errorf("failed to serialize config: %w", err)
-	}
-
-	header := "# Autospec Configuration\n# See 'autospec config show' for all available options\n\n"
-	return os.WriteFile(configPath, []byte(header+string(data)), 0644)
 }
 
 // handleConstitution checks for existing constitution and copies it if needed.

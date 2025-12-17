@@ -1,9 +1,10 @@
 # Retry state files (created in /tmp)
 /tmp/speckit_retry_*
 
-# Isolated settings files (user-specific)
-.claude/*-settings.json
-!.claude/spec-workflow-settings.json
+# Development directories (tracked on feature branches, not main)
+.dev/
+.claude/
+specs/
 
 # Test results and temporary files
 tests/results/
@@ -31,8 +32,10 @@ package-lock.json
 
 .specify
 .autospec/
+.autospec/context/
 
 # Go binary outputs
+/autospec
 bin/
 dist/
 *.test

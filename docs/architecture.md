@@ -19,7 +19,8 @@ autospec is built as a modular Go application with clear separation of concerns 
 graph TB
     CLI[CLI Layer<br/>internal/cli] --> Workflow[Workflow Orchestration<br/>internal/workflow]
     CLI --> Config[Configuration<br/>internal/config]
-    Workflow --> Executor[Phase Executor<br/>internal/workflow]
+    CLI --> Commands[Embedded Commands<br/>internal/commands]
+    Workflow --> Executor[Stage Executor<br/>internal/workflow]
     Workflow --> Validation[Validation<br/>internal/validation]
     Workflow --> Retry[Retry Management<br/>internal/retry]
     Executor --> Claude[Claude Integration<br/>internal/workflow]
@@ -30,9 +31,11 @@ graph TB
 
     classDef primary fill:#e1f5ff,stroke:#0066cc,stroke-width:2px
     classDef secondary fill:#f0f0f0,stroke:#666,stroke-width:1px
+    classDef embedded fill:#e6ffe6,stroke:#339933,stroke-width:1px
 
     class CLI,Workflow,Executor primary
     class Config,Validation,Retry,Claude,Health,Spec,Git,Progress secondary
+    class Commands embedded
 ```
 
 ### 1. CLI Layer (internal/cli/)
@@ -41,7 +44,7 @@ User-facing Cobra commands (internal/cli/root.go:1): Parse args, load config, in
 
 ### 2. Workflow Orchestration (internal/workflow/)
 
-Multi-phase execution with validation and retry (internal/workflow/workflow.go:1): Execute phases in order, validate outputs, retry on failure
+Multi-stage execution with validation and retry (internal/workflow/workflow.go:1): Execute stages in order, validate outputs, retry on failure
 
 ### 3. Configuration (internal/config/)
 
@@ -70,6 +73,10 @@ Dependency verification (internal/health/health.go:1): Verify Claude CLI, check 
 ### 9. Progress Display (internal/progress/)
 
 Real-time feedback (internal/progress/display.go:1): Spinner indicators for long-running operations
+
+### 10. Embedded Commands (internal/commands/)
+
+Slash command templates embedded in binary (internal/commands/embed.go:1): Install to `.claude/commands/` during `autospec init`
 
 ## System Architecture
 
@@ -124,54 +131,27 @@ flowchart TB
 
 ## Package Structure
 
-Detailed breakdown of internal package organization:
+Internal package organization:
 
 ```
 internal/
-├── cli/                    # Cobra-based CLI commands
-│   ├── root.go            # Root command + global flags
-│   ├── full.go            # autospec full command
-│   ├── workflow.go        # autospec workflow command
-│   ├── specify.go         # autospec specify command
-│   ├── plan.go            # autospec plan command
-│   ├── tasks.go           # autospec tasks command
-│   ├── implement.go       # autospec implement command
-│   ├── doctor.go          # autospec doctor command
-│   ├── status.go          # autospec status command
-│   ├── config.go          # autospec config command
-│   ├── init.go            # autospec init command
-│   └── version.go         # autospec version command
-│
-├── workflow/              # Workflow orchestration
-│   ├── workflow.go        # WorkflowOrchestrator
-│   ├── executor.go        # Executor (phase execution)
-│   ├── claude.go          # ClaudeExecutor (API/CLI)
-│   └── preflight.go       # PreflightChecks
-│
-├── config/                # Configuration management
-│   ├── config.go          # Load config (koanf)
-│   └── defaults.go        # Default values
-│
-├── validation/            # Validation functions
-│   ├── validation.go      # File validation
-│   ├── tasks.go           # Task parsing
-│   ├── prompt.go          # Prompt generation
-│   └── docs_test.go       # Documentation tests
-│
-├── retry/                 # Retry state management
-│   └── retry.go           # RetryState (persistent)
-│
-├── spec/                  # Spec detection
-│   └── spec.go            # DetectCurrentSpec()
-│
-├── git/                   # Git integration
-│   └── git.go             # Git helpers
-│
-├── health/                # Health checks
-│   └── health.go          # Dependency verification
-│
-└── progress/              # Progress indicators
-    └── progress.go        # Spinner display
+├── cli/          # Cobra CLI commands (root, run, all, prep, specify, plan, tasks,
+│                 # implement, constitution, clarify, checklist, analyze, update_task,
+│                 # update_agent_context, clean, uninstall, doctor, status, config, init, version)
+├── workflow/     # WorkflowOrchestrator, Executor, ClaudeExecutor, PreflightChecks
+├── config/       # Config loading (koanf), defaults, XDG paths, YAML validation
+├── commands/     # Embedded slash command templates (.md files)
+├── validation/   # File validation, task parsing, prompt generation
+├── retry/        # Persistent retry state management
+├── spec/         # Spec detection (git branch, directory scan)
+├── git/          # Git helpers (branch name, repo status)
+├── agent/        # Agent context file management (update CLAUDE.md, etc.)
+├── health/       # Dependency verification
+├── progress/     # Spinner display for operations
+├── yaml/         # YAML parsing utilities
+├── clean/        # Project cleanup functions
+├── uninstall/    # System uninstall functions
+└── errors/       # Custom error types
 ```
 
 ## Execution Flow
@@ -331,7 +311,7 @@ func (e *Executor) ExecutePhase(specName, phase, command string, validateFn func
 export AUTOSPEC_MAX_RETRIES=5
 
 # Priority 2: Local config
-echo 'max_retries: 3' > .autospec/config.yml
+echo 'max_retries: 0' > .autospec/config.yml
 
 # Priority 3: Global config
 echo 'max_retries: 2' > ~/.config/autospec/config.yml
@@ -388,14 +368,12 @@ func DetectCurrentSpec() (*SpecMetadata, error) {
 
 **Methods**:
 1. **CLI Mode** (default): Execute `claude` command via shell
-2. **API Mode**: Direct API calls using API key
-3. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
+2. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
 
 **Configuration**:
 ```yaml
 claude_cmd: claude
 custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
-use_api_key: false
 ```
 
 **Prompt Injection**:

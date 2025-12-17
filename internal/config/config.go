@@ -1,3 +1,11 @@
+// autospec - Spec-Driven Development Automation
+// Author: Ariel Frischer
+// Source: https://github.com/ariel-frischer/autospec
+
+// Package config provides hierarchical configuration management for autospec using koanf.
+// Configuration is loaded with priority: environment variables > project config (.autospec/config.yml)
+// > user config (~/.config/autospec/config.yml) > defaults. It supports both YAML and legacy JSON
+// formats, with migration utilities for transitioning from JSON to YAML.
 package config
 
 import (
@@ -7,6 +15,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -28,15 +37,27 @@ const (
 type Configuration struct {
 	ClaudeCmd         string   `koanf:"claude_cmd"`
 	ClaudeArgs        []string `koanf:"claude_args"`
-	UseAPIKey         bool     `koanf:"use_api_key"`
 	CustomClaudeCmd   string   `koanf:"custom_claude_cmd"`
 	MaxRetries        int      `koanf:"max_retries"`
 	SpecsDir          string   `koanf:"specs_dir"`
 	StateDir          string   `koanf:"state_dir"`
 	SkipPreflight     bool     `koanf:"skip_preflight"`
 	Timeout           int      `koanf:"timeout"`
-	ShowProgress      bool     `koanf:"show_progress"`      // Show progress indicators (spinners) during execution
 	SkipConfirmations bool     `koanf:"skip_confirmations"` // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
+	// ImplementMethod sets the default execution mode for the implement command.
+	// Valid values: "single-session" (legacy), "phases" (default), "tasks"
+	// Can be overridden by CLI flags (--phases, --tasks) or env var AUTOSPEC_IMPLEMENT_METHOD
+	ImplementMethod string `koanf:"implement_method"`
+
+	// Notifications configures notification preferences for command and stage completion.
+	// Supports sound, visual, or both notification types across macOS, Linux, and Windows.
+	// Environment variable support via AUTOSPEC_NOTIFICATIONS_* prefix.
+	Notifications notify.NotificationConfig `koanf:"notifications"`
+
+	// MaxHistoryEntries sets the maximum number of command history entries to retain.
+	// Oldest entries are pruned when this limit is exceeded.
+	// Default: 500. Can be set via AUTOSPEC_MAX_HISTORY_ENTRIES env var.
+	MaxHistoryEntries int `koanf:"max_history_entries"`
 }
 
 // LoadOptions configures how configuration is loaded
@@ -66,18 +87,43 @@ func Load(projectConfigPath string) (*Configuration, error) {
 // LoadWithOptions loads configuration with custom options
 func LoadWithOptions(opts LoadOptions) (*Configuration, error) {
 	k := koanf.New(".")
-	warningWriter := opts.WarningWriter
-	if warningWriter == nil {
-		warningWriter = os.Stderr
+	warningWriter := getWarningWriter(opts.WarningWriter)
+
+	loadDefaults(k)
+
+	if err := loadUserConfig(k, warningWriter, opts.SkipWarnings); err != nil {
+		return nil, err
 	}
 
-	// Apply defaults first
+	if err := loadProjectConfig(k, opts.ProjectConfigPath, warningWriter, opts.SkipWarnings); err != nil {
+		return nil, err
+	}
+
+	if err := loadEnvironmentConfig(k); err != nil {
+		return nil, err
+	}
+
+	return finalizeConfig(k)
+}
+
+// getWarningWriter returns the warning writer or defaults to stderr
+func getWarningWriter(w io.Writer) io.Writer {
+	if w == nil {
+		return os.Stderr
+	}
+	return w
+}
+
+// loadDefaults applies default configuration values
+func loadDefaults(k *koanf.Koanf) {
 	defaults := GetDefaults()
 	for key, value := range defaults {
 		k.Set(key, value)
 	}
+}
 
-	// Load user-level config (new YAML location first, then legacy JSON)
+// loadUserConfig loads user-level config (YAML preferred, legacy JSON supported)
+func loadUserConfig(k *koanf.Koanf, warningWriter io.Writer, skipWarnings bool) error {
 	userYAMLPath, _ := UserConfigPath()
 	legacyUserPath, _ := LegacyUserConfigPath()
 
@@ -85,33 +131,23 @@ func LoadWithOptions(opts LoadOptions) (*Configuration, error) {
 	legacyUserExists := fileExists(legacyUserPath)
 
 	if userYAMLExists {
-		// Validate YAML syntax first
-		if err := ValidateYAMLSyntax(userYAMLPath); err != nil {
-			return nil, err
+		if err := loadYAMLConfig(k, userYAMLPath, "user"); err != nil {
+			return fmt.Errorf("loading user YAML config: %w", err)
 		}
-		if err := k.Load(file.Provider(userYAMLPath), yaml.Parser()); err != nil {
-			return nil, fmt.Errorf("failed to load user config %s: %w", userYAMLPath, err)
-		}
-		// Warn if legacy JSON also exists
-		if legacyUserExists && !opts.SkipWarnings {
-			fmt.Fprintf(warningWriter, "Warning: Legacy JSON config found at %s (ignored, using %s)\n", legacyUserPath, userYAMLPath)
-			fmt.Fprintf(warningWriter, "  Run 'autospec config migrate --user' to remove the legacy file.\n\n")
-		}
+		warnLegacyExists(warningWriter, legacyUserPath, userYAMLPath, legacyUserExists, skipWarnings, "--user")
 	} else if legacyUserExists {
-		// Load legacy JSON and warn about migration
-		if err := k.Load(file.Provider(legacyUserPath), json.Parser()); err != nil {
-			return nil, fmt.Errorf("failed to load legacy user config %s: %w", legacyUserPath, err)
-		}
-		if !opts.SkipWarnings {
-			fmt.Fprintf(warningWriter, "Warning: Using deprecated JSON config at %s\n", legacyUserPath)
-			fmt.Fprintf(warningWriter, "  Run 'autospec config migrate --user' to migrate to YAML format.\n\n")
+		if err := loadLegacyJSONConfig(k, legacyUserPath, "user", warningWriter, skipWarnings, "--user"); err != nil {
+			return fmt.Errorf("loading legacy user JSON config: %w", err)
 		}
 	}
+	return nil
+}
 
-	// Load project-level config (new YAML location first, then legacy JSON)
+// loadProjectConfig loads project-level config (YAML preferred, legacy JSON supported)
+func loadProjectConfig(k *koanf.Koanf, customPath string, warningWriter io.Writer, skipWarnings bool) error {
 	projectYAMLPath := ProjectConfigPath()
-	if opts.ProjectConfigPath != "" {
-		projectYAMLPath = opts.ProjectConfigPath
+	if customPath != "" {
+		projectYAMLPath = customPath
 	}
 	legacyProjectPath := LegacyProjectConfigPath()
 
@@ -119,50 +155,71 @@ func LoadWithOptions(opts LoadOptions) (*Configuration, error) {
 	legacyProjectExists := fileExists(legacyProjectPath)
 
 	if projectYAMLExists {
-		// Validate YAML syntax first
-		if err := ValidateYAMLSyntax(projectYAMLPath); err != nil {
-			return nil, err
+		if err := loadYAMLConfig(k, projectYAMLPath, "project"); err != nil {
+			return fmt.Errorf("loading project YAML config: %w", err)
 		}
-		if err := k.Load(file.Provider(projectYAMLPath), yaml.Parser()); err != nil {
-			return nil, fmt.Errorf("failed to load project config %s: %w", projectYAMLPath, err)
-		}
-		// Warn if legacy JSON also exists
-		if legacyProjectExists && !opts.SkipWarnings {
-			fmt.Fprintf(warningWriter, "Warning: Legacy JSON config found at %s (ignored, using %s)\n", legacyProjectPath, projectYAMLPath)
-			fmt.Fprintf(warningWriter, "  Run 'autospec config migrate --project' to remove the legacy file.\n\n")
-		}
+		warnLegacyExists(warningWriter, legacyProjectPath, projectYAMLPath, legacyProjectExists, skipWarnings, "--project")
 	} else if legacyProjectExists {
-		// Load legacy JSON and warn about migration
-		if err := k.Load(file.Provider(legacyProjectPath), json.Parser()); err != nil {
-			return nil, fmt.Errorf("failed to load legacy project config %s: %w", legacyProjectPath, err)
-		}
-		if !opts.SkipWarnings {
-			fmt.Fprintf(warningWriter, "Warning: Using deprecated JSON config at %s\n", legacyProjectPath)
-			fmt.Fprintf(warningWriter, "  Run 'autospec config migrate --project' to migrate to YAML format.\n\n")
+		if err := loadLegacyJSONConfig(k, legacyProjectPath, "project", warningWriter, skipWarnings, "--project"); err != nil {
+			return fmt.Errorf("loading legacy project JSON config: %w", err)
 		}
 	}
+	return nil
+}
 
-	// Override with environment variables (highest priority)
+// loadYAMLConfig validates and loads a YAML config file
+func loadYAMLConfig(k *koanf.Koanf, path, configType string) error {
+	if err := ValidateYAMLSyntax(path); err != nil {
+		return fmt.Errorf("validating YAML syntax for %s config: %w", configType, err)
+	}
+	if err := k.Load(file.Provider(path), yaml.Parser()); err != nil {
+		return fmt.Errorf("failed to load %s config %s: %w", configType, path, err)
+	}
+	return nil
+}
+
+// loadLegacyJSONConfig loads legacy JSON and warns about migration
+func loadLegacyJSONConfig(k *koanf.Koanf, path, configType string, warningWriter io.Writer, skipWarnings bool, migrateFlag string) error {
+	if err := k.Load(file.Provider(path), json.Parser()); err != nil {
+		return fmt.Errorf("failed to load legacy %s config %s: %w", configType, path, err)
+	}
+	if !skipWarnings {
+		fmt.Fprintf(warningWriter, "Warning: Using deprecated JSON config at %s\n", path)
+		fmt.Fprintf(warningWriter, "  Run 'autospec config migrate %s' to migrate to YAML format.\n\n", migrateFlag)
+	}
+	return nil
+}
+
+// warnLegacyExists warns if legacy JSON exists alongside new YAML
+func warnLegacyExists(warningWriter io.Writer, legacyPath, yamlPath string, legacyExists, skipWarnings bool, migrateFlag string) {
+	if legacyExists && !skipWarnings {
+		fmt.Fprintf(warningWriter, "Warning: Legacy JSON config found at %s (ignored, using %s)\n", legacyPath, yamlPath)
+		fmt.Fprintf(warningWriter, "  Run 'autospec config migrate %s' to remove the legacy file.\n\n", migrateFlag)
+	}
+}
+
+// loadEnvironmentConfig loads environment variable overrides
+func loadEnvironmentConfig(k *koanf.Koanf) error {
 	if err := k.Load(env.Provider("AUTOSPEC_", ".", envTransform), nil); err != nil {
-		return nil, fmt.Errorf("failed to load environment config: %w", err)
+		return fmt.Errorf("failed to load environment config: %w", err)
 	}
+	return nil
+}
 
-	// Unmarshal into struct
+// finalizeConfig unmarshals, validates, and applies final transformations
+func finalizeConfig(k *koanf.Koanf) (*Configuration, error) {
 	var cfg Configuration
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	// Validate configuration values
 	if err := ValidateConfigValues(&cfg, "config"); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
 
-	// Expand home directory in paths
 	cfg.StateDir = expandHomePath(cfg.StateDir)
 	cfg.SpecsDir = expandHomePath(cfg.SpecsDir)
 
-	// Handle AUTOSPEC_YES as an alias for skip_confirmations
 	if os.Getenv("AUTOSPEC_YES") != "" {
 		cfg.SkipConfirmations = true
 	}

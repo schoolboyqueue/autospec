@@ -3,19 +3,22 @@ package cli
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
+	"github.com/ariel-frischer/autospec/internal/lifecycle"
+	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 	"github.com/spf13/cobra"
 )
 
 var clarifyCmd = &cobra.Command{
-	Use:   "clarify [optional-prompt]",
-	Short: "Refine the specification by asking clarification questions",
+	Use:     "clarify [optional-prompt]",
+	Aliases: []string{"cl"},
+	Short:   "Refine the specification by asking clarification questions (cl)",
 	Long: `Execute the /autospec.clarify command for the current specification.
 
 The clarify command will:
@@ -64,31 +67,52 @@ Prerequisites:
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Check if constitution exists (required for clarify)
+		constitutionCheck := workflow.CheckConstitutionExists()
+		if !constitutionCheck.Exists {
+			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
+		}
+
 		// Auto-detect current spec and verify spec.yaml exists
 		metadata, err := spec.DetectCurrentSpec(cfg.SpecsDir)
 		if err != nil {
+			cmd.SilenceUsage = true
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
+		PrintSpecInfo(metadata)
 
-		// Check that spec.yaml exists
-		specFile := filepath.Join(metadata.Directory, "spec.yaml")
-		if _, err := os.Stat(specFile); os.IsNotExist(err) {
-			return fmt.Errorf("spec.yaml not found in %s\n\nRun 'autospec specify' to create a spec first", metadata.Directory)
+		// Validate spec.yaml exists (required for clarify stage)
+		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageClarify, metadata.Directory)
+		if !prereqResult.Valid {
+			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
+			cmd.SilenceUsage = true
+			return NewExitError(ExitInvalidArguments)
 		}
 
-		// Create workflow orchestrator
-		orch := workflow.NewWorkflowOrchestrator(cfg)
-
-		// Execute clarify phase
+		// Create notification handler and history logger
+		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 		specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
-		if err := orch.ExecuteClarify(specName, prompt); err != nil {
-			return err
-		}
 
-		return nil
+		// Wrap command execution with lifecycle for timing, notification, and history
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "clarify", specName, func() error {
+			// Create workflow orchestrator
+			orch := workflow.NewWorkflowOrchestrator(cfg)
+			orch.Executor.NotificationHandler = notifHandler
+
+			// Execute clarify stage
+			if err := orch.ExecuteClarify(specName, prompt); err != nil {
+				return fmt.Errorf("clarify stage failed: %w", err)
+			}
+
+			return nil
+		})
 	},
 }
 
 func init() {
+	clarifyCmd.GroupID = GroupOptionalStages
 	rootCmd.AddCommand(clarifyCmd)
 }
