@@ -76,6 +76,39 @@ func RunWithContext(ctx context.Context, handler NotificationHandler, name strin
 	return fnErr
 }
 
+// RunWithHistoryContext wraps context-aware command execution with history logging.
+// It behaves like RunWithContext but also logs the command execution to history.
+//
+// Parameters:
+//   - ctx: context for cancellation
+//   - handler: notification handler (may be nil)
+//   - logger: history logger (may be nil)
+//   - name: command name for notifications and history
+//   - spec: spec name for history (may be empty)
+//   - fn: the command function to execute
+//
+// History is logged after the command completes, regardless of success or failure.
+// History logging errors are non-fatal (written to stderr, don't affect return value).
+func RunWithHistoryContext(ctx context.Context, handler NotificationHandler, logger HistoryLogger, name, spec string, fn func(context.Context) error) error {
+	start := time.Now()
+
+	// Check if context is already cancelled
+	if err := ctx.Err(); err != nil {
+		duration := time.Since(start)
+		notifyCommandComplete(handler, name, false, duration)
+		logHistory(logger, name, spec, err, duration)
+		return err
+	}
+
+	fnErr := fn(ctx)
+	duration := time.Since(start)
+
+	notifyCommandComplete(handler, name, fnErr == nil, duration)
+	logHistory(logger, name, spec, fnErr, duration)
+
+	return fnErr
+}
+
 // RunStage wraps workflow stage execution with notification dispatch.
 // It executes fn and calls handler.OnStageComplete with the results.
 //

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
+	"github.com/ariel-frischer/autospec/internal/history"
 	"github.com/ariel-frischer/autospec/internal/lifecycle"
 	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/workflow"
@@ -58,11 +59,13 @@ The feature description should be a clear, concise description of what you want 
 			return cliErr
 		}
 
-		// Create notification handler
+		// Create notification handler and history logger
 		notifHandler := notify.NewHandler(cfg.Notifications)
+		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 
-		// Wrap command execution with lifecycle for timing and notification
-		return lifecycle.Run(notifHandler, "specify", func() error {
+		// Wrap command execution with lifecycle for timing, notification, and history
+		// Note: spec name is empty for specify since we're creating a new spec
+		return lifecycle.RunWithHistory(notifHandler, historyLogger, "specify", "", func() error {
 			// Override skip-preflight from flag if set
 			if cmd.Flags().Changed("skip-preflight") {
 				cfg.SkipPreflight = skipPreflight
