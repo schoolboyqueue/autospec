@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"regexp"
@@ -147,7 +148,8 @@ The --tasks mode provides maximum context isolation:
 		notifHandler := notify.NewHandler(cfg.Notifications)
 
 		// Wrap command execution with lifecycle for timing and notification
-		return lifecycle.Run(notifHandler, "implement", func() error {
+		// Use RunWithContext to support context cancellation (e.g., Ctrl+C)
+		return lifecycle.RunWithContext(cmd.Context(), notifHandler, "implement", func(_ context.Context) error {
 			// Override skip-preflight from flag if set
 			if cmd.Flags().Changed("skip-preflight") {
 				cfg.SkipPreflight = skipPreflight

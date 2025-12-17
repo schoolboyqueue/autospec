@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -55,7 +56,8 @@ This is useful when you want to review the generated artifacts before implementa
 		notifHandler := notify.NewHandler(cfg.Notifications)
 
 		// Wrap command execution with lifecycle for timing and notification
-		return lifecycle.Run(notifHandler, "prep", func() error {
+		// Use RunWithContext to support context cancellation (e.g., Ctrl+C)
+		return lifecycle.RunWithContext(cmd.Context(), notifHandler, "prep", func(_ context.Context) error {
 			// Override skip-preflight from flag if set
 			if cmd.Flags().Changed("skip-preflight") {
 				cfg.SkipPreflight = skipPreflight

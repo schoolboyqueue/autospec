@@ -245,7 +245,7 @@ phases:
       tasks:
         - id: "T018"
           title: "Update commands that need context cancellation to use RunWithContext"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"

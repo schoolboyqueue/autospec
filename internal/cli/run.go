@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -188,8 +189,8 @@ Stages are always executed in canonical order:
 			return printDryRunPreview(stageConfig, featureDescription, specMetadata)
 		}
 
-		// Execute stages in canonical order
-		return executeStages(orchestrator, stageConfig, featureDescription, specMetadata, resume, debug, cfg.ImplementMethod)
+		// Execute stages in canonical order with context for cancellation support
+		return executeStages(cmd.Context(), orchestrator, stageConfig, featureDescription, specMetadata, resume, debug, cfg.ImplementMethod)
 	},
 }
 
@@ -257,7 +258,7 @@ type stageExecutionContext struct {
 }
 
 // executeStages executes the selected stages in order
-func executeStages(orchestrator *workflow.WorkflowOrchestrator, stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool, implementMethod string) error {
+func executeStages(cmdCtx context.Context, orchestrator *workflow.WorkflowOrchestrator, stageConfig *workflow.StageConfig, featureDescription string, specMetadata *spec.Metadata, resume, debug bool, implementMethod string) error {
 	stages := stageConfig.GetCanonicalOrder()
 	orchestrator.Executor.TotalStages = len(stages)
 
@@ -279,7 +280,8 @@ func executeStages(orchestrator *workflow.WorkflowOrchestrator, stageConfig *wor
 	}
 
 	// Wrap stage execution with lifecycle for timing and notification
-	return lifecycle.Run(notifHandler, "run", func() error {
+	// Use RunWithContext to support context cancellation (e.g., Ctrl+C)
+	return lifecycle.RunWithContext(cmdCtx, notifHandler, "run", func(_ context.Context) error {
 		for i, stage := range stages {
 			fmt.Printf("[Stage %d/%d] %s...\n", i+1, len(stages), stage)
 			if err := ctx.executeStage(stage); err != nil {
