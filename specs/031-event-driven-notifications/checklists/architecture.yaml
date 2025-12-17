@@ -69,22 +69,22 @@ categories:
         description: "Are package import relationships between internal/events, internal/lifecycle, and internal/notify specified?"
         quality_dimension: "consistency"
         spec_reference: null
-        status: "pending"
-        notes: "FR-001 creates internal/events, FR-003 creates internal/lifecycle - dependency direction not documented"
+        status: "pass"
+        notes: "docs/events.md architecture diagram shows flow: lifecycle→events, notify→events; clear dependency direction"
 
       - id: "CHK009"
         description: "Is it specified whether internal/cli commands import lifecycle directly or via workflow?"
         quality_dimension: "consistency"
         spec_reference: "FR-006"
-        status: "pending"
-        notes: "FR-006 says 'migrate all 11 CLI commands' but doesn't specify import path"
+        status: "pass"
+        notes: "docs/events.md CLI Command Integration shows direct lifecycle.Run() import from commands"
 
       - id: "CHK010"
         description: "Are references to docs/events.md consistent across all requirements?"
         quality_dimension: "consistency"
         spec_reference: "FR-001, FR-002, FR-003, FR-005"
-        status: "pending"
-        notes: "Multiple FRs reference docs/events.md - verify file exists and sections match"
+        status: "pass"
+        notes: "All referenced sections verified to exist in docs/events.md: #event-types, #global-dispatcher-default, #publishing-events, #subscribing-to-events, #error-handling-in-subscribers"
 
   - name: "Concurrency Requirements Coverage"
     description: "Are thread-safety and async behavior requirements complete?"
@@ -93,22 +93,22 @@ categories:
         description: "Is the goroutine model for event dispatch explicitly documented?"
         quality_dimension: "coverage"
         spec_reference: "US-003, US-004"
-        status: "pending"
-        notes: "US-004 mentions 'kelindar/event runs each subscriber in its own goroutine' - is this requirement or assumption?"
+        status: "pass"
+        notes: "US-004, docs/events.md, and key_entities all document 'goroutine-per-subscriber' async dispatch model"
 
       - id: "CHK012"
         description: "Are requirements for subscriber goroutine lifecycle management defined?"
         quality_dimension: "coverage"
         spec_reference: null
-        status: "pending"
-        notes: "No FR specifies when subscriber goroutines are created/destroyed or max concurrency"
+        status: "fail"
+        notes: "ACTION REQUIRED: Document max concurrent subscriber limit (e.g., max 10 subscribers) for safety"
 
       - id: "CHK013"
         description: "Is event ordering guarantee (or lack thereof) documented?"
         quality_dimension: "coverage"
         spec_reference: null
-        status: "pending"
-        notes: "Async dispatch means events may be processed out of order - is this acceptable?"
+        status: "pass"
+        notes: "docs/events.md Best Practices clearly states: 'Don't rely on event order - Subscribers run concurrently'"
 
   - name: "Migration Requirements Completeness"
     description: "Are all migration paths and compatibility requirements specified?"
@@ -117,22 +117,22 @@ categories:
         description: "Are all 11 command names explicitly listed for migration?"
         quality_dimension: "completeness"
         spec_reference: "US-005, FR-006"
-        status: "pending"
-        notes: "US-005 says '11 workflow commands' but doesn't enumerate them"
+        status: "pass"
+        notes: "plan.yaml Phase 4 lists all 11: specify, plan, tasks, clarify, analyze, checklist, constitution, implement, run, prep, all"
 
       - id: "CHK015"
         description: "Is the NotificationHandler field removal requirement explicitly stated?"
         quality_dimension: "completeness"
         spec_reference: "FR-007"
-        status: "pending"
-        notes: "FR-007 says 'NotificationHandler field can be removed' - should this be MUST or MAY?"
+        status: "pass"
+        notes: "FR-007 'can be removed' (MAY) is acceptable - field can remain if useful for testing"
 
       - id: "CHK016"
         description: "Are migration steps ordered with dependencies documented?"
         quality_dimension: "completeness"
         spec_reference: null
-        status: "pending"
-        notes: "FR-001 through FR-009 have implicit ordering but dependencies not explicit"
+        status: "pass"
+        notes: "plan.yaml implementation_phases has explicit dependency ordering between all phases"
 
   - name: "Error Handling Edge Cases"
     description: "Are failure scenarios and recovery behaviors defined?"
@@ -141,22 +141,22 @@ categories:
         description: "Is the defer/recover requirement for subscriber handlers precisely specified?"
         quality_dimension: "edge_cases"
         spec_reference: "NFR-002"
-        status: "pending"
-        notes: "NFR-002 mentions 'defer/recover in handler wrapper' - is this in events package or each handler?"
+        status: "pass"
+        notes: "docs/events.md Error Handling shows defer/recover pattern in handler (internal/notify), not events package"
 
       - id: "CHK018"
         description: "Is logging behavior for recovered panics specified (format, level, destination)?"
         quality_dimension: "edge_cases"
         spec_reference: "NFR-002"
-        status: "pending"
-        notes: "NFR-002 says 'error logged' but doesn't specify log format or logger instance"
+        status: "pass"
+        notes: "docs/events.md shows h.logger.Error('panic in event handler', 'panic', r) - Error level, structured logging"
 
       - id: "CHK019"
         description: "Is behavior defined when events.Publish() is called after process termination begins?"
         quality_dimension: "edge_cases"
         spec_reference: null
-        status: "pending"
-        notes: "Edge case for SIGTERM/shutdown scenarios not covered"
+        status: "fail"
+        notes: "ACTION REQUIRED: Add edge_case documenting that late publishes during SIGTERM are silently ignored"
 
   - name: "Acceptance Criteria Measurability"
     description: "Can success criteria be objectively verified?"
@@ -165,22 +165,22 @@ categories:
         description: "Is '~100 lines removed' in SC-001 a measurable target or estimate?"
         quality_dimension: "measurability"
         spec_reference: "SC-001"
-        status: "pending"
-        notes: "SC-001 uses approximate '~100 lines' - difficult to verify objectively"
+        status: "pass"
+        notes: "~100 lines is an estimate target (11 commands × ~8 lines); verifiable approximately via git diff"
 
       - id: "CHK021"
         description: "Is 'zero allocations' claim in NFR-001 verifiable within this project?"
         quality_dimension: "measurability"
         spec_reference: "NFR-001"
-        status: "pending"
-        notes: "NFR-001 cites kelindar/event performance - is benchmark test required?"
+        status: "pass"
+        notes: "Relies on kelindar/event library guarantees documented in their benchmarks; no additional verification needed"
 
       - id: "CHK022"
         description: "Are all 11 commands enumerated for SC-002 verification?"
         quality_dimension: "measurability"
         spec_reference: "SC-002"
-        status: "pending"
-        notes: "SC-002 says '11 of 11 commands' but list not provided for verification"
+        status: "pass"
+        notes: "All 11 commands enumerated in plan.yaml Phase 4 for verification"
 
   - name: "Reference Documentation Coverage"
     description: "Are external references accessible and consistent?"
@@ -189,29 +189,29 @@ categories:
         description: "Does docs/events.md exist with all referenced sections?"
         quality_dimension: "coverage"
         spec_reference: "references"
-        status: "pending"
-        notes: "Multiple FRs reference specific sections in docs/events.md"
+        status: "pass"
+        notes: "docs/events.md verified to exist with all referenced sections: #event-types, #global-dispatcher-default, #publishing-events, #subscribing-to-events, #error-handling-in-subscribers"
 
       - id: "CHK024"
         description: "Are kelindar/event API assumptions documented from authoritative source?"
         quality_dimension: "coverage"
         spec_reference: "assumptions"
-        status: "pending"
-        notes: "Spec assumes kelindar/event behavior (goroutine-per-subscriber, thread-safe) - are these verified?"
+        status: "pass"
+        notes: "kelindar/event behavior (goroutine-per-subscriber, thread-safe) documented in library README; assumptions reasonable"
 
       - id: "CHK025"
         description: "Is the external dependency license and maintenance status documented?"
         quality_dimension: "coverage"
         spec_reference: "assumptions"
-        status: "pending"
-        notes: "Assumption says 'MIT license, zero external dependencies' - is this verified?"
+        status: "pass"
+        notes: "MIT license verified from GitHub repo; zero dependencies verified from go.mod"
 
 summary:
   total_items: 25
-  passed: 0
-  failed: 0
-  pending: 25
-  pass_rate: "0%"
+  passed: 22
+  failed: 3
+  pending: 0
+  pass_rate: "88%"
 
 _meta:
   version: "1.0.0"
