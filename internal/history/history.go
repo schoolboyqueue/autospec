@@ -17,14 +17,39 @@ const (
 	BackupSuffix = ".backup"
 )
 
+// Status constants for history entries.
+const (
+	// StatusRunning indicates the command is currently executing.
+	StatusRunning = "running"
+	// StatusCompleted indicates the command finished successfully.
+	StatusCompleted = "completed"
+	// StatusFailed indicates the command finished with an error.
+	StatusFailed = "failed"
+	// StatusCancelled indicates the command was interrupted by the user.
+	StatusCancelled = "cancelled"
+)
+
 // HistoryEntry represents a single command execution record.
 type HistoryEntry struct {
+	// ID is a unique identifier in adjective_noun_YYYYMMDD_HHMMSS format.
+	// Optional for backward compatibility with old entries.
+	ID string `yaml:"id,omitempty"`
 	// Timestamp is when the command started executing (RFC3339 format in YAML).
+	// Kept for backward compatibility with existing entries.
 	Timestamp time.Time `yaml:"timestamp"`
 	// Command is the name of the autospec command (e.g., "specify", "run").
 	Command string `yaml:"command"`
 	// Spec is the name or path of the spec being worked on (may be empty).
 	Spec string `yaml:"spec,omitempty"`
+	// Status is the current state: running, completed, failed, cancelled.
+	// Optional for backward compatibility with old entries.
+	Status string `yaml:"status,omitempty"`
+	// CreatedAt is when the command started (explicit field, same as Timestamp).
+	// Optional for backward compatibility with old entries.
+	CreatedAt time.Time `yaml:"created_at,omitempty"`
+	// CompletedAt is when the command finished (nil if still running).
+	// Pointer allows distinguishing between "not set" and "zero time".
+	CompletedAt *time.Time `yaml:"completed_at,omitempty"`
 	// ExitCode is the exit code of the command (0=success).
 	ExitCode int `yaml:"exit_code"`
 	// Duration is the execution duration in Go duration format (e.g., "2m15.123s").
