@@ -15,6 +15,12 @@ const (
 	ArtifactTypePlan ArtifactType = "plan"
 	// ArtifactTypeTasks represents tasks.yaml artifacts.
 	ArtifactTypeTasks ArtifactType = "tasks"
+	// ArtifactTypeAnalysis represents analysis.yaml artifacts.
+	ArtifactTypeAnalysis ArtifactType = "analysis"
+	// ArtifactTypeChecklist represents checklist.yaml artifacts.
+	ArtifactTypeChecklist ArtifactType = "checklist"
+	// ArtifactTypeConstitution represents constitution.yaml artifacts.
+	ArtifactTypeConstitution ArtifactType = "constitution"
 )
 
 // FieldType represents the expected type of a schema field.
@@ -339,6 +345,261 @@ var TaskFieldSchema = []SchemaField{
 	{Name: "file_path", Type: FieldTypeString, Required: false, Description: "Primary file path for this task"},
 	{Name: "dependencies", Type: FieldTypeArray, Required: false, Description: "List of task IDs this task depends on"},
 	{Name: "acceptance_criteria", Type: FieldTypeArray, Required: false, Description: "Acceptance criteria for the task"},
+}
+
+// AnalysisSchema defines the schema for analysis.yaml artifacts.
+var AnalysisSchema = Schema{
+	Type:        ArtifactTypeAnalysis,
+	Description: "Cross-artifact analysis results containing findings, coverage, and recommendations",
+	Fields: []SchemaField{
+		{
+			Name:        "analysis",
+			Type:        FieldTypeObject,
+			Required:    true,
+			Description: "Analysis metadata including branch and file references",
+			Children: []SchemaField{
+				{Name: "branch", Type: FieldTypeString, Required: true, Description: "Git branch name"},
+				{Name: "timestamp", Type: FieldTypeString, Required: true, Description: "Analysis timestamp (ISO 8601)"},
+				{Name: "spec_path", Type: FieldTypeString, Required: false, Description: "Path to spec file"},
+				{Name: "plan_path", Type: FieldTypeString, Required: false, Description: "Path to plan file"},
+				{Name: "tasks_path", Type: FieldTypeString, Required: false, Description: "Path to tasks file"},
+				{Name: "constitution_path", Type: FieldTypeString, Required: false, Description: "Path to constitution file"},
+			},
+		},
+		{
+			Name:        "findings",
+			Type:        FieldTypeArray,
+			Required:    true,
+			Description: "List of analysis findings",
+			Children: []SchemaField{
+				{Name: "id", Type: FieldTypeString, Required: true, Description: "Finding ID (e.g., DUP-001, AMB-001)"},
+				{Name: "category", Type: FieldTypeString, Required: true, Enum: []string{"duplication", "ambiguity", "coverage", "constitution", "inconsistency", "underspecification"}, Description: "Finding category"},
+				{Name: "severity", Type: FieldTypeString, Required: true, Enum: []string{"CRITICAL", "HIGH", "MEDIUM", "LOW"}, Description: "Finding severity"},
+				{Name: "location", Type: FieldTypeString, Required: true, Description: "Location of the finding"},
+				{Name: "summary", Type: FieldTypeString, Required: true, Description: "Brief summary of the finding"},
+				{Name: "details", Type: FieldTypeString, Required: false, Description: "Detailed explanation"},
+				{Name: "recommendation", Type: FieldTypeString, Required: false, Description: "Suggested fix"},
+			},
+		},
+		{
+			Name:        "coverage",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Coverage analysis for requirements and stories",
+			Children: []SchemaField{
+				{Name: "requirements", Type: FieldTypeArray, Required: false, Description: "Requirement coverage details"},
+				{Name: "user_stories", Type: FieldTypeArray, Required: false, Description: "User story coverage details"},
+			},
+		},
+		{
+			Name:        "constitution_alignment",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Constitution compliance check results",
+			Children: []SchemaField{
+				{Name: "status", Type: FieldTypeString, Required: false, Enum: []string{"PASS", "FAIL"}, Description: "Overall alignment status"},
+				{Name: "violations", Type: FieldTypeArray, Required: false, Description: "List of constitution violations"},
+			},
+		},
+		{
+			Name:        "unmapped_tasks",
+			Type:        FieldTypeArray,
+			Required:    false,
+			Description: "Tasks without corresponding requirements",
+		},
+		{
+			Name:        "metrics",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Analysis metrics and counts",
+			Children: []SchemaField{
+				{Name: "total_requirements", Type: FieldTypeInt, Required: false, Description: "Total number of requirements"},
+				{Name: "total_tasks", Type: FieldTypeInt, Required: false, Description: "Total number of tasks"},
+				{Name: "coverage_percentage", Type: FieldTypeInt, Required: false, Description: "Percentage of requirements with tasks"},
+				{Name: "critical_issues", Type: FieldTypeInt, Required: false, Description: "Number of critical issues"},
+				{Name: "high_issues", Type: FieldTypeInt, Required: false, Description: "Number of high issues"},
+				{Name: "medium_issues", Type: FieldTypeInt, Required: false, Description: "Number of medium issues"},
+				{Name: "low_issues", Type: FieldTypeInt, Required: false, Description: "Number of low issues"},
+			},
+		},
+		{
+			Name:        "summary",
+			Type:        FieldTypeObject,
+			Required:    true,
+			Description: "Analysis summary",
+			Children: []SchemaField{
+				{Name: "overall_status", Type: FieldTypeString, Required: true, Enum: []string{"PASS", "WARN", "FAIL"}, Description: "Overall analysis status"},
+				{Name: "blocking_issues", Type: FieldTypeInt, Required: false, Description: "Number of blocking issues"},
+				{Name: "actionable_improvements", Type: FieldTypeInt, Required: false, Description: "Number of actionable improvements"},
+				{Name: "ready_for_implementation", Type: FieldTypeBool, Required: false, Description: "Whether ready for implementation"},
+			},
+		},
+		{
+			Name:        "_meta",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Artifact metadata",
+			Children: []SchemaField{
+				{Name: "version", Type: FieldTypeString, Required: false, Description: "Schema version"},
+				{Name: "generator", Type: FieldTypeString, Required: false, Description: "Generator tool name"},
+				{Name: "generator_version", Type: FieldTypeString, Required: false, Description: "Generator version"},
+				{Name: "created", Type: FieldTypeString, Required: false, Description: "Creation timestamp"},
+				{Name: "artifact_type", Type: FieldTypeString, Required: false, Enum: []string{"analysis"}, Description: "Artifact type"},
+			},
+		},
+	},
+}
+
+// ChecklistSchema defines the schema for checklist.yaml artifacts.
+var ChecklistSchema = Schema{
+	Type:        ArtifactTypeChecklist,
+	Description: "Feature quality validation checklist for requirements completeness and clarity",
+	Fields: []SchemaField{
+		{
+			Name:        "checklist",
+			Type:        FieldTypeObject,
+			Required:    true,
+			Description: "Checklist metadata",
+			Children: []SchemaField{
+				{Name: "feature", Type: FieldTypeString, Required: true, Description: "Feature name"},
+				{Name: "branch", Type: FieldTypeString, Required: true, Description: "Git branch name"},
+				{Name: "spec_path", Type: FieldTypeString, Required: false, Description: "Path to spec file"},
+				{Name: "domain", Type: FieldTypeString, Required: true, Description: "Checklist domain (ux, api, security, performance, etc.)"},
+				{Name: "audience", Type: FieldTypeString, Required: false, Enum: []string{"author", "reviewer", "qa", "release"}, Description: "Target audience"},
+				{Name: "depth", Type: FieldTypeString, Required: false, Enum: []string{"lightweight", "standard", "comprehensive"}, Description: "Checklist depth"},
+			},
+		},
+		{
+			Name:        "categories",
+			Type:        FieldTypeArray,
+			Required:    true,
+			Description: "Checklist categories with items",
+			Children: []SchemaField{
+				{Name: "name", Type: FieldTypeString, Required: true, Description: "Category name"},
+				{Name: "description", Type: FieldTypeString, Required: false, Description: "Category description"},
+				{Name: "items", Type: FieldTypeArray, Required: true, Description: "Checklist items in this category"},
+			},
+		},
+		{
+			Name:        "summary",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Checklist summary statistics",
+			Children: []SchemaField{
+				{Name: "total_items", Type: FieldTypeInt, Required: false, Description: "Total number of items"},
+				{Name: "passed", Type: FieldTypeInt, Required: false, Description: "Number of passed items"},
+				{Name: "failed", Type: FieldTypeInt, Required: false, Description: "Number of failed items"},
+				{Name: "pending", Type: FieldTypeInt, Required: false, Description: "Number of pending items"},
+				{Name: "pass_rate", Type: FieldTypeString, Required: false, Description: "Pass rate percentage"},
+			},
+		},
+		{
+			Name:        "_meta",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Artifact metadata",
+			Children: []SchemaField{
+				{Name: "version", Type: FieldTypeString, Required: false, Description: "Schema version"},
+				{Name: "generator", Type: FieldTypeString, Required: false, Description: "Generator tool name"},
+				{Name: "generator_version", Type: FieldTypeString, Required: false, Description: "Generator version"},
+				{Name: "created", Type: FieldTypeString, Required: false, Description: "Creation timestamp"},
+				{Name: "artifact_type", Type: FieldTypeString, Required: false, Enum: []string{"checklist"}, Description: "Artifact type"},
+			},
+		},
+	},
+}
+
+// ChecklistItemSchema defines the schema for individual checklist items.
+var ChecklistItemSchema = []SchemaField{
+	{Name: "id", Type: FieldTypeString, Required: true, Description: "Checklist item ID (CHKnnn format)"},
+	{Name: "description", Type: FieldTypeString, Required: true, Description: "Item description (question format)"},
+	{Name: "quality_dimension", Type: FieldTypeString, Required: false, Enum: []string{"completeness", "clarity", "consistency", "measurability", "coverage", "edge_cases"}, Description: "Quality dimension being checked"},
+	{Name: "spec_reference", Type: FieldTypeString, Required: false, Description: "Reference to spec requirement"},
+	{Name: "status", Type: FieldTypeString, Required: true, Enum: []string{"pending", "pass", "fail"}, Description: "Item status"},
+	{Name: "notes", Type: FieldTypeString, Required: false, Description: "Additional notes"},
+}
+
+// ConstitutionSchema defines the schema for constitution.yaml artifacts.
+var ConstitutionSchema = Schema{
+	Type:        ArtifactTypeConstitution,
+	Description: "Project constitution defining principles, governance, and standards",
+	Fields: []SchemaField{
+		{
+			Name:        "constitution",
+			Type:        FieldTypeObject,
+			Required:    true,
+			Description: "Constitution metadata",
+			Children: []SchemaField{
+				{Name: "project_name", Type: FieldTypeString, Required: true, Description: "Project name"},
+				{Name: "version", Type: FieldTypeString, Required: true, Description: "Constitution version"},
+				{Name: "ratified", Type: FieldTypeString, Required: false, Description: "Ratification date"},
+				{Name: "last_amended", Type: FieldTypeString, Required: false, Description: "Last amendment date"},
+			},
+		},
+		{
+			Name:        "preamble",
+			Type:        FieldTypeString,
+			Required:    false,
+			Description: "Constitution preamble describing purpose",
+		},
+		{
+			Name:        "principles",
+			Type:        FieldTypeArray,
+			Required:    true,
+			Description: "List of project principles",
+			Children: []SchemaField{
+				{Name: "name", Type: FieldTypeString, Required: true, Description: "Principle name"},
+				{Name: "id", Type: FieldTypeString, Required: true, Description: "Principle ID (PRIN-nnn format)"},
+				{Name: "category", Type: FieldTypeString, Required: false, Enum: []string{"quality", "architecture", "process", "security"}, Description: "Principle category"},
+				{Name: "priority", Type: FieldTypeString, Required: true, Enum: []string{"NON-NEGOTIABLE", "MUST", "SHOULD", "MAY"}, Description: "Principle priority"},
+				{Name: "description", Type: FieldTypeString, Required: true, Description: "Principle description"},
+				{Name: "rationale", Type: FieldTypeString, Required: false, Description: "Rationale for the principle"},
+				{Name: "enforcement", Type: FieldTypeArray, Required: false, Description: "Enforcement mechanisms"},
+				{Name: "exceptions", Type: FieldTypeArray, Required: false, Description: "Allowed exceptions"},
+			},
+		},
+		{
+			Name:        "sections",
+			Type:        FieldTypeArray,
+			Required:    false,
+			Description: "Additional constitution sections",
+			Children: []SchemaField{
+				{Name: "name", Type: FieldTypeString, Required: true, Description: "Section name"},
+				{Name: "content", Type: FieldTypeString, Required: true, Description: "Section content"},
+			},
+		},
+		{
+			Name:        "governance",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Governance rules and processes",
+			Children: []SchemaField{
+				{Name: "amendment_process", Type: FieldTypeArray, Required: false, Description: "Amendment process steps"},
+				{Name: "versioning_policy", Type: FieldTypeString, Required: false, Description: "Version policy description"},
+				{Name: "compliance_review", Type: FieldTypeObject, Required: false, Description: "Compliance review settings"},
+				{Name: "rules", Type: FieldTypeArray, Required: false, Description: "Governance rules"},
+			},
+		},
+		{
+			Name:        "sync_impact",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Impact of recent changes",
+		},
+		{
+			Name:        "_meta",
+			Type:        FieldTypeObject,
+			Required:    false,
+			Description: "Artifact metadata",
+			Children: []SchemaField{
+				{Name: "version", Type: FieldTypeString, Required: false, Description: "Schema version"},
+				{Name: "generator", Type: FieldTypeString, Required: false, Description: "Generator tool name"},
+				{Name: "generator_version", Type: FieldTypeString, Required: false, Description: "Generator version"},
+				{Name: "created", Type: FieldTypeString, Required: false, Description: "Creation timestamp"},
+				{Name: "artifact_type", Type: FieldTypeString, Required: false, Enum: []string{"constitution"}, Description: "Artifact type"},
+			},
+		},
+	},
 }
 
 // GetSchema returns the schema for the given artifact type.

@@ -263,7 +263,7 @@ phases:
       tasks:
         - id: "T019"
           title: "Migrate executor.go to use lifecycle.RunStage() for stage completion"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -279,7 +279,7 @@ phases:
       tasks:
         - id: "T020"
           title: "Update TestAllCommandsHaveNotificationSupport to verify lifecycle usage"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -290,7 +290,7 @@ phases:
             - "Test passes with all commands migrated"
         - id: "T021"
           title: "Update CLAUDE.md to document lifecycle wrapper pattern"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null

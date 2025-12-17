@@ -114,31 +114,44 @@ for name, tt := range tests {
 
 ### CLI Command Notification Handlers (REQUIRED)
 
-All workflow CLI commands in `internal/cli/` MUST have notification handler integration. This ensures users receive completion notifications (sound/visual) when commands finish.
+All workflow CLI commands in `internal/cli/` MUST use the lifecycle wrapper for notifications. This ensures users receive completion notifications (sound/visual) when commands finish, with automatic timing and panic recovery.
 
-Required pattern for each command:
+Required pattern using `lifecycle.Run()`:
 
 ```go
-// Create notification handler and attach to executor
+import (
+    "github.com/ariel-frischer/autospec/internal/lifecycle"
+    "github.com/ariel-frischer/autospec/internal/notify"
+)
+
+// Create notification handler
 notifHandler := notify.NewHandler(cfg.Notifications)
 orch.Executor.NotificationHandler = notifHandler
 
-// Track command start time
-startTime := time.Now()
-notifHandler.SetStartTime(startTime)
+// Wrap command execution in lifecycle.Run() - handles timing and notification
+return lifecycle.Run(notifHandler, "command-name", func() error {
+    // Execute the command logic
+    return orch.ExecuteXxx(...)
+})
+```
 
-// Execute the stage
-execErr := orch.ExecuteXxx(...)
+The lifecycle wrapper provides:
+- Automatic timing (start time, duration calculation)
+- Notification dispatch (`OnCommandComplete` with correct parameters)
+- Panic recovery for notification handlers
+- Nil handler safety (no-op if handler is nil)
 
-// Calculate duration and send command completion notification
-duration := time.Since(startTime)
-success := execErr == nil
-notifHandler.OnCommandComplete("command-name", success, duration)
+For context-aware commands (cancellation support), use `lifecycle.RunWithContext()`:
+
+```go
+return lifecycle.RunWithContext(ctx, notifHandler, "command-name", func(ctx context.Context) error {
+    return orch.ExecuteWithContext(ctx, ...)
+})
 ```
 
 Commands requiring this pattern: `specify`, `plan`, `tasks`, `clarify`, `analyze`, `checklist`, `constitution`, `prep`, `run`, `implement`, `all`.
 
-Regression test: `TestAllCommandsHaveNotificationSupport` in `internal/cli/specify_test.go` verifies all commands have notification support.
+Regression test: `TestAllCommandsHaveNotificationSupport` in `internal/cli/specify_test.go` verifies all commands use the lifecycle wrapper (not legacy boilerplate).
 
 ## Spec Generation (MUST)
 
