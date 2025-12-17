@@ -224,30 +224,48 @@ func TestRunHistory_Limit(t *testing.T) {
 func TestRunHistory_InvalidLimit(t *testing.T) {
 	t.Parallel()
 
-	tests := map[string]struct {
-		limit string
-	}{
-		"zero limit":     {limit: "0"},
-		"negative limit": {limit: "-1"},
+	stateDir := t.TempDir()
+
+	cmd := createTestHistoryCmd(stateDir)
+	require.NoError(t, cmd.Flags().Set("limit", "-1"))
+
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+
+	err := cmd.RunE(cmd, []string{})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "must be positive")
+}
+
+func TestRunHistory_ZeroLimit(t *testing.T) {
+	t.Parallel()
+
+	stateDir := t.TempDir()
+
+	// Create history with 3 entries
+	histFile := &history.HistoryFile{
+		Entries: []history.HistoryEntry{
+			{Timestamp: time.Now(), Command: "cmd1", Spec: "spec", ExitCode: 0, Duration: "1m"},
+			{Timestamp: time.Now(), Command: "cmd2", Spec: "spec", ExitCode: 0, Duration: "2m"},
+			{Timestamp: time.Now(), Command: "cmd3", Spec: "spec", ExitCode: 0, Duration: "3m"},
+		},
 	}
+	require.NoError(t, history.SaveHistory(stateDir, histFile))
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+	cmd := createTestHistoryCmd(stateDir)
+	require.NoError(t, cmd.Flags().Set("limit", "0"))
 
-			stateDir := t.TempDir()
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
 
-			cmd := createTestHistoryCmd(stateDir)
-			require.NoError(t, cmd.Flags().Set("limit", tc.limit))
+	err := cmd.RunE(cmd, []string{})
+	require.NoError(t, err)
 
-			var buf bytes.Buffer
-			cmd.SetOut(&buf)
-
-			err := cmd.RunE(cmd, []string{})
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "must be positive")
-		})
-	}
+	output := buf.String()
+	// Zero limit should show all entries
+	assert.Contains(t, output, "cmd1")
+	assert.Contains(t, output, "cmd2")
+	assert.Contains(t, output, "cmd3")
 }
 
 func TestRunHistory_Clear(t *testing.T) {

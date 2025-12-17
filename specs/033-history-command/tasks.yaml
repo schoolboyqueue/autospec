@@ -133,7 +133,7 @@ phases:
       tasks:
         - id: "T010"
           title: "Create internal/cli/history_test.go with display tests"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -146,7 +146,7 @@ phases:
             - "Uses map-based table-driven pattern"
         - id: "T011"
           title: "Implement historyCmd Cobra command in internal/cli/history.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -161,7 +161,7 @@ phases:
             - "Registers command in root.go"
         - id: "T012"
           title: "Implement formatted history output display"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -180,7 +180,7 @@ phases:
       tasks:
         - id: "T013"
           title: "Add tests for --spec filtering in internal/cli/history_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-002"
@@ -192,7 +192,7 @@ phases:
             - "Tests for case sensitivity"
         - id: "T014"
           title: "Implement --spec NAME flag for history filtering"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -204,7 +204,7 @@ phases:
             - "Shows message when no entries match"
         - id: "T015"
           title: "Add tests for --limit flag in internal/cli/history_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: "US-003"
@@ -216,7 +216,7 @@ phases:
             - "Tests for invalid limit (0, negative)"
         - id: "T016"
           title: "Implement --limit N flag for entry limiting"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -235,7 +235,7 @@ phases:
       tasks:
         - id: "T017"
           title: "Add tests for --clear flag in internal/cli/history_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
@@ -247,7 +247,7 @@ phases:
             - "Tests for confirmation message output"
         - id: "T018"
           title: "Implement --clear flag for deleting history"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -266,7 +266,7 @@ phases:
       tasks:
         - id: "T019"
           title: "Implement HistoryWriter in internal/history/writer.go"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-005"
