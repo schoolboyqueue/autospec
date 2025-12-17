@@ -263,7 +263,7 @@ phases:
       tasks:
         - id: "T019"
           title: "Migrate executor.go to use lifecycle.RunStage() for stage completion"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-005"
