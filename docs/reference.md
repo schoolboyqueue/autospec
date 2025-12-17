@@ -274,6 +274,61 @@ autospec update-agent-context --json             # JSON output for integration
 
 **Exit Codes**: 0 (success), 1 (validation failed), 3 (invalid args)
 
+### autospec artifact
+
+Validate YAML artifacts against their schemas
+
+**Syntax**: `autospec artifact <path>` or `autospec artifact <type> <path>`
+
+**Description**: Validates artifacts against their schemas, checking required fields, types, enums, and cross-references (e.g., task dependencies).
+
+**Supported Types**:
+- `spec` - Feature specification (spec.yaml)
+- `plan` - Implementation plan (plan.yaml)
+- `tasks` - Task breakdown (tasks.yaml)
+- `analysis` - Cross-artifact analysis (analysis.yaml)
+- `checklist` - Feature quality checklist (checklists/*.yaml)
+- `constitution` - Project constitution (constitution.yaml)
+
+**Flags**:
+- `--schema` - Print the expected schema for an artifact type
+- `--fix` - Auto-fix common issues (missing optional fields, formatting)
+
+**Examples**:
+```bash
+# Path-only (preferred) - type inferred from filename
+autospec artifact specs/001-feature/spec.yaml
+autospec artifact specs/001-feature/plan.yaml
+autospec artifact specs/001-feature/tasks.yaml
+autospec artifact .autospec/memory/constitution.yaml
+
+# Checklist requires explicit type (filename varies)
+autospec artifact checklist specs/001-feature/checklists/ux.yaml
+
+# Show schema
+autospec artifact spec --schema
+
+# Auto-fix issues
+autospec artifact specs/001-feature/plan.yaml --fix
+```
+
+**Exit Codes**: 0 (valid), 1 (validation failed), 3 (invalid args)
+
+### autospec yaml check
+
+Validate YAML syntax
+
+**Syntax**: `autospec yaml check <file>`
+
+**Description**: Quick syntax validation without schema checking. Use `autospec artifact` for full schema validation.
+
+**Examples**:
+```bash
+autospec yaml check specs/001-feature/spec.yaml
+```
+
+**Exit Codes**: 0 (valid syntax), 1 (syntax error)
+
 ### autospec version
 
 Display version information

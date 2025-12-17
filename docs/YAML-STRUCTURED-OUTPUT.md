@@ -8,7 +8,8 @@ The YAML structured output feature introduces:
 
 - **YAML Artifacts**: Structured output files (`spec.yaml`, `plan.yaml`, `tasks.yaml`, etc.) with consistent schemas
 - **Command Templates**: Claude Code slash commands (`/autospec.specify`, `/autospec.plan`, etc.) that generate YAML artifacts
-- **Validation**: Built-in YAML syntax checking with `autospec yaml check`
+- **Schema Validation**: Full schema validation with `autospec artifact` (required fields, types, enums, cross-references)
+- **Syntax Checking**: Simple YAML syntax checking with `autospec yaml check`
 - **Command Management**: Install, check, and manage command templates with `autospec commands`
 
 ## Quick Start
@@ -80,9 +81,36 @@ Displays version metadata for installed commands:
 autospec commands info [--target <dir>]
 ```
 
-### autospec yaml check
+### autospec artifact (Schema Validation)
 
-Validates YAML syntax:
+Validates artifacts against their schemas:
+
+```bash
+# Path-only format (preferred) - type inferred from filename
+autospec artifact specs/001-feature/spec.yaml
+autospec artifact specs/001-feature/plan.yaml
+autospec artifact specs/001-feature/tasks.yaml
+autospec artifact specs/001-feature/analysis.yaml
+autospec artifact .autospec/memory/constitution.yaml
+
+# Checklist requires explicit type (filename varies)
+autospec artifact checklist specs/001-feature/checklists/ux.yaml
+```
+
+**Validates**:
+- Valid YAML syntax
+- Required fields present
+- Field types correct (strings, lists, enums)
+- Cross-references valid (e.g., task dependencies)
+
+**Exit codes**:
+- `0`: Valid artifact
+- `1`: Validation failed (with detailed errors)
+- `3`: Invalid arguments
+
+### autospec yaml check (Syntax Only)
+
+Validates YAML syntax without schema checking:
 
 ```bash
 autospec yaml check <file>
@@ -271,7 +299,7 @@ The typical YAML-based workflow:
 5. **Analyze** (optional): `/autospec.analyze` checks consistency across artifacts
 6. **Implement**: `/autospec.implement` executes tasks, validates checklists first
 
-Each command validates its output with `autospec yaml check` before completing.
+Each command validates its output with `autospec artifact` for schema compliance before completing.
 
 ## SpecKit vs AutoSpec: Artifact Consolidation
 
@@ -443,12 +471,23 @@ When the autospec binary version is newer than the artifact version, commands pr
 
 Ensure you're on a feature branch (e.g., `007-feature-name`) and have run `/autospec.specify` first.
 
-### YAML syntax errors
+### YAML validation errors
 
-Run `autospec yaml check <file>` to identify the line number with the error. Common issues:
+For schema errors (missing fields, wrong types):
+```bash
+autospec artifact specs/001-feature/plan.yaml
+```
+
+For syntax errors only:
+```bash
+autospec yaml check <file>
+```
+
+Common issues:
 - Tabs instead of spaces
 - Missing quotes around strings with special characters
 - Incorrect indentation
+- Missing required fields (use `autospec artifact` for details)
 
 ### Commands not found in Claude Code
 
