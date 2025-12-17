@@ -56,22 +56,16 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 | Status Updates | Manual | **Auto-updates** spec.yaml & tasks.yaml |
 | Phase Orchestration | Manual | **Automated** with dependencies |
 | Session Isolation | Single session | **Per-phase/task** (80%+ cost savings) |
-| Dependencies | Requires SpecKit CLI | **Self-contained** (only needs Claude CLI) |
+| Implementation | Shell scripts | **Go** (type-safe, single binary) |
 
 ## 📦 Quick Start
 
-### Prerequisites
+### 📋 Prerequisites
 
-| Name | Description |
-|------|-------------|
-| [Claude Code CLI](https://code.claude.com/docs/en/setup) | AI-powered coding assistant |
-| Git | Version control |
-| [claude-clean](https://github.com/ariel-frischer/claude-clean) (cclean) (optional) | Beautiful terminal parser for Claude Code's streaming JSON output |
-| [bubblewrap](https://github.com/containers/bubblewrap) (Linux) / Seatbelt (macOS) (optional) | OS-level sandboxing for Claude Code. See [Claude Settings](docs/claude-settings.md) |
-| Go 1.21+ (optional) | For building from source |
-| make (optional) | For Makefile commands |
+- [Claude Code CLI](https://code.claude.com/docs/en/setup)
+- Git
 
-### Initialize Your Project
+### 🚀 Initialize Your Project
 
 Navigate to your git repo/project directory, then check dependencies:
 
@@ -85,7 +79,7 @@ Initialize Autospec (config, commands, and scripts):
 autospec init
 ```
 
-Create project constitution (triggers Claude session):
+Create project constitution (once per project, triggers Claude session):
 
 ```bash
 autospec constitution
@@ -93,7 +87,7 @@ autospec constitution
 
 ## 🎮 Usage
 
-### Recommended Workflow
+### ✅ Recommended Workflow
 
 1. Generate the specification
 2. Review and edit `specs/001-user-auth/spec.yaml` as needed
@@ -106,7 +100,7 @@ autospec run -pti
 
 > ⚠️ **Note:** New specs automatically create and checkout a feature branch (e.g., `spec/001-user-auth`). This iterative approach lets you review and refine the spec before committing to implementation.
 
-### Flexible Stage Selection with `run`
+### 🎛️ Flexible Stage Selection with `run`
 
 ```bash
 # All core stages: specify → plan → tasks → implement
@@ -131,7 +125,7 @@ autospec run -tlzi
 autospec run -a -y "Feature description"
 ```
 
-### Stage Flags Reference
+### 🚩 Stage Flags Reference
 
 | Flag | Stage | Description |
 |------|-------|-------------|
@@ -148,7 +142,7 @@ autospec run -a -y "Feature description"
 > 📌 Stages always execute in canonical order regardless of flag order:
 > `constitution → specify → clarify → plan → tasks → checklist → analyze → implement`
 
-### Shortcut Commands
+### ⚡ Shortcut Commands
 
 ```bash
 # All core stages: specify → plan → tasks → implement
@@ -167,7 +161,7 @@ autospec st
 autospec st -v
 ```
 
-### Implementation Execution Modes
+### 🔄 Implementation Execution Modes
 
 Control how implementation runs with different levels of context isolation:
 
@@ -204,7 +198,7 @@ autospec implement --single-session
 
 > 💡 **Why isolate sessions?** Context accumulation causes LLM performance degradation and higher API costs (each turn bills the entire context). Phase/task isolation can reduce costs by **80%+** on large specs. See [FAQ](docs/faq.md#why-use---phases-or---tasks-instead-of-running-everything-in-one-session) for details.
 
-### Optional Stage Commands
+### 🔧 Optional Stage Commands
 
 ```bash
 # Create/update project principles
@@ -220,7 +214,7 @@ autospec checklist "Include a11y checks"
 autospec analyze "Verify API contracts"
 ```
 
-### Task Management
+### 📝 Task Management
 
 Claude automatically updates task status during implementation. Manual updates:
 
@@ -230,7 +224,7 @@ autospec update-task T001 Completed
 autospec update-task T001 Blocked
 ```
 
-### History Tracking
+### 📜 History Tracking
 
 View command execution history with filtering and status tracking. See [docs/reference.md](docs/reference.md#autospec-history) for details.
 
@@ -252,7 +246,7 @@ specs/
     └── tasks.yaml     # Actionable task breakdown
 ```
 
-### Example `tasks.yaml`
+### 📄 Example `tasks.yaml`
 
 ```yaml
 feature: user-authentication
@@ -273,14 +267,14 @@ tasks:
 
 ## ⚙️ Configuration
 
-### Config Files (YAML format)
+### 📂 Config Files (YAML format)
 
 - **User config**: `~/.config/autospec/config.yml` (XDG compliant)
 - **Project config**: `.autospec/config.yml`
 
 Priority: Environment vars > Project config > User config > Defaults
 
-### All Settings
+### 🎚️ All Settings
 
 ```yaml
 # .autospec/config.yml
@@ -291,7 +285,7 @@ claude_args:                          # Arguments passed to Claude CLI
   - --output-format
   - stream-json
 custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
-max_retries: 0                        # Max retry attempts (0-10)
+max_retries: 0                        # Max retry attempts per stage (0-10)
 specs_dir: ./specs                    # Directory for feature specs
 state_dir: ~/.autospec/state          # Directory for state files
 skip_preflight: false                 # Skip preflight checks
@@ -308,26 +302,10 @@ notifications:
   on_stage_complete: false            # Notify on each stage
   on_error: true                      # Notify on failures
   on_long_running: false              # Notify after threshold
-  long_running_threshold: 30s         # Duration threshold
+  long_running_threshold: 2m          # Duration threshold
 ```
 
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `AUTOSPEC_MAX_RETRIES` | `0` | No retries |
-| `AUTOSPEC_SPECS_DIR` | `./specs` | Specs directory |
-| `AUTOSPEC_TIMEOUT` | `2400` | 40 minutes |
-| `AUTOSPEC_YES` | `false` | Prompts enabled |
-
-```bash
-export AUTOSPEC_MAX_RETRIES=0
-export AUTOSPEC_SPECS_DIR="./specs"
-export AUTOSPEC_TIMEOUT=2400
-export AUTOSPEC_YES=false
-```
-
-### Commands
+### 💻 Commands
 
 ```bash
 autospec init
@@ -377,7 +355,14 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and sol
 
 ## 💡 Pro Tips
 
-### Readable Streaming Output with claude-clean
+### 🧩 Optional Dependencies
+
+- [claude-clean](https://github.com/ariel-frischer/claude-clean) — Beautiful terminal parser for Claude Code's streaming JSON output
+- [bubblewrap](https://github.com/containers/bubblewrap) (Linux) / Seatbelt (macOS) — OS-level sandboxing. See [Claude Settings](docs/claude-settings.md)
+- Go 1.21+ — For building from source
+- make — For Makefile commands
+
+### 🖥️ Readable Streaming Output with claude-clean
 
 [claude-clean](https://github.com/ariel-frischer/claude-clean) makes Claude's `stream-json` output readable in real-time:
 
