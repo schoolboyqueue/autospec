@@ -24,6 +24,12 @@ User-facing documentation for the autospec CLI tool.
   - Differences from SpecKit
   - Optional artifact sections
 
+- **[Checklists](./checklists.md)** - Checklist generation and validation
+  - Purpose and quality dimensions
+  - Generating domain-specific checklists
+  - Implementation gating behavior
+  - YAML schema reference
+
 ### Developer Documentation
 
 - **[CLAUDE.md](../CLAUDE.md)** - Development documentation for working with this codebase
