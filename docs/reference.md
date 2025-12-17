@@ -175,6 +175,46 @@ autospec doctor --debug
 
 **Exit Codes**: 0 (all checks passed), 4 (dependencies missing)
 
+### autospec history
+
+View command execution history
+
+**Syntax**: `autospec history [flags]`
+
+**Description**: Display a log of all autospec command executions with timestamp, command name, spec, exit code, and duration.
+
+**Flags**:
+- `-s, --spec <name>`: Filter by spec name
+- `-n, --limit <count>`: Limit to last N entries (most recent)
+- `-c, --clear`: Clear all history
+
+**Output Format**:
+```
+TIMESTAMP            COMMAND       SPEC             EXIT  DURATION
+2024-01-15 10:30:00  specify       test-feature     0     2m30s
+2024-01-15 10:35:00  plan          test-feature     0     1m15s
+2024-01-15 10:40:00  tasks         test-feature     1     45s
+```
+
+**Examples**:
+```bash
+# View all history
+autospec history
+
+# View last 10 entries
+autospec history -n 10
+
+# Filter by spec name
+autospec history --spec 001-feature
+
+# Clear all history
+autospec history --clear
+```
+
+**Exit Codes**: 0 (success)
+
+**File Location**: `~/.autospec/state/history.yaml`
+
 ### autospec status
 
 Check current feature status and progress
@@ -468,6 +508,19 @@ custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
 ```
 
 **Environment**: `AUTOSPEC_CUSTOM_CLAUDE_CMD`
+
+### max_history_entries
+
+**Type**: integer
+**Default**: `500`
+**Description**: Maximum number of command history entries to retain. Oldest entries are pruned when this limit is exceeded.
+
+**Example**:
+```yaml
+max_history_entries: 1000
+```
+
+**Environment**: `AUTOSPEC_MAX_HISTORY_ENTRIES`
 
 ### notifications
 

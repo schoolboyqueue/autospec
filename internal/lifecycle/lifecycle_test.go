@@ -320,3 +320,160 @@ func TestRunDurationAccuracy(t *testing.T) {
 		t.Errorf("duration %v too much greater than sleep %v", calls[0].duration, sleepDuration)
 	}
 }
+
+// mockLogger records history calls for testing.
+type mockLogger struct {
+	mu           sync.Mutex
+	historyCalls []historyCall
+	shouldPanic  bool
+}
+
+type historyCall struct {
+	command  string
+	spec     string
+	exitCode int
+	duration time.Duration
+}
+
+func (m *mockLogger) LogCommand(command, spec string, exitCode int, duration time.Duration) {
+	if m.shouldPanic {
+		panic("logger panic")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.historyCalls = append(m.historyCalls, historyCall{command, spec, exitCode, duration})
+}
+
+func (m *mockLogger) getHistoryCalls() []historyCall {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return append([]historyCall{}, m.historyCalls...)
+}
+
+func TestRunWithHistory(t *testing.T) {
+	t.Parallel()
+
+	errTest := errors.New("test error")
+
+	tests := map[string]struct {
+		handler      *mockHandler
+		logger       *mockLogger
+		spec         string
+		fn           func() error
+		wantErr      error
+		wantSuccess  bool
+		wantExitCode int
+	}{
+		"success": {
+			handler:      &mockHandler{},
+			logger:       &mockLogger{},
+			spec:         "test-spec",
+			fn:           func() error { return nil },
+			wantErr:      nil,
+			wantSuccess:  true,
+			wantExitCode: 0,
+		},
+		"failure": {
+			handler:      &mockHandler{},
+			logger:       &mockLogger{},
+			spec:         "test-spec",
+			fn:           func() error { return errTest },
+			wantErr:      errTest,
+			wantSuccess:  false,
+			wantExitCode: 1,
+		},
+		"empty spec": {
+			handler:      &mockHandler{},
+			logger:       &mockLogger{},
+			spec:         "",
+			fn:           func() error { return nil },
+			wantErr:      nil,
+			wantSuccess:  true,
+			wantExitCode: 0,
+		},
+		"nil handler": {
+			handler:      nil,
+			logger:       &mockLogger{},
+			spec:         "test-spec",
+			fn:           func() error { return nil },
+			wantErr:      nil,
+			wantSuccess:  true,
+			wantExitCode: 0,
+		},
+		"nil logger": {
+			handler:      &mockHandler{},
+			logger:       nil,
+			spec:         "test-spec",
+			fn:           func() error { return nil },
+			wantErr:      nil,
+			wantSuccess:  true,
+			wantExitCode: 0,
+		},
+		"both nil": {
+			handler:      nil,
+			logger:       nil,
+			spec:         "test-spec",
+			fn:           func() error { return nil },
+			wantErr:      nil,
+			wantSuccess:  true,
+			wantExitCode: 0,
+		},
+		"logger panics": {
+			handler:      &mockHandler{},
+			logger:       &mockLogger{shouldPanic: true},
+			spec:         "test-spec",
+			fn:           func() error { return errTest },
+			wantErr:      errTest,
+			wantSuccess:  false,
+			wantExitCode: 1,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			err := RunWithHistory(tt.handler, tt.logger, "test-cmd", tt.spec, tt.fn)
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("RunWithHistory() error = %v, want %v", err, tt.wantErr)
+			}
+
+			// Check handler was called (if not nil)
+			if tt.handler != nil {
+				calls := tt.handler.getCommandCalls()
+				if len(calls) != 1 {
+					t.Errorf("handler got %d calls, want 1", len(calls))
+				} else {
+					if calls[0].name != "test-cmd" {
+						t.Errorf("handler got name %q, want %q", calls[0].name, "test-cmd")
+					}
+					if calls[0].success != tt.wantSuccess {
+						t.Errorf("handler got success %v, want %v", calls[0].success, tt.wantSuccess)
+					}
+				}
+			}
+
+			// Check logger was called (if not nil and not panicking)
+			if tt.logger != nil && !tt.logger.shouldPanic {
+				calls := tt.logger.getHistoryCalls()
+				if len(calls) != 1 {
+					t.Errorf("logger got %d calls, want 1", len(calls))
+				} else {
+					if calls[0].command != "test-cmd" {
+						t.Errorf("logger got command %q, want %q", calls[0].command, "test-cmd")
+					}
+					if calls[0].spec != tt.spec {
+						t.Errorf("logger got spec %q, want %q", calls[0].spec, tt.spec)
+					}
+					if calls[0].exitCode != tt.wantExitCode {
+						t.Errorf("logger got exitCode %d, want %d", calls[0].exitCode, tt.wantExitCode)
+					}
+					if calls[0].duration <= 0 {
+						t.Error("logger duration should be positive")
+					}
+				}
+			}
+		})
+	}
+}

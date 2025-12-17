@@ -266,7 +266,7 @@ phases:
       tasks:
         - id: "T019"
           title: "Implement HistoryWriter in internal/history/writer.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -280,7 +280,7 @@ phases:
             - "Function under 40 lines"
         - id: "T020"
           title: "Implement entry pruning when max exceeded in writer"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-006"
@@ -292,7 +292,7 @@ phases:
             - "FIFO removal (oldest first)"
         - id: "T021"
           title: "Implement unit tests for HistoryWriter and pruning"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-005"
@@ -305,7 +305,7 @@ phases:
             - "Tests for non-fatal error handling"
         - id: "T022"
           title: "Hook HistoryWriter into lifecycle wrapper"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -323,7 +323,7 @@ phases:
       tasks:
         - id: "T023"
           title: "Update docs/reference.md with history command documentation"
-          status: "Pending"
+          status: "InProgress"
           type: "documentation"
           parallel: false
           story_id: null

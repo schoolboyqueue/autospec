@@ -30,6 +30,29 @@ func Run(handler NotificationHandler, name string, fn func() error) error {
 	return fnErr
 }
 
+// RunWithHistory wraps command execution with timing, notification, and history logging.
+// It behaves like Run but also logs the command execution to history.
+//
+// Parameters:
+//   - handler: notification handler (may be nil)
+//   - logger: history logger (may be nil)
+//   - name: command name for notifications and history
+//   - spec: spec name for history (may be empty)
+//   - fn: the command function to execute
+//
+// History is logged after the command completes, regardless of success or failure.
+// History logging errors are non-fatal (written to stderr, don't affect return value).
+func RunWithHistory(handler NotificationHandler, logger HistoryLogger, name, spec string, fn func() error) error {
+	start := time.Now()
+	fnErr := fn()
+	duration := time.Since(start)
+
+	notifyCommandComplete(handler, name, fnErr == nil, duration)
+	logHistory(logger, name, spec, fnErr, duration)
+
+	return fnErr
+}
+
 // RunWithContext wraps context-aware command execution.
 // If the context is already cancelled, returns context.Canceled immediately
 // without executing fn. Otherwise behaves like Run.
@@ -80,4 +103,18 @@ func notifyStageComplete(handler NotificationHandler, name string, success bool)
 	}
 	defer func() { _ = recover() }()
 	handler.OnStageComplete(name, success)
+}
+
+// logHistory safely logs command execution to history with panic recovery.
+func logHistory(logger HistoryLogger, name, spec string, fnErr error, duration time.Duration) {
+	if logger == nil {
+		return
+	}
+	defer func() { _ = recover() }()
+
+	exitCode := 0
+	if fnErr != nil {
+		exitCode = 1
+	}
+	logger.LogCommand(name, spec, exitCode, duration)
 }

@@ -30,3 +30,19 @@ type NotificationHandler interface {
 	//   - success: true if stage completed without error
 	OnStageComplete(name string, success bool)
 }
+
+// HistoryLogger defines the interface for command history logging.
+// This interface is satisfied by *history.Writer but defined separately
+// to avoid circular imports between lifecycle and history packages.
+//
+// Implementations should be non-fatal: errors during logging should not
+// cause command failures.
+type HistoryLogger interface {
+	// LogCommand logs a command execution to the history file.
+	// Parameters:
+	//   - command: the command name (e.g., "specify", "plan", "implement")
+	//   - spec: the spec name being worked on (may be empty)
+	//   - exitCode: the exit code (0 = success)
+	//   - duration: how long the command took to execute
+	LogCommand(command, spec string, exitCode int, duration time.Duration)
+}
