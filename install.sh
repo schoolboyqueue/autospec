@@ -15,12 +15,13 @@ BINARY_NAME="autospec"
 DEFAULT_INSTALL_DIR="/usr/local/bin"
 
 # Colors (disabled if not a terminal)
+# Use \e escapes with printf %b for portable POSIX color support
 if [ -t 1 ]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[0;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m' # No Color
+    RED='\e[0;31m'
+    GREEN='\e[0;32m'
+    YELLOW='\e[0;33m'
+    BLUE='\e[0;34m'
+    NC='\e[0m'
 else
     RED=''
     GREEN=''
@@ -29,21 +30,21 @@ else
     NC=''
 fi
 
-# Logging functions
+# Logging functions (use %b to interpret color escapes, output to stderr)
 info() {
-    printf "${BLUE}==>${NC} %s\n" "$1"
+    printf '%b==>%b %s\n' "${BLUE}" "${NC}" "$1" >&2
 }
 
 success() {
-    printf "${GREEN}==>${NC} %s\n" "$1"
+    printf '%b==>%b %s\n' "${GREEN}" "${NC}" "$1" >&2
 }
 
 warn() {
-    printf "${YELLOW}Warning:${NC} %s\n" "$1"
+    printf '%bWarning:%b %s\n' "${YELLOW}" "${NC}" "$1" >&2
 }
 
 error() {
-    printf "${RED}Error:${NC} %s\n" "$1" >&2
+    printf '%bError:%b %s\n' "${RED}" "${NC}" "$1" >&2
     exit 1
 }
 
@@ -193,10 +194,8 @@ check_path() {
 # Main installation function
 main() {
     echo ""
-    printf '%s\n' "${GREEN}"
-    echo '▄▀█ █ █ ▀█▀ █▀█ █▀ █▀█ █▀▀ █▀▀'
-    echo '█▀█ █▄█  █  █▄█ ▄█ █▀▀ ██▄ █▄▄'
-    printf '%s\n' "${NC}"
+    printf '%b%s\n' "${GREEN}" '▄▀█ █ █ ▀█▀ █▀█ █▀ █▀█ █▀▀ █▀▀'
+    printf '%s%b\n' '█▀█ █▄█  █  █▄█ ▄█ █▀▀ ██▄ █▄▄' "${NC}"
     echo "         Installer"
     echo ""
 
