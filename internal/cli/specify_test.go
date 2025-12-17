@@ -88,12 +88,11 @@ func TestSpecifyCmd_MaxRetriesDefault(t *testing.T) {
 }
 
 // TestSpecifyCmd_NotificationIntegration is a regression test to ensure
-// the specify command has notification support. This test reads the source
-// file and verifies the notification patterns are present.
+// the specify command has notification support via the lifecycle wrapper.
+// This test reads the source file and verifies the lifecycle patterns are present.
 //
-// Background: The specify command was missing notification support while
-// other commands (run, prep, implement, all) had it. This caused notifications
-// to not fire when using 'autospec specify' directly.
+// Background: The specify command was refactored to use lifecycle.Run() wrapper
+// which handles timing and notification dispatch automatically.
 func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
 	// Read the specify.go source file
 	sourceFile := "specify.go"
@@ -101,6 +100,12 @@ func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
 	require.NoError(t, err, "failed to read specify.go source file")
 
 	source := string(content)
+
+	t.Run("imports lifecycle package", func(t *testing.T) {
+		assert.True(t,
+			strings.Contains(source, `"github.com/ariel-frischer/autospec/internal/lifecycle"`),
+			"specify.go must import the lifecycle package")
+	})
 
 	t.Run("imports notify package", func(t *testing.T) {
 		assert.True(t,
@@ -121,28 +126,19 @@ func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
 			"specify.go must set the notification handler on the executor")
 	})
 
-	t.Run("tracks start time", func(t *testing.T) {
+	t.Run("uses lifecycle.Run wrapper", func(t *testing.T) {
 		assert.True(t,
-			strings.Contains(source, "time.Now()") &&
-				strings.Contains(source, "SetStartTime"),
-			"specify.go must track command start time")
-	})
-
-	t.Run("calls OnCommandComplete", func(t *testing.T) {
-		assert.True(t,
-			strings.Contains(source, "OnCommandComplete"),
-			"specify.go must call OnCommandComplete when finished")
-	})
-
-	t.Run("calculates duration", func(t *testing.T) {
-		assert.True(t,
-			strings.Contains(source, "time.Since"),
-			"specify.go must calculate command duration")
+			strings.Contains(source, "lifecycle.Run("),
+			"specify.go must use lifecycle.Run() wrapper for timing and notification")
 	})
 }
 
 // TestAllCommandsHaveNotificationSupport is a comprehensive regression test
 // to ensure all workflow commands have notification integration.
+//
+// Commands can have notification support via either:
+// 1. lifecycle.Run() wrapper (preferred - handles timing and notification automatically)
+// 2. Direct OnCommandComplete calls (legacy pattern)
 func TestAllCommandsHaveNotificationSupport(t *testing.T) {
 	// Commands that should have notification support
 	commandFiles := map[string]string{
@@ -159,28 +155,35 @@ func TestAllCommandsHaveNotificationSupport(t *testing.T) {
 		"constitution": "constitution.go",
 	}
 
-	requiredPatterns := []struct {
-		name    string
-		pattern string
-	}{
-		{"notify import", `"github.com/ariel-frischer/autospec/internal/notify"`},
-		{"handler creation", "notify.NewHandler"},
-		{"OnCommandComplete call", "OnCommandComplete"},
-	}
-
 	for cmdName, fileName := range commandFiles {
 		t.Run(cmdName, func(t *testing.T) {
 			content, err := os.ReadFile(fileName)
 			require.NoError(t, err, "failed to read %s", fileName)
 			source := string(content)
 
-			for _, p := range requiredPatterns {
-				t.Run(p.name, func(t *testing.T) {
-					assert.True(t,
-						strings.Contains(source, p.pattern),
-						"%s must contain %s (%s)", fileName, p.name, p.pattern)
-				})
-			}
+			// All commands must import notify and create a handler
+			t.Run("notify import", func(t *testing.T) {
+				assert.True(t,
+					strings.Contains(source, `"github.com/ariel-frischer/autospec/internal/notify"`),
+					"%s must import notify package", fileName)
+			})
+
+			t.Run("handler creation", func(t *testing.T) {
+				assert.True(t,
+					strings.Contains(source, "notify.NewHandler"),
+					"%s must create notification handler", fileName)
+			})
+
+			// Commands can use either lifecycle.Run() or direct OnCommandComplete
+			t.Run("notification dispatch", func(t *testing.T) {
+				usesLifecycle := strings.Contains(source, "lifecycle.Run(") ||
+					strings.Contains(source, "lifecycle.RunWithContext(")
+				usesDirectCall := strings.Contains(source, "OnCommandComplete")
+
+				assert.True(t,
+					usesLifecycle || usesDirectCall,
+					"%s must use lifecycle.Run() wrapper or call OnCommandComplete directly", fileName)
+			})
 		})
 	}
 }
