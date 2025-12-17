@@ -31,7 +31,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Implement lifecycle.Run() function in internal/lifecycle/lifecycle.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -46,7 +46,7 @@ phases:
             - "Function under 40 lines"
         - id: "T003"
           title: "Implement lifecycle.RunWithContext() function in internal/lifecycle/lifecycle.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -60,7 +60,7 @@ phases:
             - "Function under 40 lines"
         - id: "T004"
           title: "Implement lifecycle.RunStage() function in internal/lifecycle/lifecycle.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -73,7 +73,7 @@ phases:
             - "Function under 40 lines"
         - id: "T005"
           title: "Create unit tests for lifecycle functions in internal/lifecycle/lifecycle_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -90,7 +90,7 @@ phases:
             - "All tests pass"
         - id: "T006"
           title: "Create benchmark tests for lifecycle overhead in internal/lifecycle/lifecycle_bench_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: null
