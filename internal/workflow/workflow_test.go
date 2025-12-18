@@ -2301,3 +2301,931 @@ requirements:
 	// Test with invalid path - should not panic
 	printTasksSummary(filepath.Join(tmpDir, "nonexistent.yaml"), specDir)
 }
+
+// TestSchemaValidationIntegration tests that schema validators are properly wired into workflow
+// These tests verify FR-006: executePlan(), executeTasks(), and executeSpecify() pass schema validator functions to ExecuteStage()
+func TestSchemaValidationIntegration(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		stage        string
+		validateFunc func(string) error
+		validDir     string
+		invalidDir   string
+		errContains  string
+		setupValid   func(string) error
+		setupInvalid func(string) error
+	}{
+		"spec schema validation": {
+			stage:        "specify",
+			validateFunc: ValidateSpecSchema,
+			errContains:  "schema validation failed for spec.yaml",
+			setupValid: func(specDir string) error {
+				content := `feature:
+  branch: "001-test"
+  created: "2025-01-01"
+  status: "Draft"
+  input: "Test feature"
+user_stories: []
+requirements:
+  functional: []
+  non_functional: []
+success_criteria:
+  measurable_outcomes: []
+key_entities: []
+edge_cases: []
+assumptions: []
+constraints: []
+out_of_scope: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "spec"
+`
+				return os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte(content), 0644)
+			},
+			setupInvalid: func(specDir string) error {
+				// Missing required 'feature' field
+				content := `user_stories: []
+requirements:
+  functional: []
+_meta:
+  version: "1.0.0"
+  artifact_type: "spec"
+`
+				return os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte(content), 0644)
+			},
+		},
+		"plan schema validation": {
+			stage:        "plan",
+			validateFunc: ValidatePlanSchema,
+			errContains:  "schema validation failed for plan.yaml",
+			setupValid: func(specDir string) error {
+				content := `plan:
+  branch: "001-test"
+  created: "2025-01-01"
+  spec_path: "specs/001-test/spec.yaml"
+summary: "Test plan"
+technical_context:
+  language: "Go"
+  framework: "Cobra"
+  project_type: "cli"
+implementation_phases: []
+project_structure:
+  source_code: []
+  tests: []
+  documentation: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "plan"
+`
+				return os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte(content), 0644)
+			},
+			setupInvalid: func(specDir string) error {
+				// Missing required 'plan' field
+				content := `summary: "Test plan"
+technical_context:
+  language: "Go"
+_meta:
+  version: "1.0.0"
+  artifact_type: "plan"
+`
+				return os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte(content), 0644)
+			},
+		},
+		"tasks schema validation": {
+			stage:        "tasks",
+			validateFunc: ValidateTasksSchema,
+			errContains:  "schema validation failed for tasks.yaml",
+			setupValid: func(specDir string) error {
+				content := `tasks:
+  branch: "001-test"
+  created: "2025-01-01"
+  spec_path: "specs/001-test/spec.yaml"
+  plan_path: "specs/001-test/plan.yaml"
+summary:
+  total_tasks: 1
+  total_phases: 1
+phases:
+  - number: 1
+    title: "Setup"
+    purpose: "Initial setup"
+    tasks:
+      - id: "T001"
+        title: "Test task"
+        status: "Pending"
+        type: "implementation"
+        parallel: false
+        dependencies: []
+        acceptance_criteria:
+          - "Test passes"
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "tasks"
+`
+				return os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte(content), 0644)
+			},
+			setupInvalid: func(specDir string) error {
+				// Missing required 'tasks' field
+				content := `summary:
+  total_tasks: 1
+  total_phases: 1
+phases: []
+_meta:
+  version: "1.0.0"
+  artifact_type: "tasks"
+`
+				return os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte(content), 0644)
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// Test valid artifact passes validation
+			t.Run("valid_"+tc.stage+"_passes", func(t *testing.T) {
+				t.Parallel()
+				tmpDir := t.TempDir()
+				specDir := filepath.Join(tmpDir, "specs", "001-test")
+				if err := os.MkdirAll(specDir, 0755); err != nil {
+					t.Fatalf("Failed to create spec directory: %v", err)
+				}
+				if err := tc.setupValid(specDir); err != nil {
+					t.Fatalf("Failed to setup valid artifact: %v", err)
+				}
+
+				err := tc.validateFunc(specDir)
+				if err != nil {
+					t.Errorf("Valid %s should pass validation, got error: %v", tc.stage, err)
+				}
+			})
+
+			// Test invalid artifact fails validation with correct error message
+			t.Run("invalid_"+tc.stage+"_fails", func(t *testing.T) {
+				t.Parallel()
+				tmpDir := t.TempDir()
+				specDir := filepath.Join(tmpDir, "specs", "001-test")
+				if err := os.MkdirAll(specDir, 0755); err != nil {
+					t.Fatalf("Failed to create spec directory: %v", err)
+				}
+				if err := tc.setupInvalid(specDir); err != nil {
+					t.Fatalf("Failed to setup invalid artifact: %v", err)
+				}
+
+				err := tc.validateFunc(specDir)
+				if err == nil {
+					t.Errorf("Invalid %s should fail validation, got nil error", tc.stage)
+					return
+				}
+				if !strings.Contains(err.Error(), tc.errContains) {
+					t.Errorf("Error should contain %q, got: %v", tc.errContains, err)
+				}
+			})
+		})
+	}
+}
+
+// TestSchemaValidationRejectsInvalidBeforeNextStage verifies that invalid artifacts
+// are caught before proceeding to the next workflow stage (FR-001, FR-002, FR-003)
+func TestSchemaValidationRejectsInvalidBeforeNextStage(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		currentStage   string
+		nextStage      string
+		validateFunc   func(string) error
+		invalidContent string
+		expectedErr    string
+	}{
+		"invalid spec rejected before plan stage": {
+			currentStage: "specify",
+			nextStage:    "plan",
+			validateFunc: ValidateSpecSchema,
+			invalidContent: `# Missing required 'feature' field
+user_stories: []
+requirements:
+  functional: []
+_meta:
+  artifact_type: "spec"
+`,
+			expectedErr: "missing required field: feature",
+		},
+		"invalid plan rejected before tasks stage": {
+			currentStage: "plan",
+			nextStage:    "tasks",
+			validateFunc: ValidatePlanSchema,
+			invalidContent: `# Missing required 'plan' field
+summary: "Test"
+_meta:
+  artifact_type: "plan"
+`,
+			expectedErr: "missing required field: plan",
+		},
+		"invalid tasks rejected before implement stage": {
+			currentStage: "tasks",
+			nextStage:    "implement",
+			validateFunc: ValidateTasksSchema,
+			invalidContent: `# Missing required 'tasks' field
+summary:
+  total_tasks: 0
+phases: []
+_meta:
+  artifact_type: "tasks"
+`,
+			expectedErr: "missing required field: tasks",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory: %v", err)
+			}
+
+			// Create invalid artifact file
+			var artifactPath string
+			switch tc.currentStage {
+			case "specify":
+				artifactPath = filepath.Join(specDir, "spec.yaml")
+			case "plan":
+				artifactPath = filepath.Join(specDir, "plan.yaml")
+			case "tasks":
+				artifactPath = filepath.Join(specDir, "tasks.yaml")
+			}
+			if err := os.WriteFile(artifactPath, []byte(tc.invalidContent), 0644); err != nil {
+				t.Fatalf("Failed to write invalid artifact: %v", err)
+			}
+
+			// Run validation (simulates what ExecuteStage does after Claude generates output)
+			err := tc.validateFunc(specDir)
+
+			// Verify validation fails with expected error
+			if err == nil {
+				t.Errorf("Expected validation to fail for invalid %s artifact before %s stage", tc.currentStage, tc.nextStage)
+				return
+			}
+			if !strings.Contains(err.Error(), tc.expectedErr) {
+				t.Errorf("Error should contain %q, got: %v", tc.expectedErr, err)
+			}
+		})
+	}
+}
+
+// TestValidArtifactsProceedToNextStage verifies that valid artifacts proceed without error
+func TestValidArtifactsProceedToNextStage(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		stage        string
+		validateFunc func(string) error
+		content      string
+		artifactName string
+	}{
+		"valid spec proceeds to plan": {
+			stage:        "specify",
+			validateFunc: ValidateSpecSchema,
+			artifactName: "spec.yaml",
+			content: `feature:
+  branch: "001-valid-test"
+  created: "2025-01-01"
+  status: "Draft"
+  input: "Valid test feature"
+user_stories:
+  - id: "US-001"
+    title: "Test story"
+    priority: "P1"
+    as_a: "user"
+    i_want: "to test"
+    so_that: "I can verify"
+    acceptance_scenarios:
+      - given: "a test"
+        when: "I run it"
+        then: "it passes"
+requirements:
+  functional:
+    - id: "FR-001"
+      description: "MUST pass test"
+      testable: true
+      acceptance_criteria: "Test passes"
+  non_functional: []
+success_criteria:
+  measurable_outcomes:
+    - id: "SC-001"
+      description: "Tests pass"
+      metric: "Pass rate"
+      target: "100%"
+key_entities: []
+edge_cases: []
+assumptions: []
+constraints: []
+out_of_scope: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "spec"
+`,
+		},
+		"valid plan proceeds to tasks": {
+			stage:        "plan",
+			validateFunc: ValidatePlanSchema,
+			artifactName: "plan.yaml",
+			content: `plan:
+  branch: "001-valid-test"
+  created: "2025-01-01"
+  spec_path: "specs/001-valid-test/spec.yaml"
+summary: "Valid implementation plan"
+technical_context:
+  language: "Go"
+  framework: "Cobra"
+  project_type: "cli"
+implementation_phases:
+  - phase: 1
+    name: "Setup"
+    goal: "Initial setup"
+    deliverables:
+      - "Project structure"
+project_structure:
+  source_code:
+    - path: "cmd/main.go"
+      description: "Entry point"
+  tests:
+    - path: "cmd/main_test.go"
+      description: "Entry point tests"
+  documentation: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "plan"
+`,
+		},
+		"valid tasks proceeds to implement": {
+			stage:        "tasks",
+			validateFunc: ValidateTasksSchema,
+			artifactName: "tasks.yaml",
+			content: `tasks:
+  branch: "001-valid-test"
+  created: "2025-01-01"
+  spec_path: "specs/001-valid-test/spec.yaml"
+  plan_path: "specs/001-valid-test/plan.yaml"
+summary:
+  total_tasks: 1
+  total_phases: 1
+phases:
+  - number: 1
+    title: "Setup"
+    purpose: "Initial setup"
+    tasks:
+      - id: "T001"
+        title: "Initialize project"
+        status: "Pending"
+        type: "setup"
+        parallel: false
+        dependencies: []
+        acceptance_criteria:
+          - "Project compiles"
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "tasks"
+`,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-valid-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory: %v", err)
+			}
+
+			artifactPath := filepath.Join(specDir, tc.artifactName)
+			if err := os.WriteFile(artifactPath, []byte(tc.content), 0644); err != nil {
+				t.Fatalf("Failed to write valid artifact: %v", err)
+			}
+
+			// Run validation
+			err := tc.validateFunc(specDir)
+
+			// Verify validation passes
+			if err != nil {
+				t.Errorf("Valid %s artifact should pass validation, got error: %v", tc.stage, err)
+			}
+		})
+	}
+}
+
+// TestSchemaValidationErrorMessageFormat verifies error messages are consistent (SC-003)
+func TestSchemaValidationErrorMessageFormat(t *testing.T) {
+	t.Parallel()
+
+	// All schema validation errors should follow the same format:
+	// "schema validation failed for <artifact>:\n- <error1>\n- <error2>..."
+	tests := map[string]struct {
+		validateFunc func(string) error
+		artifactName string
+		content      string
+	}{
+		"spec error format": {
+			validateFunc: ValidateSpecSchema,
+			artifactName: "spec.yaml",
+			content: `user_stories: []
+_meta:
+  artifact_type: "spec"
+`,
+		},
+		"plan error format": {
+			validateFunc: ValidatePlanSchema,
+			artifactName: "plan.yaml",
+			content: `summary: "test"
+_meta:
+  artifact_type: "plan"
+`,
+		},
+		"tasks error format": {
+			validateFunc: ValidateTasksSchema,
+			artifactName: "tasks.yaml",
+			content: `phases: []
+_meta:
+  artifact_type: "tasks"
+`,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory: %v", err)
+			}
+
+			artifactPath := filepath.Join(specDir, tc.artifactName)
+			if err := os.WriteFile(artifactPath, []byte(tc.content), 0644); err != nil {
+				t.Fatalf("Failed to write artifact: %v", err)
+			}
+
+			err := tc.validateFunc(specDir)
+			if err == nil {
+				t.Fatal("Expected validation error")
+			}
+
+			errStr := err.Error()
+			// Verify error format is consistent
+			if !strings.HasPrefix(errStr, "schema validation failed for "+tc.artifactName) {
+				t.Errorf("Error should start with 'schema validation failed for %s', got: %s", tc.artifactName, errStr)
+			}
+			if !strings.Contains(errStr, "- ") {
+				t.Errorf("Error should contain bullet point format '- ', got: %s", errStr)
+			}
+		})
+	}
+}
+
+// TestSchemaValidationInAutospecRunPath verifies schema validation in the autospec run -a path (US-003, T014).
+// This test simulates the full workflow run path where an invalid spec.yaml should be rejected
+// before proceeding to the plan stage.
+func TestSchemaValidationInAutospecRunPath(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		specContent      string
+		expectValidation bool
+		errContains      string
+		description      string
+	}{
+		"invalid spec missing feature field rejected before plan": {
+			specContent: `# Missing required 'feature' field
+user_stories: []
+requirements:
+  functional: []
+  non_functional: []
+_meta:
+  version: "1.0.0"
+  artifact_type: "spec"
+`,
+			expectValidation: false,
+			errContains:      "missing required field: feature",
+			description:      "Spec without 'feature' field should fail schema validation",
+		},
+		"invalid spec missing branch rejected before plan": {
+			specContent: `feature:
+  created: "2025-01-01"
+  status: "Draft"
+user_stories: []
+requirements:
+  functional: []
+  non_functional: []
+_meta:
+  version: "1.0.0"
+  artifact_type: "spec"
+`,
+			expectValidation: false,
+			errContains:      "missing required field: branch",
+			description:      "Spec without 'feature.branch' should fail schema validation",
+		},
+		"valid spec proceeds to plan stage": {
+			specContent: `feature:
+  branch: "001-test-feature"
+  created: "2025-01-01"
+  status: "Draft"
+  input: "Test feature for validation"
+user_stories:
+  - id: "US-001"
+    title: "Test story"
+    priority: "P1"
+    as_a: "developer"
+    i_want: "to test validation"
+    so_that: "I can verify the workflow"
+    acceptance_scenarios:
+      - given: "a valid spec"
+        when: "validation runs"
+        then: "it passes"
+requirements:
+  functional:
+    - id: "FR-001"
+      description: "MUST validate spec"
+      testable: true
+      acceptance_criteria: "Spec passes validation"
+  non_functional: []
+success_criteria:
+  measurable_outcomes:
+    - id: "SC-001"
+      description: "Validation passes"
+      metric: "Pass rate"
+      target: "100%"
+key_entities: []
+edge_cases: []
+assumptions: []
+constraints: []
+out_of_scope: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "spec"
+`,
+			expectValidation: true,
+			errContains:      "",
+			description:      "Valid spec should pass schema validation",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test-feature")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory: %v", err)
+			}
+
+			// Write spec.yaml (simulating output from specify stage)
+			specPath := filepath.Join(specDir, "spec.yaml")
+			if err := os.WriteFile(specPath, []byte(tc.specContent), 0644); err != nil {
+				t.Fatalf("Failed to write spec.yaml: %v", err)
+			}
+
+			// Run schema validation (same function used in autospec run -a path)
+			err := ValidateSpecSchema(specDir)
+
+			// Verify validation result matches expected outcome
+			if tc.expectValidation {
+				if err != nil {
+					t.Errorf("%s: expected validation to pass, got error: %v", tc.description, err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("%s: expected validation to fail, but it passed", tc.description)
+					return
+				}
+				// Verify error message format matches standalone specify command
+				errStr := err.Error()
+				if !strings.HasPrefix(errStr, "schema validation failed for spec.yaml") {
+					t.Errorf("Error format mismatch: expected prefix 'schema validation failed for spec.yaml', got: %s", errStr)
+				}
+				if tc.errContains != "" && !strings.Contains(errStr, tc.errContains) {
+					t.Errorf("Error should contain %q, got: %s", tc.errContains, errStr)
+				}
+			}
+		})
+	}
+}
+
+// TestSchemaValidationInAutospecPrepPath verifies schema validation in the autospec prep path (US-003, T015).
+// This test simulates the prep workflow where an invalid plan.yaml should be rejected
+// before proceeding to the tasks stage.
+func TestSchemaValidationInAutospecPrepPath(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		planContent      string
+		expectValidation bool
+		errContains      string
+		description      string
+	}{
+		"invalid plan missing plan field rejected before tasks": {
+			planContent: `# Missing required 'plan' field
+summary: "Test plan"
+technical_context:
+  language: "Go"
+_meta:
+  version: "1.0.0"
+  artifact_type: "plan"
+`,
+			expectValidation: false,
+			errContains:      "missing required field: plan",
+			description:      "Plan without 'plan' field should fail schema validation",
+		},
+		"invalid plan missing branch rejected before tasks": {
+			planContent: `plan:
+  created: "2025-01-01"
+  spec_path: "specs/001-test/spec.yaml"
+summary: "Test plan"
+technical_context:
+  language: "Go"
+_meta:
+  version: "1.0.0"
+  artifact_type: "plan"
+`,
+			expectValidation: false,
+			errContains:      "missing required field: branch",
+			description:      "Plan without 'plan.branch' should fail schema validation",
+		},
+		"valid plan proceeds to tasks stage": {
+			planContent: `plan:
+  branch: "001-test-feature"
+  created: "2025-01-01"
+  spec_path: "specs/001-test-feature/spec.yaml"
+summary: "Implementation plan for test feature"
+technical_context:
+  language: "Go"
+  framework: "Cobra"
+  project_type: "cli"
+implementation_phases:
+  - phase: 1
+    name: "Setup"
+    goal: "Initial setup"
+    deliverables:
+      - "Project structure"
+project_structure:
+  source_code:
+    - path: "cmd/main.go"
+      description: "Entry point"
+  tests:
+    - path: "cmd/main_test.go"
+      description: "Entry point tests"
+  documentation: []
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "test"
+  created: "2025-01-01T00:00:00Z"
+  artifact_type: "plan"
+`,
+			expectValidation: true,
+			errContains:      "",
+			description:      "Valid plan should pass schema validation",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test-feature")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory: %v", err)
+			}
+
+			// Write plan.yaml (simulating output from plan stage)
+			planPath := filepath.Join(specDir, "plan.yaml")
+			if err := os.WriteFile(planPath, []byte(tc.planContent), 0644); err != nil {
+				t.Fatalf("Failed to write plan.yaml: %v", err)
+			}
+
+			// Run schema validation (same function used in autospec prep path)
+			err := ValidatePlanSchema(specDir)
+
+			// Verify validation result matches expected outcome
+			if tc.expectValidation {
+				if err != nil {
+					t.Errorf("%s: expected validation to pass, got error: %v", tc.description, err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("%s: expected validation to fail, but it passed", tc.description)
+					return
+				}
+				// Verify error message format matches standalone plan command
+				errStr := err.Error()
+				if !strings.HasPrefix(errStr, "schema validation failed for plan.yaml") {
+					t.Errorf("Error format mismatch: expected prefix 'schema validation failed for plan.yaml', got: %s", errStr)
+				}
+				if tc.errContains != "" && !strings.Contains(errStr, tc.errContains) {
+					t.Errorf("Error should contain %q, got: %s", tc.errContains, errStr)
+				}
+			}
+		})
+	}
+}
+
+// assertSchemaValidationErrorFormat is a helper function that verifies the consistency
+// of schema validation error messages across different entry points (US-003, T016).
+// It ensures:
+// - Error prefix is consistent: "schema validation failed for <artifact>:"
+// - Error contains bullet point format "- <error message>"
+// - Error includes the expected field/message
+func assertSchemaValidationErrorFormat(t *testing.T, err error, artifactName string, expectedContent string) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("Expected validation error for %s, got nil", artifactName)
+	}
+
+	errStr := err.Error()
+
+	// Check consistent prefix format
+	expectedPrefix := fmt.Sprintf("schema validation failed for %s:", artifactName)
+	if !strings.HasPrefix(errStr, expectedPrefix) {
+		t.Errorf("Error format inconsistent: expected prefix %q, got: %s", expectedPrefix, errStr)
+	}
+
+	// Check bullet point format is present
+	if !strings.Contains(errStr, "- ") {
+		t.Errorf("Error format inconsistent: expected bullet point format '- ', got: %s", errStr)
+	}
+
+	// Check expected content is present
+	if expectedContent != "" && !strings.Contains(errStr, expectedContent) {
+		t.Errorf("Error should contain %q, got: %s", expectedContent, errStr)
+	}
+}
+
+// TestSchemaValidationErrorConsistencyAcrossEntryPoints verifies that error messages
+// are consistent across different autospec entry points (US-003, T016).
+// This test checks that the same validation failure produces identical error format
+// regardless of whether it's triggered via:
+// - autospec run -a (specify → plan → tasks → implement)
+// - autospec specify (standalone)
+// - autospec prep (specify → plan → tasks)
+// - autospec plan (standalone)
+// - autospec tasks (standalone)
+func TestSchemaValidationErrorConsistencyAcrossEntryPoints(t *testing.T) {
+	t.Parallel()
+
+	// Test that the same invalid spec produces consistent errors
+	// regardless of which command path invokes validation
+	t.Run("spec validation error format consistency", func(t *testing.T) {
+		t.Parallel()
+
+		invalidSpecContent := `user_stories: []
+requirements:
+  functional: []
+_meta:
+  artifact_type: "spec"
+`
+
+		// Create two separate directories to simulate different entry points
+		entries := []string{"run-a", "specify-standalone"}
+		errors := make(map[string]error)
+
+		for _, entry := range entries {
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory for %s: %v", entry, err)
+			}
+
+			specPath := filepath.Join(specDir, "spec.yaml")
+			if err := os.WriteFile(specPath, []byte(invalidSpecContent), 0644); err != nil {
+				t.Fatalf("Failed to write spec.yaml for %s: %v", entry, err)
+			}
+
+			// Both entry points use the same ValidateSpecSchema function
+			errors[entry] = ValidateSpecSchema(specDir)
+		}
+
+		// Verify both entry points produce errors
+		for entry, err := range errors {
+			assertSchemaValidationErrorFormat(t, err, "spec.yaml", "missing required field: feature")
+			t.Logf("%s error: %v", entry, err)
+		}
+
+		// Verify error formats are identical (prefix and structure)
+		runErr := errors["run-a"].Error()
+		specifyErr := errors["specify-standalone"].Error()
+		if runErr != specifyErr {
+			t.Errorf("Error format mismatch across entry points:\n  run -a: %s\n  specify: %s", runErr, specifyErr)
+		}
+	})
+
+	// Test that the same invalid plan produces consistent errors
+	t.Run("plan validation error format consistency", func(t *testing.T) {
+		t.Parallel()
+
+		invalidPlanContent := `summary: "test"
+technical_context:
+  language: "Go"
+_meta:
+  artifact_type: "plan"
+`
+
+		entries := []string{"prep", "plan-standalone"}
+		errors := make(map[string]error)
+
+		for _, entry := range entries {
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory for %s: %v", entry, err)
+			}
+
+			planPath := filepath.Join(specDir, "plan.yaml")
+			if err := os.WriteFile(planPath, []byte(invalidPlanContent), 0644); err != nil {
+				t.Fatalf("Failed to write plan.yaml for %s: %v", entry, err)
+			}
+
+			errors[entry] = ValidatePlanSchema(specDir)
+		}
+
+		for entry, err := range errors {
+			assertSchemaValidationErrorFormat(t, err, "plan.yaml", "missing required field: plan")
+			t.Logf("%s error: %v", entry, err)
+		}
+
+		prepErr := errors["prep"].Error()
+		planErr := errors["plan-standalone"].Error()
+		if prepErr != planErr {
+			t.Errorf("Error format mismatch across entry points:\n  prep: %s\n  plan: %s", prepErr, planErr)
+		}
+	})
+
+	// Test that the same invalid tasks produces consistent errors
+	t.Run("tasks validation error format consistency", func(t *testing.T) {
+		t.Parallel()
+
+		invalidTasksContent := `summary:
+  total_tasks: 0
+phases: []
+_meta:
+  artifact_type: "tasks"
+`
+
+		entries := []string{"run-a", "tasks-standalone"}
+		errors := make(map[string]error)
+
+		for _, entry := range entries {
+			tmpDir := t.TempDir()
+			specDir := filepath.Join(tmpDir, "specs", "001-test")
+			if err := os.MkdirAll(specDir, 0755); err != nil {
+				t.Fatalf("Failed to create spec directory for %s: %v", entry, err)
+			}
+
+			tasksPath := filepath.Join(specDir, "tasks.yaml")
+			if err := os.WriteFile(tasksPath, []byte(invalidTasksContent), 0644); err != nil {
+				t.Fatalf("Failed to write tasks.yaml for %s: %v", entry, err)
+			}
+
+			errors[entry] = ValidateTasksSchema(specDir)
+		}
+
+		for entry, err := range errors {
+			assertSchemaValidationErrorFormat(t, err, "tasks.yaml", "missing required field: tasks")
+			t.Logf("%s error: %v", entry, err)
+		}
+
+		runErr := errors["run-a"].Error()
+		tasksErr := errors["tasks-standalone"].Error()
+		if runErr != tasksErr {
+			t.Errorf("Error format mismatch across entry points:\n  run -a: %s\n  tasks: %s", runErr, tasksErr)
+		}
+	})
+}

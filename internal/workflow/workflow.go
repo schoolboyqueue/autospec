@@ -262,11 +262,7 @@ func (w *WorkflowOrchestrator) executeSpecify(featureDescription string) (string
 		"", // Spec name not known yet
 		StageSpecify,
 		command,
-		func(specDir string) error {
-			// After specify, we need to detect the newly created spec
-			// For now, just check if any spec.md was created
-			return nil
-		},
+		ValidateSpecSchema,
 	)
 
 	if err != nil && !result.Exhausted {
@@ -301,7 +297,7 @@ func (w *WorkflowOrchestrator) executePlan(specName string, prompt string) error
 		specName,
 		StagePlan,
 		command,
-		w.Executor.ValidatePlan,
+		ValidatePlanSchema,
 	)
 
 	if err != nil {
@@ -331,7 +327,7 @@ func (w *WorkflowOrchestrator) executeTasks(specName string, prompt string) erro
 		specName,
 		StageTasks,
 		command,
-		w.Executor.ValidateTasks,
+		ValidateTasksSchema,
 	)
 
 	if err != nil {

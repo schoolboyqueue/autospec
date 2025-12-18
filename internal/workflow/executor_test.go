@@ -449,3 +449,208 @@ func TestDebugLog(t *testing.T) {
 		executor.debugLog("test message %s", "arg")
 	})
 }
+
+func TestFormatRetryContext(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		attemptNum       int
+		maxRetries       int
+		validationErrors []string
+		want             string
+	}{
+		"no errors": {
+			attemptNum:       2,
+			maxRetries:       3,
+			validationErrors: nil,
+			want:             "RETRY 2/3",
+		},
+		"empty errors slice": {
+			attemptNum:       1,
+			maxRetries:       3,
+			validationErrors: []string{},
+			want:             "RETRY 1/3",
+		},
+		"single error": {
+			attemptNum:       2,
+			maxRetries:       3,
+			validationErrors: []string{"missing required field: feature.branch"},
+			want:             "RETRY 2/3\nSchema validation failed:\n- missing required field: feature.branch",
+		},
+		"multiple errors": {
+			attemptNum:       1,
+			maxRetries:       5,
+			validationErrors: []string{"error one", "error two", "error three"},
+			want:             "RETRY 1/5\nSchema validation failed:\n- error one\n- error two\n- error three",
+		},
+		"exactly 10 errors": {
+			attemptNum: 2,
+			maxRetries: 3,
+			validationErrors: []string{
+				"error 1", "error 2", "error 3", "error 4", "error 5",
+				"error 6", "error 7", "error 8", "error 9", "error 10",
+			},
+			want: "RETRY 2/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10",
+		},
+		"more than 10 errors truncated": {
+			attemptNum: 3,
+			maxRetries: 3,
+			validationErrors: []string{
+				"error 1", "error 2", "error 3", "error 4", "error 5",
+				"error 6", "error 7", "error 8", "error 9", "error 10",
+				"error 11", "error 12",
+			},
+			want: "RETRY 3/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10\n...and 2 more errors",
+		},
+		"15 errors shows truncation": {
+			attemptNum: 1,
+			maxRetries: 5,
+			validationErrors: []string{
+				"e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10",
+				"e11", "e12", "e13", "e14", "e15",
+			},
+			want: "RETRY 1/5\nSchema validation failed:\n- e1\n- e2\n- e3\n- e4\n- e5\n- e6\n- e7\n- e8\n- e9\n- e10\n...and 5 more errors",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got := FormatRetryContext(tc.attemptNum, tc.maxRetries, tc.validationErrors)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestBuildRetryCommand(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		command      string
+		retryContext string
+		originalArgs string
+		want         string
+	}{
+		"no context no args": {
+			command:      "/autospec.plan",
+			retryContext: "",
+			originalArgs: "",
+			want:         "/autospec.plan",
+		},
+		"no context with args": {
+			command:      "/autospec.specify",
+			retryContext: "",
+			originalArgs: "add user auth",
+			want:         "/autospec.specify add user auth",
+		},
+		"context only no original args": {
+			command:      "/autospec.plan",
+			retryContext: "RETRY 2/3\nSchema validation failed:\n- missing field",
+			originalArgs: "",
+			want:         "/autospec.plan RETRY 2/3\nSchema validation failed:\n- missing field",
+		},
+		"context with original args": {
+			command:      "/autospec.specify",
+			retryContext: "RETRY 1/3\nSchema validation failed:\n- error",
+			originalArgs: "feature description",
+			want:         "/autospec.specify RETRY 1/3\nSchema validation failed:\n- error\n\nfeature description",
+		},
+		"multiline original args": {
+			command:      "/autospec.implement",
+			retryContext: "RETRY 2/3",
+			originalArgs: "--phase 1\n--verbose",
+			want:         "/autospec.implement RETRY 2/3\n\n--phase 1\n--verbose",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got := BuildRetryCommand(tc.command, tc.retryContext, tc.originalArgs)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestExtractValidationErrors(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		err  error
+		want []string
+	}{
+		"nil error": {
+			err:  nil,
+			want: nil,
+		},
+		"single line error no bullets": {
+			err:  errors.New("file not found"),
+			want: []string{"file not found"},
+		},
+		"standard validation error format": {
+			err:  errors.New("schema validation failed for spec.yaml:\n- missing required field: feature.branch\n- invalid enum value"),
+			want: []string{"missing required field: feature.branch", "invalid enum value"},
+		},
+		"multiple bullet errors": {
+			err:  errors.New("validation failed:\n- error one\n- error two\n- error three"),
+			want: []string{"error one", "error two", "error three"},
+		},
+		"mixed content with bullets": {
+			err:  errors.New("header line\n- bullet one\nregular line\n- bullet two"),
+			want: []string{"bullet one", "bullet two"},
+		},
+		"whitespace handling": {
+			err:  errors.New("  - trimmed error  \n  - another error  "),
+			want: []string{"trimmed error", "another error"},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got := ExtractValidationErrors(tc.err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestHandleValidationFailure_StoresValidationErrors(t *testing.T) {
+	t.Parallel()
+
+	stateDir := t.TempDir()
+
+	executor := &Executor{
+		Claude: &ClaudeExecutor{
+			ClaudeCmd:  "echo",
+			ClaudeArgs: []string{},
+		},
+		StateDir:   stateDir,
+		MaxRetries: 3,
+	}
+
+	result := &StageResult{
+		Stage:   StageSpecify,
+		Success: false,
+	}
+
+	retryState := &retry.RetryState{
+		SpecName:   "test-spec",
+		Phase:      "specify",
+		Count:      0,
+		MaxRetries: 3,
+	}
+
+	stageInfo := executor.buildStageInfo(StageSpecify, 0)
+
+	// Create a validation error in the expected format
+	validationErr := errors.New("schema validation failed for spec.yaml:\n- missing required field: feature.branch\n- invalid enum value: status")
+
+	// Call handleValidationFailure
+	_ = executor.handleValidationFailure(result, retryState, stageInfo, validationErr)
+
+	// Verify validation errors were extracted and stored
+	assert.NotNil(t, result.ValidationErrors)
+	assert.Len(t, result.ValidationErrors, 2)
+	assert.Contains(t, result.ValidationErrors, "missing required field: feature.branch")
+	assert.Contains(t, result.ValidationErrors, "invalid enum value: status")
+}

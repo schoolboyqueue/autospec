@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/lifecycle"
 	"github.com/ariel-frischer/autospec/internal/notify"
@@ -86,11 +87,12 @@ func (e *Executor) buildStageInfo(stage Stage, retryCount int) progress.StageInf
 
 // StageResult represents the result of executing a workflow stage
 type StageResult struct {
-	Stage      Stage
-	Success    bool
-	Error      error
-	RetryCount int
-	Exhausted  bool
+	Stage            Stage
+	Success          bool
+	Error            error
+	RetryCount       int
+	Exhausted        bool
+	ValidationErrors []string // Schema validation errors for retry context
 }
 
 // ExecuteStage executes a workflow stage with validation and retry logic.
@@ -194,9 +196,14 @@ func (e *Executor) handleExecutionFailure(result *StageResult, retryState *retry
 
 // handleValidationFailure handles validation failure without sending stage notification.
 // Stage notification is handled by lifecycle.RunStage wrapper.
+// It extracts validation errors and stores them in StageResult for retry context.
 func (e *Executor) handleValidationFailure(result *StageResult, retryState *retry.RetryState, stageInfo progress.StageInfo, err error) error {
 	e.debugLog("Validation failed: %v", err)
 	result.Error = fmt.Errorf("validation failed: %w", err)
+
+	// Extract and store validation errors for retry context
+	result.ValidationErrors = ExtractValidationErrors(err)
+	e.debugLog("Extracted %d validation errors for retry context", len(result.ValidationErrors))
 
 	if e.ProgressDisplay != nil {
 		e.ProgressDisplay.FailStage(stageInfo, result.Error)
@@ -317,4 +324,84 @@ func (e *Executor) ValidateTasksComplete(tasksPath string) error {
 	}
 
 	return nil
+}
+
+// maxRetryErrors is the maximum number of validation errors to include in retry context
+const maxRetryErrors = 10
+
+// FormatRetryContext creates a standardized retry context string from validation errors.
+// Format: 'RETRY X/Y\nSchema validation failed:\n- error1\n- error2'
+// If there are more than maxRetryErrors errors, the list is truncated with a summary.
+func FormatRetryContext(attemptNum, maxRetries int, validationErrors []string) string {
+	if len(validationErrors) == 0 {
+		return fmt.Sprintf("RETRY %d/%d", attemptNum, maxRetries)
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("RETRY %d/%d\n", attemptNum, maxRetries))
+	sb.WriteString("Schema validation failed:\n")
+
+	errorsToShow := validationErrors
+	remaining := 0
+	if len(validationErrors) > maxRetryErrors {
+		errorsToShow = validationErrors[:maxRetryErrors]
+		remaining = len(validationErrors) - maxRetryErrors
+	}
+
+	for _, err := range errorsToShow {
+		sb.WriteString(fmt.Sprintf("- %s\n", err))
+	}
+
+	if remaining > 0 {
+		sb.WriteString(fmt.Sprintf("...and %d more errors\n", remaining))
+	}
+
+	return strings.TrimSuffix(sb.String(), "\n")
+}
+
+// BuildRetryCommand creates a command string with retry context prepended to original arguments.
+// The retry context and original arguments are separated by a blank line.
+// If originalArgs is empty, the retry context becomes the sole content.
+func BuildRetryCommand(command string, retryContext string, originalArgs string) string {
+	if retryContext == "" {
+		if originalArgs != "" {
+			return fmt.Sprintf("%s %s", command, originalArgs)
+		}
+		return command
+	}
+
+	if originalArgs == "" {
+		return fmt.Sprintf("%s %s", command, retryContext)
+	}
+
+	// Separate retry context from original args with a blank line
+	combinedArgs := fmt.Sprintf("%s\n\n%s", retryContext, originalArgs)
+	return fmt.Sprintf("%s %s", command, combinedArgs)
+}
+
+// ExtractValidationErrors parses a validation error message and extracts individual error lines.
+// It handles the standard format: "schema validation failed for X:\n- error1\n- error2"
+func ExtractValidationErrors(err error) []string {
+	if err == nil {
+		return nil
+	}
+
+	errStr := err.Error()
+	lines := strings.Split(errStr, "\n")
+	var errors []string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Extract lines that start with "- " (error bullet points)
+		if strings.HasPrefix(line, "- ") {
+			errors = append(errors, strings.TrimPrefix(line, "- "))
+		}
+	}
+
+	// If no bullet points found, return the whole error as a single error
+	if len(errors) == 0 && errStr != "" {
+		return []string{errStr}
+	}
+
+	return errors
 }
