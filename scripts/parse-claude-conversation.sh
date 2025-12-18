@@ -88,18 +88,24 @@ cmd_files() {
         size=$(echo "$line" | awk '{print $5}')
         date=$(echo "$line" | awk '{print $6, $7, $8}')
 
-        # Try to detect autospec command
+        # Try to detect autospec command at START of conversation (first 100 lines)
+        # This distinguishes true autospec-triggered sessions from manual sessions
+        # that merely mention autospec commands
         local cmd_type="unknown"
-        if grep -q '/autospec\.implement' "$file" 2>/dev/null; then
+        local first_lines
+        first_lines=$(head -100 "$file" 2>/dev/null)
+        if echo "$first_lines" | grep -q '/autospec\.implement'; then
             cmd_type="implement"
-        elif grep -q '/autospec\.specify' "$file" 2>/dev/null; then
+        elif echo "$first_lines" | grep -q '/autospec\.specify'; then
             cmd_type="specify"
-        elif grep -q '/autospec\.plan' "$file" 2>/dev/null; then
+        elif echo "$first_lines" | grep -q '/autospec\.plan'; then
             cmd_type="plan"
-        elif grep -q '/autospec\.tasks' "$file" 2>/dev/null; then
+        elif echo "$first_lines" | grep -q '/autospec\.tasks'; then
             cmd_type="tasks"
-        elif grep -q '/autospec\.' "$file" 2>/dev/null; then
+        elif echo "$first_lines" | grep -q '/autospec\.'; then
             cmd_type="autospec"
+        elif echo "$first_lines" | grep -q 'prereqs --json'; then
+            cmd_type="autospec"  # Legacy prereqs-only detection
         fi
 
         local basename
@@ -135,11 +141,26 @@ cmd_info() {
     echo -e "  Lines: $(wc -l < "$file")"
     echo -e "  Modified: $(stat -c '%y' "$file" 2>/dev/null || stat -f '%Sm' "$file" 2>/dev/null)"
 
-    # Detect command type
+    # Detect command type - check if at START of conversation
     echo -e "\n${CYAN}Command Detection:${NC}"
-    local autospec_cmd
-    autospec_cmd=$(grep -o '/autospec\.[a-z]*' "$file" 2>/dev/null | head -1 || echo "none")
+    local first_lines autospec_cmd is_triggered
+    first_lines=$(head -100 "$file" 2>/dev/null)
+    autospec_cmd=$(echo "$first_lines" | grep -o '/autospec\.[a-z]*' | head -1 || echo "none")
+
+    # Check if this is a true autospec-triggered session
+    if echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
+        is_triggered="${GREEN}YES${NC} (command at conversation start)"
+    else
+        # Check if command appears later in file (manual session that mentions autospec)
+        if grep -q '/autospec\.' "$file" 2>/dev/null; then
+            is_triggered="${YELLOW}MAYBE${NC} (command found but not at start - likely manual session)"
+            autospec_cmd=$(grep -o '/autospec\.[a-z]*' "$file" 2>/dev/null | head -1 || echo "none")
+        else
+            is_triggered="${RED}NO${NC} (no autospec command found)"
+        fi
+    fi
     echo -e "  Autospec command: ${YELLOW}${autospec_cmd}${NC}"
+    echo -e "  Autospec-triggered: ${is_triggered}"
 
     # Count messages
     echo -e "\n${CYAN}Message Counts:${NC}"
@@ -318,8 +339,11 @@ cmd_unreviewed() {
         for file in "${project_dir}"/*.jsonl; do
             [[ -f "$file" ]] || continue
 
-            # Check if it's an autospec conversation
-            if ! grep -q '/autospec\.' "$file" 2>/dev/null; then
+            # Check if it's an autospec-TRIGGERED conversation (command at START)
+            # Only check first 100 lines to distinguish from manual sessions
+            local first_lines
+            first_lines=$(head -100 "$file" 2>/dev/null)
+            if ! echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
                 continue
             fi
 
@@ -337,13 +361,13 @@ cmd_unreviewed() {
             mod_date=$(stat -c '%y' "$file" 2>/dev/null | cut -d' ' -f1 || stat -f '%Sm' -t '%Y-%m-%d' "$file" 2>/dev/null)
 
             local cmd_type="autospec"
-            if grep -q '/autospec\.implement' "$file" 2>/dev/null; then
+            if echo "$first_lines" | grep -q '/autospec\.implement'; then
                 cmd_type="implement"
-            elif grep -q '/autospec\.specify' "$file" 2>/dev/null; then
+            elif echo "$first_lines" | grep -q '/autospec\.specify'; then
                 cmd_type="specify"
-            elif grep -q '/autospec\.plan' "$file" 2>/dev/null; then
+            elif echo "$first_lines" | grep -q '/autospec\.plan'; then
                 cmd_type="plan"
-            elif grep -q '/autospec\.tasks' "$file" 2>/dev/null; then
+            elif echo "$first_lines" | grep -q '/autospec\.tasks'; then
                 cmd_type="tasks"
             fi
 
@@ -388,7 +412,10 @@ cmd_status() {
     for project_dir in $projects; do
         for file in "${project_dir}"/*.jsonl; do
             [[ -f "$file" ]] || continue
-            if ! grep -q '/autospec\.' "$file" 2>/dev/null; then
+            # Only count autospec-TRIGGERED conversations (command at START)
+            local first_lines
+            first_lines=$(head -100 "$file" 2>/dev/null)
+            if ! echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
                 continue
             fi
             local basename

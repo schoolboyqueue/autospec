@@ -12,6 +12,33 @@ $ARGUMENTS
 
 Analyze **NEW, UNREVIEWED** Claude Code conversations to identify patterns, inefficiencies, and improvement opportunities for the autospec workflow.
 
+## CRITICAL: Only Analyze AUTOSPEC-TRIGGERED Conversations
+
+**What is an autospec-triggered conversation?**
+
+These are sessions **auto-started by the `autospec` CLI tool** - NOT manual Claude Code sessions. They have specific characteristics:
+
+### Identifying Markers (MUST have at least one):
+1. **Slash command at conversation START**: `/autospec.specify`, `/autospec.plan`, `/autospec.tasks`, `/autospec.implement`, etc.
+2. **`autospec prereqs` as first tool call**: The orchestrator runs `prereqs --json` before injecting the command
+3. **Phase context file read early**: `.autospec/context/phase-X.yaml` read near the start
+
+### NOT Autospec-Triggered (SKIP these):
+- Manual sessions where user typed questions/requests interactively
+- Sessions that mention `/autospec.*` in discussion but weren't started by it
+- Sessions with many back-and-forth user messages (autospec sessions have 0-1 user messages)
+- Sessions where the first tool call is NOT `prereqs` or reading a phase context file
+
+### Quick Detection:
+```bash
+# Check first 50 lines - autospec command should be at the START
+cclean -s plain <file> | head -50 | grep -E "(/autospec\.|prereqs --json)"
+
+# Autospec sessions typically have 0 user messages (fully automated)
+./scripts/parse-claude-conversation.sh info <file>
+# Look for "User messages: 0" or "User messages: 1"
+```
+
 ## CRITICAL: Only Analyze NEW Conversations
 
 **DO NOT re-analyze conversations already documented in observations.md.**
@@ -19,6 +46,7 @@ Analyze **NEW, UNREVIEWED** Claude Code conversations to identify patterns, inef
 1. Check `.dev/feedback/reviewed.txt` - these are ALREADY analyzed
 2. Only process conversations NOT in that file
 3. The helper script's `unreviewed` command filters automatically
+4. **Verify the session is truly autospec-triggered before analyzing**
 
 ## Context Files
 
