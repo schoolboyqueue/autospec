@@ -31,3 +31,9 @@ c2eaa70d -home-ari-repos-autospec 2025-12-17 tasks
 cff29d20 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
 d645bf41 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
 7223fd36 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
+ddaa1a1c -home-ari-repos-autospec 2025-12-17 implement
+df3b65d5 -home-ari-repos-autospec 2025-12-17 implement
+e776dce7 -home-ari-repos-autospec 2025-12-17 implement
+dc297cec -home-ari-repos-autospec 2025-12-17 specify
+938a4ac7 -home-ari-repos-autospec 2025-12-17 plan
+4a0a10c9 -home-ari-repos-autospec 2025-12-17 implement

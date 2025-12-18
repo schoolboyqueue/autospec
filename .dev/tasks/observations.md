@@ -930,3 +930,253 @@ After implementing improvements:
 - [ ] Add `_context_meta.phase_artifacts_bundled` flag
 - [ ] Update sandbox allowlist in CLAUDE.md recommendations
 - [ ] Consider implementing file-read tracking in TodoWrite schema
+
+---
+
+# Additional Analysis: autospec-block-task-reason December 17, 2025 Sessions
+
+**Analysis Date:** 2025-12-17
+**Project:** autospec-block-task-reason
+**Conversations Analyzed:** 6 implement/specify sessions
+**Focus:** Duplicate file reads and checklist directory patterns
+
+---
+
+## Per-Conversation Analysis
+
+### File: ddaa1a1c (implement - task_test.go changes)
+**Command:** `/autospec.implement`
+**Issues:**
+- `task_test.go` read 2 times (minor)
+- 11 checklists directory checks (unnecessary)
+- 17 sandbox restriction workarounds
+- Phase context read + 30 individual artifact reads (redundancy)
+
+**Severity:** Medium - moderate redundancy
+
+---
+
+### File: df3b65d5 (implement - tasks_yaml validation)
+**Command:** `/autospec.implement`
+**Issues:**
+- `tasks_yaml_test.go` read 2 times
+- `tasks_yaml.go` read 2 times
+- 15 checklists directory checks (unnecessary)
+- 7 sandbox restriction workarounds
+- Phase context read + 18 individual artifact reads (redundancy)
+
+**Severity:** Medium - moderate redundancy
+
+---
+
+### File: e776dce7 (implement - parse-claude-conversation.sh updates)
+**Command:** `/autospec.implement`
+**Issues:**
+- `parse-claude-conversation.sh` read **14 times** (SEVERE)
+- `feature-ideas.md` read 3 times
+- `reviewed.txt` read 2 times
+- 27 checklists directory checks (unnecessary)
+- `workflow_test.go` exceeds token limit
+- 4 Serena MCP issues
+- 8 sandbox restriction workarounds
+
+**Severity:** HIGH - 14 reads of same file is severe inefficiency
+
+---
+
+### File: dc297cec (specify - cli-test-coverage)
+**Command:** `/autospec.specify`
+**Issues:**
+- `preflight_test.go` read **18 times** (CRITICAL)
+- `prereq_integration_test.go` read **10 times** (SEVERE)
+- `workflow.go` read 4 times
+- `run.go` read 3 times
+- `implement_integration_test.go` read 3 times
+- 49 checklists directory checks (unnecessary)
+- 12 sandbox restriction workarounds
+
+**Severity:** CRITICAL - 18 reads of same file + 49 checklist checks
+
+---
+
+### File: 938a4ac7 (plan - schema validation)
+**Command:** `/autospec.plan`
+**Issues:**
+- `workflow.go` read **16 times** (CRITICAL)
+- `executor_test.go` read **9 times** (SEVERE)
+- `schema_validation.go` read **7 times**
+- `executor.go` read 4 times
+- `schema_validation_test.go` read 3 times
+- 10 checklists directory checks (unnecessary)
+- `troubleshooting.md` exceeds line count (960 > 950)
+- 2 Serena MCP issues
+- 46 sandbox restriction workarounds
+
+**Severity:** CRITICAL - multiple files read 7-16 times each
+
+---
+
+### File: 4a0a10c9 (implement - spec update)
+**Command:** `/autospec.implement`
+**Issues:**
+- `spec.yaml` read 6 times
+- `autospec.specify.md` read 5 times
+- 16 checklists directory checks (unnecessary)
+
+**Severity:** Medium - moderate redundancy
+
+---
+
+## Cross-Session Pattern Analysis (December 17 Batch)
+
+### Duplicate File Reads - Most Severe Cases
+
+| File | Reads | Session | Command |
+|------|-------|---------|---------|
+| `preflight_test.go` | 18 | dc297cec | specify |
+| `workflow.go` | 16 | 938a4ac7 | plan |
+| `parse-claude-conversation.sh` | 14 | e776dce7 | implement |
+| `prereq_integration_test.go` | 10 | dc297cec | specify |
+| `executor_test.go` | 9 | 938a4ac7 | plan |
+| `schema_validation.go` | 7 | 938a4ac7 | plan |
+
+### Checklists Directory Checks Summary
+
+| Session | Checklist Refs | Exists? |
+|---------|---------------|---------|
+| ddaa1a1c | 11 | No |
+| df3b65d5 | 15 | No |
+| e776dce7 | 27 | No |
+| dc297cec | 49 | No |
+| 938a4ac7 | 10 | No |
+| 4a0a10c9 | 16 | No |
+| **Total** | **128** | **Never** |
+
+128 checklist directory checks across 6 sessions, all for a directory that never exists.
+
+### Sandbox Workarounds
+
+| Session | Sandbox Issues |
+|---------|---------------|
+| ddaa1a1c | 17 |
+| df3b65d5 | 7 |
+| e776dce7 | 8 |
+| dc297cec | 12 |
+| 938a4ac7 | 46 |
+| 4a0a10c9 | 0 |
+| **Total** | **90** |
+
+---
+
+## Root Cause Analysis: Extreme File Re-Reading
+
+The pattern of reading the same file 10-18 times indicates:
+
+1. **No In-Context Memory Retention**: Claude appears to lose file content between tool calls
+2. **Verification Loop**: Pattern of read → edit → re-read → verify → re-read
+3. **Cross-Reference Re-Reads**: When referencing a file while working on another, re-reads it
+4. **Test Discovery Re-Reads**: When looking for test patterns, re-reads test files repeatedly
+5. **Grep → Read Cycle**: Greps file, then reads it fully, then greps again
+
+### Proposed Solutions
+
+1. **Template-Level File Tracking**:
+   ```markdown
+   ## File Memory Strategy
+
+   When you read a file, YOU ALREADY HAVE ITS CONTENTS IN CONTEXT.
+
+   DO NOT re-read files you have already read in this session UNLESS:
+   - You need to verify changes you just made (1 re-read allowed)
+   - External process may have modified it
+
+   Maximum reads per file: 2 (initial read + verification)
+   ```
+
+2. **Pre-Discovery Phase**:
+   Add to implement.md template:
+   ```markdown
+   ## Phase 0: Discovery (do once at start)
+
+   Read all files you will need for this task ONCE:
+   1. List files likely to be modified
+   2. Read each file once
+   3. Note relevant line numbers and patterns
+   4. DO NOT re-read these files during implementation
+   ```
+
+3. **Checklist Cache Flag**:
+   Add to `.autospec/config.yml`:
+   ```yaml
+   workflow:
+     has_checklists: false  # Skip checklist directory checks
+   ```
+
+---
+
+## Updated Priority Matrix
+
+| Issue | Severity | Sessions Affected | Est. Token Waste |
+|-------|----------|-------------------|------------------|
+| 10+ file re-reads | CRITICAL | 3/6 | 50K+ per session |
+| Phase context → artifact reads | HIGH | 6/6 | 15K per session |
+| Checklists checks | MEDIUM | 6/6 | 5K per session |
+| Sandbox workarounds | MEDIUM | 5/6 | 2K per session |
+| Serena MCP errors | LOW | 2/6 | 1K per session |
+
+---
+
+## Recommended Template Changes
+
+### 1. Add to implement.md (CRITICAL)
+
+```markdown
+## CRITICAL: File Reading Discipline
+
+### Rule: Read Once, Remember Forever
+
+When you read a file with the Read tool:
+- ✅ The content IS NOW in your context window
+- ✅ You can reference it without re-reading
+- ❌ DO NOT read the same file again unless you made changes and need to verify
+
+### Maximum File Read Counts
+
+| Scenario | Max Reads |
+|----------|-----------|
+| Understanding a file | 1 |
+| Editing a file | 2 (before + after) |
+| Referencing while editing another | 0 (you already have it) |
+| Debugging test failures | 2 |
+
+### Pre-Task File Discovery
+
+Before starting implementation:
+1. Identify ALL files you will need to read
+2. Read each file ONCE
+3. Note line numbers of relevant sections
+4. Proceed with implementation WITHOUT re-reading
+```
+
+### 2. Add to specify.md and plan.md
+
+```markdown
+## Context Efficiency
+
+When analyzing the codebase:
+- Use Grep to locate patterns BEFORE reading entire files
+- Read only the sections you need (use offset/limit for large files)
+- Once you've read a file, DO NOT read it again in this session
+- Track which files you've read mentally - they are in your context
+```
+
+---
+
+## Action Items (Updated)
+
+- [ ] **CRITICAL**: Add "Read Once, Remember Forever" section to implement.md
+- [ ] **CRITICAL**: Add file read discipline to specify.md and plan.md
+- [ ] **HIGH**: Add `has_checklists: false` to project config
+- [ ] **HIGH**: Pre-approve Go sandbox commands in CLAUDE.md
+- [ ] **MEDIUM**: Add `max_file_reads: 2` guidance to templates
+- [ ] **LOW**: Consider session-level file read tracking tool
