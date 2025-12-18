@@ -13,7 +13,11 @@ import (
 // These tests verify that task status updates work correctly without modifying
 // the actual repository's tasks.yaml file.
 func TestTaskStatusUpdates_Integration(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() here or in subtests below.
+	// GitIsolation changes the working directory which causes race conditions
+	// when running in parallel. Each subtest captures origDir on setup, but
+	// parallel execution can cause one test's temp dir to be captured as
+	// another test's origDir, leading to cleanup failures.
 
 	tests := map[string]struct {
 		initialStatus  string
@@ -49,7 +53,7 @@ func TestTaskStatusUpdates_Integration(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// NOTE: Do NOT add t.Parallel() - see comment at top of test function.
 
 			// Create isolated git repo
 			gi := testutil.NewGitIsolation(t)
@@ -102,7 +106,8 @@ func TestTaskStatusUpdates_Integration(t *testing.T) {
 // TestTaskStatusUpdates_IsolatedModifications tests that tasks.yaml modifications
 // in temp directory don't affect the original repository.
 func TestTaskStatusUpdates_IsolatedModifications(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() - GitIsolation changes the working
+	// directory which causes race conditions with parallel tests.
 
 	// Store original working directory
 	origDir, err := os.Getwd()
@@ -153,7 +158,9 @@ func TestTaskStatusUpdates_IsolatedModifications(t *testing.T) {
 
 // TestTaskValidation_InIsolation tests task validation functions in isolated environment.
 func TestTaskValidation_InIsolation(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() here or in subtests below.
+	// GitIsolation changes the working directory which causes race conditions
+	// when running in parallel.
 
 	tests := map[string]struct {
 		tasksContent string
@@ -200,7 +207,7 @@ func TestTaskValidation_InIsolation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// NOTE: Do NOT add t.Parallel() - see comment at top of test function.
 
 			gi := testutil.NewGitIsolation(t)
 			specDir := gi.SetupSpecsDir("validation-test")
@@ -230,7 +237,9 @@ func TestTaskValidation_InIsolation(t *testing.T) {
 
 // TestTaskDependencies_InIsolation tests task dependency validation in isolated environment.
 func TestTaskDependencies_InIsolation(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() here or in subtests below.
+	// GitIsolation changes the working directory which causes race conditions
+	// when running in parallel.
 
 	tests := map[string]struct {
 		tasksContent string
@@ -262,7 +271,7 @@ func TestTaskDependencies_InIsolation(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// NOTE: Do NOT add t.Parallel() - see comment at top of test function.
 
 			gi := testutil.NewGitIsolation(t)
 			specDir := gi.SetupSpecsDir("deps-test")

@@ -243,6 +243,7 @@ phases:
         parallel: false
         file_path: "internal/auth/"
         dependencies: []
+        notes: ""  # optional free-form notes (max 1000 chars)
 
 dependencies:
   phase_order:

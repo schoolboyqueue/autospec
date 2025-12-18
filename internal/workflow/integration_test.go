@@ -14,7 +14,11 @@ import (
 // TestWorkflowOrchestrator_Integration tests workflow orchestration using mock infrastructure.
 // These tests verify the workflow behavior without making real Claude CLI calls.
 func TestWorkflowOrchestrator_Integration(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() here or in subtests below.
+	// GitIsolation changes the working directory which causes race conditions
+	// when running in parallel. Each subtest captures origDir on setup, but
+	// parallel execution can cause one test's temp dir to be captured as
+	// another test's origDir, leading to cleanup failures.
 
 	tests := map[string]struct {
 		setupMock   func(*testing.T, *testutil.MockExecutorBuilder, string)
@@ -139,7 +143,7 @@ func TestWorkflowOrchestrator_Integration(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+			// NOTE: Do NOT add t.Parallel() - see comment at top of test function.
 
 			// Create isolated git repo
 			gi := testutil.NewGitIsolation(t)
@@ -395,7 +399,8 @@ func TestMockExecutor_CallLogVerification(t *testing.T) {
 
 // TestGitIsolation_NoBranchPollution tests that git isolation prevents branch pollution.
 func TestGitIsolation_NoBranchPollution(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() - GitIsolation changes the working
+	// directory which causes race conditions with parallel tests.
 
 	// Create isolation
 	gi := testutil.NewGitIsolation(t)
@@ -431,7 +436,8 @@ func TestGitIsolation_NoBranchPollution(t *testing.T) {
 
 // TestGitIsolation_FileOperations tests file operations in isolated repo.
 func TestGitIsolation_FileOperations(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() - GitIsolation changes the working
+	// directory which causes race conditions with parallel tests.
 
 	gi := testutil.NewGitIsolation(t)
 
@@ -466,7 +472,8 @@ func TestGitIsolation_FileOperations(t *testing.T) {
 
 // TestMockExecutor_ArtifactGeneration tests that mock can generate artifacts.
 func TestMockExecutor_ArtifactGeneration(t *testing.T) {
-	t.Parallel()
+	// NOTE: Do NOT add t.Parallel() - GitIsolation changes the working
+	// directory which causes race conditions with parallel tests.
 
 	gi := testutil.NewGitIsolation(t)
 	specsDir := gi.SetupSpecsDir("test-feature")
