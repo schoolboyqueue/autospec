@@ -7,12 +7,13 @@ Guidance for Claude Code when working with this repository.
 ```bash
 # Build & Dev
 make build          # Build for current platform
-make test           # Run all tests
+make test           # Run all tests (quiet, shows failures only)
+make test-v         # Run all tests (verbose, for debugging)
 make fmt            # Format Go code (run before committing)
 make lint           # Run all linters
 
 # Single test
-go test -v -run TestName ./internal/package/
+go test -run TestName ./internal/package/
 
 # CLI usage (run `autospec --help` for full reference)
 autospec run -a "feature description"    # All stages: specify → plan → tasks → implement
