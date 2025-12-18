@@ -5359,6 +5359,7 @@ func TestExecuteTaskLoop_Integration(t *testing.T) {
 		})
 	}
 }
+
 // TestSchemaValidationIntegration tests that schema validators are properly wired into workflow
 // These tests verify FR-006: executePlan(), executeTasks(), and executeSpecify() pass schema validator functions to ExecuteStage()
 func TestSchemaValidationIntegration(t *testing.T) {

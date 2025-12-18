@@ -411,9 +411,9 @@ requirements:
 
 	// Call with various invalid paths - should all succeed because detector ignores them
 	testPaths := []string{
-		"",                                  // Empty (the bug case)
-		"/nonexistent/path",                 // Nonexistent path
-		filepath.Join(specsDir, ""),         // specsDir with empty suffix
+		"",                                    // Empty (the bug case)
+		"/nonexistent/path",                   // Nonexistent path
+		filepath.Join(specsDir, ""),           // specsDir with empty suffix
 		filepath.Join(specsDir, "wrong-spec"), // Wrong spec name
 	}
 

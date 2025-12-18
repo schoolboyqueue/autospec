@@ -15,7 +15,7 @@ phases:
       tasks:
         - id: "T001"
           title: "Verify existing plan.yaml testdata and validation infrastructure"
-          status: "InProgress"
+          status: "Completed"
           type: "setup"
           parallel: false
           story_id: null
@@ -31,7 +31,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Add ValidationWarning type to internal/validation/validation.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -42,7 +42,7 @@ phases:
             - "Type is exported and documented"
         - id: "T003"
           title: "Add Warnings field and AddWarning method to ValidationResult"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -60,7 +60,7 @@ phases:
       tasks:
         - id: "T004"
           title: "Update PlanSchema risks Children in internal/validation/schema.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -72,7 +72,7 @@ phases:
             - "likelihood and impact have ValidValues: low, medium, high"
         - id: "T005"
           title: "Add validateRisks method to PlanValidator in internal/validation/artifact_plan.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -86,7 +86,7 @@ phases:
             - "Called from Validate method when risks section exists"
         - id: "T006"
           title: "Add test fixtures for risk validation in internal/validation/testdata/plan/"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -100,7 +100,7 @@ phases:
             - "risks_empty_array.yaml with empty risks array"
         - id: "T007"
           title: "Add unit tests for risk validation in internal/validation/artifact_plan_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -122,7 +122,7 @@ phases:
       tasks:
         - id: "T008"
           title: "Add high-impact risk warning logic to validateRisks in internal/validation/artifact_plan.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -135,7 +135,7 @@ phases:
             - "No warning for medium/low impact risks without mitigation"
         - id: "T009"
           title: "Update artifact command to display warnings in output"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -147,7 +147,7 @@ phases:
             - "Warnings do not cause non-zero exit code"
         - id: "T010"
           title: "Add test fixtures and tests for warning emission"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -167,7 +167,7 @@ phases:
       tasks:
         - id: "T011"
           title: "Add risk parsing to status command in internal/cli/status.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -180,7 +180,7 @@ phases:
             - "Handle missing plan.yaml gracefully"
         - id: "T012"
           title: "Display risk summary in status output"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -193,7 +193,7 @@ phases:
             - "Risks section only shown when plan.yaml exists"
         - id: "T013"
           title: "Add tests for status command risk display in internal/cli/status_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -210,7 +210,7 @@ phases:
       tasks:
         - id: "T014"
           title: "Run quality gates: make test, make fmt, make lint, make build"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null

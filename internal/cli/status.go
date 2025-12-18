@@ -72,6 +72,13 @@ var statusCmd = &cobra.Command{
 			fmt.Print(validation.FormatTaskSummary(stats))
 		}
 
+		// Get risk stats from plan.yaml (if plan.yaml exists)
+		planPath := validation.GetPlanFilePath(metadata.Directory)
+		riskStats, _ := validation.GetRiskStats(planPath)
+		if riskStats != nil {
+			fmt.Print(validation.FormatRiskSummary(riskStats))
+		}
+
 		// Display blocked tasks with reasons
 		if err == nil && stats != nil && stats.BlockedTasks > 0 {
 			displayBlockedTasks(tasksPath)
