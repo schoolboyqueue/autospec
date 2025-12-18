@@ -16,11 +16,12 @@ import (
 
 // WorkflowOrchestrator manages the complete specify → plan → tasks workflow
 type WorkflowOrchestrator struct {
-	Executor      *Executor
-	Config        *config.Configuration
-	SpecsDir      string
-	SkipPreflight bool
-	Debug         bool // Enable debug logging
+	Executor         *Executor
+	Config           *config.Configuration
+	SpecsDir         string
+	SkipPreflight    bool
+	Debug            bool             // Enable debug logging
+	PreflightChecker PreflightChecker // Optional: injectable for testing (nil uses default)
 }
 
 // debugLog prints a debug message if debug mode is enabled
@@ -214,11 +215,15 @@ func (w *WorkflowOrchestrator) printFullWorkflowSummary(specName string) {
 	w.debugLog("RunFullWorkflow exiting normally")
 }
 
-// runPreflightChecks runs pre-flight validation and handles user interaction
+// runPreflightChecks runs pre-flight validation and handles user interaction.
+// Uses the injected PreflightChecker if present, otherwise uses the default implementation.
 func (w *WorkflowOrchestrator) runPreflightChecks() error {
 	fmt.Println("Running pre-flight checks...")
 
-	result, err := RunPreflightChecks()
+	// Use injected checker or default
+	checker := w.getPreflightChecker()
+
+	result, err := checker.RunChecks()
 	if err != nil {
 		return fmt.Errorf("pre-flight checks failed: %w", err)
 	}
@@ -232,7 +237,7 @@ func (w *WorkflowOrchestrator) runPreflightChecks() error {
 
 		if result.WarningMessage != "" {
 			// Prompt user to continue
-			shouldContinue, err := PromptUserToContinue(result.WarningMessage)
+			shouldContinue, err := checker.PromptUser(result.WarningMessage)
 			if err != nil {
 				return fmt.Errorf("prompting user to continue: %w", err)
 			}
@@ -252,6 +257,15 @@ func (w *WorkflowOrchestrator) runPreflightChecks() error {
 
 	fmt.Println()
 	return nil
+}
+
+// getPreflightChecker returns the injected PreflightChecker or a default one.
+// This ensures nil-safety: existing code works unchanged with nil checker.
+func (w *WorkflowOrchestrator) getPreflightChecker() PreflightChecker {
+	if w.PreflightChecker != nil {
+		return w.PreflightChecker
+	}
+	return NewDefaultPreflightChecker()
 }
 
 // executeSpecify executes the /autospec.specify command and returns the spec name

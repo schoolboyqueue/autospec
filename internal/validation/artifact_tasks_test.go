@@ -260,6 +260,32 @@ func TestTasksValidator_InvalidDepCircular(t *testing.T) {
 	}
 }
 
+func TestTasksValidator_InvalidNotesTooLong(t *testing.T) {
+	validator := &TasksValidator{}
+	result := validator.Validate(filepath.Join("testdata", "tasks", "invalid_notes_too_long.yaml"))
+
+	if result.Valid {
+		t.Error("expected validation to fail for notes too long")
+	}
+
+	found := false
+	for _, err := range result.Errors {
+		if strings.Contains(err.Message, "notes too long") {
+			found = true
+			if !strings.Contains(err.Message, "max 1000") {
+				t.Error("expected error to mention max 1000 characters")
+			}
+			break
+		}
+	}
+	if !found {
+		t.Error("expected error about notes too long")
+		for _, err := range result.Errors {
+			t.Logf("  - %s", err.Error())
+		}
+	}
+}
+
 func TestTasksValidator_NonexistentFile(t *testing.T) {
 	validator := &TasksValidator{}
 	result := validator.Validate(filepath.Join("testdata", "tasks", "nonexistent.yaml"))

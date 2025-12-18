@@ -6,6 +6,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// MaxTaskNotesLength is the maximum allowed length for task notes.
+const MaxTaskNotesLength = 1000
+
 // TasksValidator validates tasks.yaml artifacts.
 type TasksValidator struct {
 	baseValidator
@@ -227,6 +230,27 @@ func (v *TasksValidator) validateTask(node *yaml.Node, path string, result *Vali
 
 	// Validate blocked_reason for blocked tasks
 	v.validateBlockedReason(node, path, statusNode, result)
+
+	// notes should be a string with max length if present
+	notesNode := findNode(node, "notes")
+	if notesNode != nil {
+		if notesNode.Kind != yaml.ScalarNode {
+			result.AddError(&ValidationError{
+				Path:     path + ".notes",
+				Line:     getNodeLine(notesNode),
+				Message:  fmt.Sprintf("wrong type for '%s.notes'", path),
+				Expected: "string",
+				Actual:   nodeKindToString(notesNode.Kind),
+			})
+		} else if len(notesNode.Value) > MaxTaskNotesLength {
+			result.AddError(&ValidationError{
+				Path:    path + ".notes",
+				Line:    getNodeLine(notesNode),
+				Message: fmt.Sprintf("notes too long: %d characters (max %d)", len(notesNode.Value), MaxTaskNotesLength),
+				Hint:    "Shorten the notes to be more concise",
+			})
+		}
+	}
 }
 
 // validateBlockedReason checks that blocked tasks have a reason.
