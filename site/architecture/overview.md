@@ -452,3 +452,11 @@ Areas designed for future extension:
 3. **Alternative Executors**: Implement ClaudeExecutor interface for new backends
 4. **Custom Health Checks**: Extend health check framework
 5. **Progress Reporters**: Implement alternative progress display formats
+
+---
+
+## Next Steps
+
+- [Internals Guide](internals) - Deep dive into spec detection, validation, and retry systems
+- [CLI Reference](/autospec/reference/cli) - Complete command documentation
+- [YAML Schemas](/autospec/reference/yaml-schemas) - Artifact structure and validation

@@ -281,7 +281,7 @@ phases:
             - "grep for 'site/' in embed directives returns empty"
         - id: "T019"
           title: "Add cross-page navigation and internal links"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -294,7 +294,7 @@ phases:
             - "Consistent navigation experience across all pages"
         - id: "T020"
           title: "Verify responsive design on mobile viewports"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -307,7 +307,7 @@ phases:
             - "Touch-friendly navigation elements"
         - id: "T021"
           title: "Run quality gates and final verification"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
