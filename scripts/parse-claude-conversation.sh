@@ -90,19 +90,19 @@ cmd_files() {
 
         # Try to detect autospec command at START of conversation (first 100 lines)
         # This distinguishes true autospec-triggered sessions from manual sessions
-        # that merely mention autospec commands
+        # Note: autospec-triggered sessions have <command-name>/autospec.X</command-name> format
         local cmd_type="unknown"
         local first_lines
         first_lines=$(head -100 "$file" 2>/dev/null)
-        if echo "$first_lines" | grep -q '/autospec\.implement'; then
+        if echo "$first_lines" | grep -q '<command-name>/autospec\.implement'; then
             cmd_type="implement"
-        elif echo "$first_lines" | grep -q '/autospec\.specify'; then
+        elif echo "$first_lines" | grep -q '<command-name>/autospec\.specify'; then
             cmd_type="specify"
-        elif echo "$first_lines" | grep -q '/autospec\.plan'; then
+        elif echo "$first_lines" | grep -q '<command-name>/autospec\.plan'; then
             cmd_type="plan"
-        elif echo "$first_lines" | grep -q '/autospec\.tasks'; then
+        elif echo "$first_lines" | grep -q '<command-name>/autospec\.tasks'; then
             cmd_type="tasks"
-        elif echo "$first_lines" | grep -q '/autospec\.'; then
+        elif echo "$first_lines" | grep -q '<command-name>/autospec\.'; then
             cmd_type="autospec"
         elif echo "$first_lines" | grep -q 'prereqs --json'; then
             cmd_type="autospec"  # Legacy prereqs-only detection
@@ -143,12 +143,14 @@ cmd_info() {
 
     # Detect command type - check if at START of conversation
     echo -e "\n${CYAN}Command Detection:${NC}"
-    local first_lines autospec_cmd is_triggered
-    first_lines=$(head -100 "$file" 2>/dev/null)
-    autospec_cmd=$(echo "$first_lines" | grep -o '/autospec\.[a-z]*' | head -1 || echo "none")
+    local autospec_cmd is_triggered
+    local first_lines
+    first_lines="$(head -100 "$file" 2>/dev/null)"
+    autospec_cmd="$(echo "$first_lines" | grep -o '/autospec\.[a-z]*' | head -1)" || autospec_cmd="none"
 
     # Check if this is a true autospec-triggered session
-    if echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
+    # Note: autospec-triggered sessions have <command-name>/autospec.X</command-name> format
+    if echo "$first_lines" | grep -qE '(<command-name>/autospec\.|prereqs --json)'; then
         is_triggered="${GREEN}YES${NC} (command at conversation start)"
     else
         # Check if command appears later in file (manual session that mentions autospec)
@@ -341,9 +343,10 @@ cmd_unreviewed() {
 
             # Check if it's an autospec-TRIGGERED conversation (command at START)
             # Only check first 100 lines to distinguish from manual sessions
+            # Note: autospec-triggered sessions have <command-name>/autospec.X</command-name> format
             local first_lines
             first_lines=$(head -100 "$file" 2>/dev/null)
-            if ! echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
+            if ! echo "$first_lines" | grep -qE '(<command-name>/autospec\.|prereqs --json)'; then
                 continue
             fi
 
@@ -361,14 +364,16 @@ cmd_unreviewed() {
             mod_date=$(stat -c '%y' "$file" 2>/dev/null | cut -d' ' -f1 || stat -f '%Sm' -t '%Y-%m-%d' "$file" 2>/dev/null)
 
             local cmd_type="autospec"
-            if echo "$first_lines" | grep -q '/autospec\.implement'; then
+            if echo "$first_lines" | grep -q '<command-name>/autospec\.implement'; then
                 cmd_type="implement"
-            elif echo "$first_lines" | grep -q '/autospec\.specify'; then
+            elif echo "$first_lines" | grep -q '<command-name>/autospec\.specify'; then
                 cmd_type="specify"
-            elif echo "$first_lines" | grep -q '/autospec\.plan'; then
+            elif echo "$first_lines" | grep -q '<command-name>/autospec\.plan'; then
                 cmd_type="plan"
-            elif echo "$first_lines" | grep -q '/autospec\.tasks'; then
+            elif echo "$first_lines" | grep -q '<command-name>/autospec\.tasks'; then
                 cmd_type="tasks"
+            elif echo "$first_lines" | grep -q '<command-name>/autospec\.'; then
+                cmd_type="autospec"
             fi
 
             echo -e "  ${GREEN}${short_id}${NC} ${mod_date} ${YELLOW}${cmd_type}${NC} ${BLUE}${project_name}${NC}"
@@ -413,9 +418,10 @@ cmd_status() {
         for file in "${project_dir}"/*.jsonl; do
             [[ -f "$file" ]] || continue
             # Only count autospec-TRIGGERED conversations (command at START)
+            # Note: autospec-triggered sessions have <command-name>/autospec.X</command-name> format
             local first_lines
             first_lines=$(head -100 "$file" 2>/dev/null)
-            if ! echo "$first_lines" | grep -qE '(/autospec\.|prereqs --json)'; then
+            if ! echo "$first_lines" | grep -qE '(<command-name>/autospec\.|prereqs --json)'; then
                 continue
             fi
             local basename
