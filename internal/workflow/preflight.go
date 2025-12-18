@@ -463,9 +463,10 @@ func generateConstitutionMissingError() string {
 
 // PrerequisiteValidationResult contains the result of prerequisite validation for a stage.
 type PrerequisiteValidationResult struct {
-	Valid            bool     // Whether all prerequisites are satisfied
-	MissingArtifacts []string // List of missing artifact file names
-	ErrorMessage     string   // User-friendly error with remediation suggestions
+	Valid            bool              // Whether all prerequisites are satisfied
+	MissingArtifacts []string          // List of missing artifact file names
+	InvalidArtifacts map[string]string // Map of artifact -> validation error message
+	ErrorMessage     string            // User-friendly error with remediation suggestions
 }
 
 // ValidateStagePrerequisites validates that all required artifacts exist for a stage.
@@ -475,23 +476,30 @@ func ValidateStagePrerequisites(stage Stage, specDir string) *PrerequisiteValida
 	result := &PrerequisiteValidationResult{
 		Valid:            true,
 		MissingArtifacts: make([]string, 0),
+		InvalidArtifacts: make(map[string]string),
 	}
 
 	// Get required artifacts for this specific stage
 	requiredArtifacts := GetRequiredArtifacts(stage)
 
-	// Check each required artifact exists
+	// Check each required artifact exists and has valid schema
 	for _, artifact := range requiredArtifacts {
 		artifactPath := filepath.Join(specDir, artifact)
 		if _, err := os.Stat(artifactPath); os.IsNotExist(err) {
 			result.MissingArtifacts = append(result.MissingArtifacts, artifact)
+			continue
+		}
+
+		// Validate schema for existing artifacts
+		if validationErr := validateArtifactSchema(artifact, specDir); validationErr != nil {
+			result.InvalidArtifacts[artifact] = validationErr.Error()
 		}
 	}
 
-	// Generate error message if any artifacts are missing
-	if len(result.MissingArtifacts) > 0 {
+	// Generate error message if any artifacts are missing or invalid
+	if len(result.MissingArtifacts) > 0 || len(result.InvalidArtifacts) > 0 {
 		result.Valid = false
-		result.ErrorMessage = GenerateArtifactMissingError(result.MissingArtifacts)
+		result.ErrorMessage = GenerateArtifactValidationError(result.MissingArtifacts, result.InvalidArtifacts)
 	}
 
 	return result
@@ -515,6 +523,43 @@ func GenerateArtifactMissingError(missingArtifacts []string) string {
 		for _, artifact := range missingArtifacts {
 			sb.WriteString(fmt.Sprintf("  %s\n", GetRemediationCommand(artifact)))
 		}
+	}
+
+	return sb.String()
+}
+
+// GenerateArtifactValidationError creates a user-friendly error message for missing and invalid artifacts.
+func GenerateArtifactValidationError(missingArtifacts []string, invalidArtifacts map[string]string) string {
+	var sb strings.Builder
+
+	// Handle missing artifacts
+	if len(missingArtifacts) > 0 {
+		if len(missingArtifacts) == 1 {
+			artifact := missingArtifacts[0]
+			sb.WriteString(fmt.Sprintf("\nError: %s not found.\n\n", artifact))
+			sb.WriteString(fmt.Sprintf("Run '%s' first to create this file.\n", GetRemediationCommand(artifact)))
+		} else {
+			sb.WriteString("\nError: Missing required artifacts:\n")
+			for _, artifact := range missingArtifacts {
+				sb.WriteString(fmt.Sprintf("  - %s\n", artifact))
+			}
+			sb.WriteString("\nRun the following commands to create them:\n")
+			for _, artifact := range missingArtifacts {
+				sb.WriteString(fmt.Sprintf("  %s\n", GetRemediationCommand(artifact)))
+			}
+		}
+	}
+
+	// Handle invalid artifacts
+	if len(invalidArtifacts) > 0 {
+		if len(missingArtifacts) > 0 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\nError: Invalid artifact schema:\n")
+		for artifact, errMsg := range invalidArtifacts {
+			sb.WriteString(fmt.Sprintf("  - %s: %s\n", artifact, errMsg))
+		}
+		sb.WriteString("\nFix the schema errors or regenerate the artifact.\n")
 	}
 
 	return sb.String()

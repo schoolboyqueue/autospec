@@ -16,33 +16,20 @@ func TestImplementCommandPrerequisiteValidation(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		setupFunc   func(specDir string)
+		setupFunc   func(t *testing.T, specDir string)
 		wantValid   bool
 		wantMissing string
 	}{
 		"missing tasks.yaml fails validation": {
-			setupFunc: func(specDir string) {
+			setupFunc: func(_ *testing.T, specDir string) {
 				// Just create directory, no tasks.yaml
 			},
 			wantValid:   false,
 			wantMissing: "tasks.yaml",
 		},
 		"with tasks.yaml passes validation": {
-			setupFunc: func(specDir string) {
-				tasksContent := `_meta:
-  version: "1.0"
-phases:
-  - number: 1
-    title: Test Phase
-    tasks:
-      - id: T001
-        title: Test Task
-        status: Pending
-`
-				err := os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte(tasksContent), 0644)
-				if err != nil {
-					panic(err)
-				}
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidWorkflowTestdata(t, "tasks.yaml", specDir)
 			},
 			wantValid:   true,
 			wantMissing: "",
@@ -54,7 +41,7 @@ phases:
 			t.Parallel()
 
 			specDir := t.TempDir()
-			tc.setupFunc(specDir)
+			tc.setupFunc(t, specDir)
 
 			// Use ValidateStagePrerequisites which is what implement command uses
 			result := workflow.ValidateStagePrerequisites(workflow.StageImplement, specDir)
@@ -219,19 +206,8 @@ func TestImplementIntegrationWithMockClaude(t *testing.T) {
 	specDir := filepath.Join(specsDir, "001-test")
 	require.NoError(t, os.MkdirAll(specDir, 0755))
 
-	// Create tasks.yaml
-	tasksContent := `_meta:
-  version: "1.0"
-phases:
-  - number: 1
-    title: Test Phase
-    tasks:
-      - id: T001
-        title: Test Task
-        status: Pending
-        type: implementation
-`
-	require.NoError(t, os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte(tasksContent), 0644))
+	// Create valid tasks.yaml from testdata
+	copyValidWorkflowTestdata(t, "tasks.yaml", specDir)
 
 	// Verify tasks.yaml was created
 	_, err := os.Stat(filepath.Join(specDir, "tasks.yaml"))

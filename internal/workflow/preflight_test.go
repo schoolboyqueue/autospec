@@ -407,13 +407,13 @@ func TestValidateStagePrerequisites(t *testing.T) {
 
 	tests := map[string]struct {
 		stage       Stage
-		setupFunc   func(specDir string) func()
+		setupFunc   func(t *testing.T, specDir string) func()
 		wantValid   bool
 		wantMissing []string
 	}{
 		"specify stage - no prerequisites required": {
 			stage: StageSpecify,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -422,9 +422,9 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"plan stage - spec.yaml exists": {
 			stage: StagePlan,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/spec.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "spec.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -432,7 +432,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"plan stage - spec.yaml missing": {
 			stage: StagePlan,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -441,9 +441,9 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"tasks stage - plan.yaml exists": {
 			stage: StageTasks,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/plan.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "plan.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -451,7 +451,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"tasks stage - plan.yaml missing": {
 			stage: StageTasks,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -460,9 +460,9 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"implement stage - tasks.yaml exists": {
 			stage: StageImplement,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/tasks.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "tasks.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -470,7 +470,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"implement stage - tasks.yaml missing": {
 			stage: StageImplement,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -479,9 +479,9 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"clarify stage - spec.yaml exists": {
 			stage: StageClarify,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/spec.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "spec.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -489,7 +489,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"clarify stage - spec.yaml missing": {
 			stage: StageClarify,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -498,9 +498,9 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"checklist stage - spec.yaml exists": {
 			stage: StageChecklist,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/spec.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "spec.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -508,7 +508,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"checklist stage - spec.yaml missing": {
 			stage: StageChecklist,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -517,11 +517,11 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"analyze stage - all artifacts exist": {
 			stage: StageAnalyze,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/spec.yaml", []byte("test"), 0644)
-				os.WriteFile(specDir+"/plan.yaml", []byte("test"), 0644)
-				os.WriteFile(specDir+"/tasks.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "spec.yaml", specDir)
+				copyValidTestdata(t, "plan.yaml", specDir)
+				copyValidTestdata(t, "tasks.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   true,
@@ -529,7 +529,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"analyze stage - all artifacts missing": {
 			stage: StageAnalyze,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -538,10 +538,10 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"analyze stage - only plan.yaml missing": {
 			stage: StageAnalyze,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(t *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
-				os.WriteFile(specDir+"/spec.yaml", []byte("test"), 0644)
-				os.WriteFile(specDir+"/tasks.yaml", []byte("test"), 0644)
+				copyValidTestdata(t, "spec.yaml", specDir)
+				copyValidTestdata(t, "tasks.yaml", specDir)
 				return func() { os.RemoveAll(specDir) }
 			},
 			wantValid:   false,
@@ -549,7 +549,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 		},
 		"constitution stage - no prerequisites required": {
 			stage: StageConstitution,
-			setupFunc: func(specDir string) func() {
+			setupFunc: func(_ *testing.T, specDir string) func() {
 				os.MkdirAll(specDir, 0755)
 				return func() { os.RemoveAll(specDir) }
 			},
@@ -563,7 +563,7 @@ func TestValidateStagePrerequisites(t *testing.T) {
 			t.Parallel()
 
 			specDir := t.TempDir()
-			cleanup := tc.setupFunc(specDir)
+			cleanup := tc.setupFunc(t, specDir)
 			defer cleanup()
 
 			result := ValidateStagePrerequisites(tc.stage, specDir)
@@ -577,6 +577,90 @@ func TestValidateStagePrerequisites(t *testing.T) {
 			} else {
 				assert.NotEmpty(t, result.ErrorMessage, "ErrorMessage should not be empty when invalid")
 			}
+		})
+	}
+}
+
+// TestValidateStagePrerequisitesWithInvalidSchema tests that ValidateStagePrerequisites
+// correctly detects schema validation errors in prerequisite artifacts.
+func TestValidateStagePrerequisitesWithInvalidSchema(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		stage           Stage
+		setupFunc       func(t *testing.T, specDir string)
+		wantValid       bool
+		wantInvalid     []string
+		wantErrContains string
+	}{
+		"plan stage - invalid spec.yaml schema": {
+			stage: StagePlan,
+			setupFunc: func(_ *testing.T, specDir string) {
+				os.MkdirAll(specDir, 0755)
+				// Write invalid spec.yaml content
+				os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte("invalid: yaml"), 0644)
+			},
+			wantValid:       false,
+			wantInvalid:     []string{"spec.yaml"},
+			wantErrContains: "Invalid artifact schema",
+		},
+		"tasks stage - invalid plan.yaml schema": {
+			stage: StageTasks,
+			setupFunc: func(_ *testing.T, specDir string) {
+				os.MkdirAll(specDir, 0755)
+				// Write invalid plan.yaml content
+				os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte("invalid: data"), 0644)
+			},
+			wantValid:       false,
+			wantInvalid:     []string{"plan.yaml"},
+			wantErrContains: "Invalid artifact schema",
+		},
+		"implement stage - invalid tasks.yaml schema": {
+			stage: StageImplement,
+			setupFunc: func(_ *testing.T, specDir string) {
+				os.MkdirAll(specDir, 0755)
+				// Write invalid tasks.yaml content
+				os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte("invalid: content"), 0644)
+			},
+			wantValid:       false,
+			wantInvalid:     []string{"tasks.yaml"},
+			wantErrContains: "Invalid artifact schema",
+		},
+		"analyze stage - one valid, two invalid": {
+			stage: StageAnalyze,
+			setupFunc: func(t *testing.T, specDir string) {
+				os.MkdirAll(specDir, 0755)
+				copyValidTestdata(t, "spec.yaml", specDir)
+				os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte("bad: data"), 0644)
+				os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte("bad: data"), 0644)
+			},
+			wantValid:       false,
+			wantInvalid:     []string{"plan.yaml", "tasks.yaml"},
+			wantErrContains: "Invalid artifact schema",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			specDir := t.TempDir()
+			tc.setupFunc(t, specDir)
+
+			result := ValidateStagePrerequisites(tc.stage, specDir)
+
+			assert.Equal(t, tc.wantValid, result.Valid, "Valid should match expected")
+			assert.Empty(t, result.MissingArtifacts, "Should have no missing artifacts")
+			assert.Len(t, result.InvalidArtifacts, len(tc.wantInvalid),
+				"Should have expected number of invalid artifacts")
+
+			for _, artifact := range tc.wantInvalid {
+				assert.Contains(t, result.InvalidArtifacts, artifact,
+					"InvalidArtifacts should contain %s", artifact)
+			}
+
+			assert.Contains(t, result.ErrorMessage, tc.wantErrContains,
+				"ErrorMessage should contain expected text")
 		})
 	}
 }
