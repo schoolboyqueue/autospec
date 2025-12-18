@@ -101,11 +101,11 @@ type StageResult struct {
 //
 // State machine flow:
 //  1. Load retry state → 2. Execute command → 3. Validate output
-//  4a. Success: persist state, return
-//  4b. Execution error: return immediately (unrecoverable)
-//  4c. Validation error: check retries remaining
-//       - If retries available: inject errors into command, loop back to step 2
-//       - If exhausted: mark result.Exhausted=true, return error
+//     4a. Success: persist state, return
+//     4b. Execution error: return immediately (unrecoverable)
+//     4c. Validation error: check retries remaining
+//     - If retries available: inject errors into command, loop back to step 2
+//     - If exhausted: mark result.Exhausted=true, return error
 //
 // The retry mechanism injects validation errors into subsequent commands,
 // allowing Claude to self-correct based on previous failures.
@@ -384,6 +384,43 @@ func (e *Executor) ValidateTasksComplete(tasksPath string) error {
 // maxRetryErrors is the maximum number of validation errors to include in retry context
 const maxRetryErrors = 10
 
+// retryInstructions contains the shared retry handling documentation.
+// These instructions are dynamically injected by FormatRetryContext when validation
+// errors are present, eliminating the need for static retry sections in command templates.
+// This reduces first-run prompt size by ~50 lines while ensuring retry guidance is
+// available when actually needed.
+const retryInstructions = `
+## Retry Instructions
+
+This is a retry attempt. The previous attempt failed schema validation.
+
+### How to Handle This Retry
+
+1. **Parse the retry indicator**: The "RETRY X/Y" line above shows attempt X of Y maximum attempts
+2. **Read the validation errors**: Each line starting with "- " lists a specific schema error
+3. **Fix the specific errors**: Address each listed error in your output
+4. **Preserve intent**: Use the same approach but fix the schema issues
+5. **Re-validate**: Run the artifact validation command to verify your fix
+
+### Common Schema Errors and Fixes
+
+| Error Pattern | Cause | Fix |
+|---------------|-------|-----|
+| "missing required field: X" | Field X was omitted | Add the missing field with appropriate value |
+| "invalid enum value for X: expected one of [...]" | Wrong value for enum | Use one of the listed valid values |
+| "invalid type for X: expected Y, got Z" | Wrong data type | Convert to the expected type (e.g., int vs string) |
+| "X does not match pattern" | Format mismatch | Match the required pattern (e.g., NNN-name for branches) |
+| "array item invalid" | List item has wrong structure | Check each item matches the expected schema |
+| "additional property not allowed" | Unknown field present | Remove the unrecognized field |
+
+### Important Notes
+
+- Focus on fixing the listed errors; don't restructure working parts
+- Schema field names use dot notation (e.g., "feature.branch" means the "branch" field inside "feature")
+- Array indices start at 0 (e.g., "user_stories[0]" is the first user story)
+- If multiple errors exist, fix all of them in a single attempt
+`
+
 // FormatRetryContext creates a standardized retry context string from validation errors.
 // Format: 'RETRY X/Y\nSchema validation failed:\n- error1\n- error2'
 //
@@ -413,6 +450,9 @@ func FormatRetryContext(attemptNum, maxRetries int, validationErrors []string) s
 	if remaining > 0 {
 		sb.WriteString(fmt.Sprintf("...and %d more errors\n", remaining))
 	}
+
+	// Append retry handling instructions when there are validation errors
+	sb.WriteString(retryInstructions)
 
 	return strings.TrimSuffix(sb.String(), "\n")
 }

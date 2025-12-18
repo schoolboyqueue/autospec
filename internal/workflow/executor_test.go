@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ariel-frischer/autospec/internal/progress"
@@ -470,46 +471,57 @@ func TestDebugLog(t *testing.T) {
 func TestFormatRetryContext(t *testing.T) {
 	t.Parallel()
 
+	// Tests verify that FormatRetryContext:
+	// - Returns only "RETRY X/Y" when no validation errors (no instructions injected)
+	// - Returns "RETRY X/Y" + errors + retryInstructions when validation errors present
+	// This ensures first-run executions don't waste tokens on retry instructions.
+
 	tests := map[string]struct {
-		attemptNum       int
-		maxRetries       int
-		validationErrors []string
-		want             string
+		attemptNum          int
+		maxRetries          int
+		validationErrors    []string
+		wantPrefix          string // The expected content before instructions
+		wantHasInstructions bool   // Whether retryInstructions should be appended
 	}{
-		"no errors": {
-			attemptNum:       2,
-			maxRetries:       3,
-			validationErrors: nil,
-			want:             "RETRY 2/3",
+		"no errors - no instructions": {
+			attemptNum:          2,
+			maxRetries:          3,
+			validationErrors:    nil,
+			wantPrefix:          "RETRY 2/3",
+			wantHasInstructions: false,
 		},
-		"empty errors slice": {
-			attemptNum:       1,
-			maxRetries:       3,
-			validationErrors: []string{},
-			want:             "RETRY 1/3",
+		"empty errors slice - no instructions": {
+			attemptNum:          1,
+			maxRetries:          3,
+			validationErrors:    []string{},
+			wantPrefix:          "RETRY 1/3",
+			wantHasInstructions: false,
 		},
-		"single error": {
-			attemptNum:       2,
-			maxRetries:       3,
-			validationErrors: []string{"missing required field: feature.branch"},
-			want:             "RETRY 2/3\nSchema validation failed:\n- missing required field: feature.branch",
+		"single error - includes instructions": {
+			attemptNum:          2,
+			maxRetries:          3,
+			validationErrors:    []string{"missing required field: feature.branch"},
+			wantPrefix:          "RETRY 2/3\nSchema validation failed:\n- missing required field: feature.branch",
+			wantHasInstructions: true,
 		},
-		"multiple errors": {
-			attemptNum:       1,
-			maxRetries:       5,
-			validationErrors: []string{"error one", "error two", "error three"},
-			want:             "RETRY 1/5\nSchema validation failed:\n- error one\n- error two\n- error three",
+		"multiple errors - includes instructions": {
+			attemptNum:          1,
+			maxRetries:          5,
+			validationErrors:    []string{"error one", "error two", "error three"},
+			wantPrefix:          "RETRY 1/5\nSchema validation failed:\n- error one\n- error two\n- error three",
+			wantHasInstructions: true,
 		},
-		"exactly 10 errors": {
+		"exactly 10 errors - includes instructions": {
 			attemptNum: 2,
 			maxRetries: 3,
 			validationErrors: []string{
 				"error 1", "error 2", "error 3", "error 4", "error 5",
 				"error 6", "error 7", "error 8", "error 9", "error 10",
 			},
-			want: "RETRY 2/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10",
+			wantPrefix:          "RETRY 2/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10",
+			wantHasInstructions: true,
 		},
-		"more than 10 errors truncated": {
+		"more than 10 errors truncated - includes instructions": {
 			attemptNum: 3,
 			maxRetries: 3,
 			validationErrors: []string{
@@ -517,16 +529,18 @@ func TestFormatRetryContext(t *testing.T) {
 				"error 6", "error 7", "error 8", "error 9", "error 10",
 				"error 11", "error 12",
 			},
-			want: "RETRY 3/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10\n...and 2 more errors",
+			wantPrefix:          "RETRY 3/3\nSchema validation failed:\n- error 1\n- error 2\n- error 3\n- error 4\n- error 5\n- error 6\n- error 7\n- error 8\n- error 9\n- error 10\n...and 2 more errors",
+			wantHasInstructions: true,
 		},
-		"15 errors shows truncation": {
+		"15 errors shows truncation - includes instructions": {
 			attemptNum: 1,
 			maxRetries: 5,
 			validationErrors: []string{
 				"e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10",
 				"e11", "e12", "e13", "e14", "e15",
 			},
-			want: "RETRY 1/5\nSchema validation failed:\n- e1\n- e2\n- e3\n- e4\n- e5\n- e6\n- e7\n- e8\n- e9\n- e10\n...and 5 more errors",
+			wantPrefix:          "RETRY 1/5\nSchema validation failed:\n- e1\n- e2\n- e3\n- e4\n- e5\n- e6\n- e7\n- e8\n- e9\n- e10\n...and 5 more errors",
+			wantHasInstructions: true,
 		},
 	}
 
@@ -534,9 +548,93 @@ func TestFormatRetryContext(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			got := FormatRetryContext(tc.attemptNum, tc.maxRetries, tc.validationErrors)
-			assert.Equal(t, tc.want, got)
+
+			if tc.wantHasInstructions {
+				// Should start with the error info prefix
+				assert.True(t, strings.HasPrefix(got, tc.wantPrefix),
+					"output should start with error info:\ngot: %s\nwant prefix: %s", got, tc.wantPrefix)
+				// Should contain the retry instructions
+				assert.Contains(t, got, "## Retry Instructions",
+					"output with errors should include retry instructions header")
+				assert.Contains(t, got, "Common Schema Errors and Fixes",
+					"output with errors should include fix guidance")
+			} else {
+				// Should be exactly the prefix with no instructions
+				assert.Equal(t, tc.wantPrefix, got,
+					"output without errors should be just RETRY X/Y, no instructions")
+				assert.NotContains(t, got, "## Retry Instructions",
+					"output without errors should NOT include retry instructions")
+			}
 		})
 	}
+}
+
+// TestRetryInstructionsContent verifies the retryInstructions constant contains
+// the required elements for proper retry handling guidance.
+func TestRetryInstructionsContent(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		expectedContent string
+		description     string
+	}{
+		"has retry header": {
+			expectedContent: "## Retry Instructions",
+			description:     "should have the main heading",
+		},
+		"has retry indicator guidance": {
+			expectedContent: "RETRY X/Y",
+			description:     "should explain the retry format",
+		},
+		"has error parsing guidance": {
+			expectedContent: "starting with \"- \"",
+			description:     "should explain how errors are formatted",
+		},
+		"has missing field fix": {
+			expectedContent: "missing required field",
+			description:     "should document how to fix missing fields",
+		},
+		"has invalid enum fix": {
+			expectedContent: "invalid enum value",
+			description:     "should document how to fix enum errors",
+		},
+		"has type mismatch fix": {
+			expectedContent: "invalid type for",
+			description:     "should document how to fix type errors",
+		},
+		"has pattern mismatch fix": {
+			expectedContent: "does not match pattern",
+			description:     "should document how to fix pattern errors",
+		},
+		"has dot notation explanation": {
+			expectedContent: "dot notation",
+			description:     "should explain field path notation",
+		},
+		"has array index explanation": {
+			expectedContent: "indices start at 0",
+			description:     "should explain array indexing",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Contains(t, retryInstructions, tc.expectedContent,
+				"%s: retryInstructions should contain %q", tc.description, tc.expectedContent)
+		})
+	}
+}
+
+// TestRetryInstructionsNotEmpty ensures the constant is defined and has content.
+func TestRetryInstructionsNotEmpty(t *testing.T) {
+	t.Parallel()
+
+	assert.NotEmpty(t, retryInstructions, "retryInstructions constant must not be empty")
+	// Should be approximately 30-50 lines of content (1000-2500 chars)
+	assert.Greater(t, len(retryInstructions), 1000,
+		"retryInstructions should be substantial (>1000 chars)")
+	assert.Less(t, len(retryInstructions), 3000,
+		"retryInstructions should be concise (<3000 chars)")
 }
 
 func TestBuildRetryCommand(t *testing.T) {
