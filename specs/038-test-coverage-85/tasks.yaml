@@ -559,7 +559,7 @@ phases:
             - "Integrates with mock-claude.sh for integration tests"
         - id: "T041"
           title: "Add integration tests using mock infrastructure for workflow orchestration"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -573,7 +573,7 @@ phases:
             - "Verify git branch unchanged after tests"
         - id: "T042"
           title: "Add integration tests for task status updates without branch pollution"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: null
@@ -614,7 +614,7 @@ phases:
             - "Test mock never makes network calls"
         - id: "T045"
           title: "Document mock testing patterns in docs/testing-mocks.md"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null

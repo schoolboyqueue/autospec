@@ -70,9 +70,9 @@ func TestMockClaudeLogsCallsToFile(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		args        []string
-		wantInLog   []string
-		exitCode    string
+		args      []string
+		wantInLog []string
+		exitCode  string
 	}{
 		"logs simple args": {
 			args:      []string{"--print", "hello"},

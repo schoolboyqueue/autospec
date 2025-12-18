@@ -22,13 +22,13 @@ type CallRecord struct {
 
 // MockExecutorBuilder provides a fluent API for configuring mock executor behavior.
 type MockExecutorBuilder struct {
-	responses       []mockResponse
-	currentIndex    int
-	calls           []CallRecord
-	mu              sync.Mutex
-	artifactDir     string
-	mockClaudePath  string
-	t               *testing.T
+	responses      []mockResponse
+	currentIndex   int
+	calls          []CallRecord
+	mu             sync.Mutex
+	artifactDir    string
+	mockClaudePath string
+	t              *testing.T
 }
 
 type mockResponse struct {

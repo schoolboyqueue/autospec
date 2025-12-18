@@ -170,17 +170,28 @@ func (gi *GitIsolation) VerifyNoBranchPollution() {
 	gi.t.Helper()
 	gi.branchVerified = true
 
-	// Change back to original dir temporarily
+	// Get the current directory before changing
 	currentDir, _ := os.Getwd()
+
+	// Only defer restoration if currentDir is not the temp repo
+	// (to avoid trying to restore to a deleted directory during Cleanup)
+	shouldRestore := currentDir != gi.tempRepoDir && currentDir != gi.tempDir
+
 	if err := os.Chdir(gi.origDir); err != nil {
 		gi.t.Errorf("failed to change to original dir for verification: %v", err)
 		return
 	}
-	defer func() {
-		if err := os.Chdir(currentDir); err != nil {
-			gi.t.Errorf("failed to restore directory: %v", err)
-		}
-	}()
+
+	if shouldRestore {
+		defer func() {
+			if err := os.Chdir(currentDir); err != nil {
+				// Don't error if the directory no longer exists
+				if !os.IsNotExist(err) {
+					gi.t.Errorf("failed to restore directory: %v", err)
+				}
+			}
+		}()
+	}
 
 	currentBranch := gi.getCurrentBranch()
 	if currentBranch != gi.origBranch {
