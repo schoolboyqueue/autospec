@@ -97,11 +97,11 @@ func TestRunClean_NoFiles(t *testing.T) {
 	cmd := getCleanCmd()
 	require.NotNil(t, cmd, "clean command must exist")
 
+	// Use RunE directly for testing, as Execute() goes through rootCmd
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()

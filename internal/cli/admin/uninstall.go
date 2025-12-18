@@ -40,7 +40,7 @@ you may need to run this command with elevated privileges (sudo).`,
 
   # If binary is in system directory
   sudo autospec uninstall --yes`,
-	RunE: runUninstall,
+	RunE: RunUninstall,
 }
 
 func init() {
@@ -49,7 +49,9 @@ func init() {
 	uninstallCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 }
 
-func runUninstall(cmd *cobra.Command, args []string) error {
+// RunUninstall is the main entry point for the uninstall command.
+// Exported for testing.
+func RunUninstall(cmd *cobra.Command, args []string) error {
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 	yes, _ := cmd.Flags().GetBool("yes")
 	out := cmd.OutOrStdout()
