@@ -119,91 +119,110 @@ type StageResult struct {
 // allowing Claude to self-correct based on previous failures.
 func (e *Executor) ExecuteStage(specName string, stage Stage, command string, validateFunc func(string) error) (*StageResult, error) {
 	e.debugLog("ExecuteStage called - spec: %s, stage: %s, command: %s", specName, stage, command)
-	result := &StageResult{
-		Stage:   stage,
-		Success: false,
-	}
+	result := &StageResult{Stage: stage, Success: false}
 
-	// Load retry state
 	retryState, err := e.loadStageRetryState(specName, stage)
 	if err != nil {
 		return result, err
 	}
 
-	currentCommand := command
-	var lastValidationErrors []string
+	ctx := &stageExecutionContext{
+		specName:       specName,
+		stage:          stage,
+		command:        command,
+		currentCommand: command,
+		validateFunc:   validateFunc,
+		result:         result,
+		retryState:     retryState,
+	}
 
-	// Retry loop - continues while retries are available
+	return e.executeStageLoop(ctx)
+}
+
+// stageExecutionContext holds state for stage execution loop
+type stageExecutionContext struct {
+	specName             string
+	stage                Stage
+	command              string
+	currentCommand       string
+	validateFunc         func(string) error
+	result               *StageResult
+	retryState           *retry.RetryState
+	lastValidationErrors []string
+}
+
+// executeStageLoop runs the retry loop for stage execution
+func (e *Executor) executeStageLoop(ctx *stageExecutionContext) (*StageResult, error) {
 	for {
-		// Build stage info and start progress display
-		stageInfo := e.buildStageInfo(stage, retryState.Count)
+		stageInfo := e.buildStageInfo(ctx.stage, ctx.retryState.Count)
 		e.startProgressDisplay(stageInfo)
 
-		// Use lifecycle.RunStage to wrap execution and handle stage notification
-		var stageErr error
-		var validationErr error
+		stageErr, validationErr := e.executeStageAttempt(ctx, stageInfo)
 
-		_ = lifecycle.RunStage(e.NotificationHandler, string(stage), func() error {
-			// Display and execute command
-			e.displayCommandExecution(currentCommand)
-			if err := e.Claude.Execute(currentCommand); err != nil {
-				stageErr = e.handleExecutionFailure(result, retryState, stageInfo, err)
-				return stageErr
-			}
-			e.debugLog("Claude.Execute() completed successfully")
-
-			// Validate output
-			specDir := fmt.Sprintf("%s/%s", e.SpecsDir, specName)
-			if err := validateFunc(specDir); err != nil {
-				validationErr = err
-				result.ValidationErrors = ExtractValidationErrors(err)
-				lastValidationErrors = result.ValidationErrors
-				e.debugLog("Validation failed: %v", err)
-				return err
-			}
-			e.debugLog("Validation passed!")
-
-			// Handle success
-			e.completeStageSuccessNoNotify(result, stageInfo, specName, stage)
-			return nil
-		})
-
-		// If execution failed (not validation), return immediately
 		if stageErr != nil {
-			return result, stageErr
+			return ctx.result, stageErr
 		}
-
-		// If validation passed, we're done
 		if validationErr == nil {
-			return result, nil
+			return ctx.result, nil
 		}
 
-		// Validation failed - check if we can retry
-		if !retryState.CanRetry() {
-			// No more retries - fail with exhausted state
-			result.Exhausted = true
-			result.RetryCount = retryState.Count
-			result.Error = fmt.Errorf("validation failed: %w", validationErr)
-			e.failStageProgress(stageInfo, result.Error)
-			return result, fmt.Errorf("validation failed and retry exhausted: %w", validationErr)
+		if done, err := e.handleStageRetry(ctx, stageInfo, validationErr); done {
+			return ctx.result, err
 		}
-
-		// Increment retry count
-		if err := retryState.Increment(); err != nil {
-			return result, fmt.Errorf("failed to increment retry: %w", err)
-		}
-		if err := retry.SaveRetryState(e.StateDir, retryState); err != nil {
-			return result, fmt.Errorf("failed to save retry state: %w", err)
-		}
-
-		// Build retry command with error context
-		retryContext := FormatRetryContext(retryState.Count, e.MaxRetries, lastValidationErrors)
-		currentCommand = BuildRetryCommand(command, retryContext, "")
-		result.RetryCount = retryState.Count
-
-		e.debugLog("Retrying (attempt %d/%d) with error context", retryState.Count, e.MaxRetries)
-		fmt.Printf("\n⟳ Retry %d/%d - injecting validation errors into command\n", retryState.Count, e.MaxRetries)
 	}
+}
+
+// executeStageAttempt executes a single attempt of a stage
+func (e *Executor) executeStageAttempt(ctx *stageExecutionContext, stageInfo progress.StageInfo) (stageErr, validationErr error) {
+	_ = lifecycle.RunStage(e.NotificationHandler, string(ctx.stage), func() error {
+		e.displayCommandExecution(ctx.currentCommand)
+		if err := e.Claude.Execute(ctx.currentCommand); err != nil {
+			stageErr = e.handleExecutionFailure(ctx.result, ctx.retryState, stageInfo, err)
+			return stageErr
+		}
+		e.debugLog("Claude.Execute() completed successfully")
+
+		specDir := fmt.Sprintf("%s/%s", e.SpecsDir, ctx.specName)
+		if err := ctx.validateFunc(specDir); err != nil {
+			validationErr = err
+			ctx.result.ValidationErrors = ExtractValidationErrors(err)
+			ctx.lastValidationErrors = ctx.result.ValidationErrors
+			e.debugLog("Validation failed: %v", err)
+			return err
+		}
+		e.debugLog("Validation passed!")
+
+		e.completeStageSuccessNoNotify(ctx.result, stageInfo, ctx.specName, ctx.stage)
+		return nil
+	})
+	return stageErr, validationErr
+}
+
+// handleStageRetry handles retry logic after validation failure
+// Returns (done bool, err error) - done=true means stop the loop
+func (e *Executor) handleStageRetry(ctx *stageExecutionContext, stageInfo progress.StageInfo, validationErr error) (bool, error) {
+	if !ctx.retryState.CanRetry() {
+		ctx.result.Exhausted = true
+		ctx.result.RetryCount = ctx.retryState.Count
+		ctx.result.Error = fmt.Errorf("validation failed: %w", validationErr)
+		e.failStageProgress(stageInfo, ctx.result.Error)
+		return true, fmt.Errorf("validation failed and retry exhausted: %w", validationErr)
+	}
+
+	if err := ctx.retryState.Increment(); err != nil {
+		return true, fmt.Errorf("failed to increment retry: %w", err)
+	}
+	if err := retry.SaveRetryState(e.StateDir, ctx.retryState); err != nil {
+		return true, fmt.Errorf("failed to save retry state: %w", err)
+	}
+
+	retryContext := FormatRetryContext(ctx.retryState.Count, e.MaxRetries, ctx.lastValidationErrors)
+	ctx.currentCommand = BuildRetryCommand(ctx.command, retryContext, "")
+	ctx.result.RetryCount = ctx.retryState.Count
+
+	e.debugLog("Retrying (attempt %d/%d) with error context", ctx.retryState.Count, e.MaxRetries)
+	fmt.Printf("\n⟳ Retry %d/%d - injecting validation errors into command\n", ctx.retryState.Count, e.MaxRetries)
+	return false, nil
 }
 
 // loadStageRetryState loads retry state for a stage

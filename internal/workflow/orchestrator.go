@@ -60,13 +60,28 @@ func (w *WorkflowOrchestrator) debugLog(format string, args ...interface{}) {
 // This constructor creates default implementations for all executor interfaces,
 // ensuring the orchestrator always delegates to specialized executors.
 // For dependency injection (testing), use NewWorkflowOrchestratorWithExecutors.
+//
+// Component wiring:
+// - ClaudeExecutor implements ClaudeRunner interface for command execution
+// - ProgressController wraps nil display (CLI commands don't provide progress display)
+// - NotifyDispatcher wraps nil handler (CLI commands set handler via deprecated field)
+//
+// Note: CLI commands typically set Executor.NotificationHandler after construction.
+// The Executor methods support both new controllers and deprecated fields via fallback.
 func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
+	// Create ClaudeExecutor as ClaudeRunner interface implementation
 	claude := &ClaudeExecutor{
 		ClaudeCmd:       cfg.ClaudeCmd,
 		ClaudeArgs:      cfg.ClaudeArgs,
 		CustomClaudeCmd: cfg.CustomClaudeCmd,
 		Timeout:         cfg.Timeout,
 	}
+
+	// Create ProgressController with nil display (no-op, CLI commands don't use progress display)
+	progressCtrl := NewProgressController(nil)
+
+	// Create NotifyDispatcher with nil handler (CLI commands set handler via deprecated field)
+	notifyDispatch := NewNotifyDispatcher(nil)
 
 	executor := &Executor{
 		Claude:      claude,
@@ -75,6 +90,8 @@ func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
 		MaxRetries:  cfg.MaxRetries,
 		TotalStages: 3,     // Default to 3 stages (specify, plan, tasks)
 		Debug:       false, // Will be set by CLI command
+		Progress:    progressCtrl,
+		Notify:      notifyDispatch,
 	}
 
 	// Create default executor implementations

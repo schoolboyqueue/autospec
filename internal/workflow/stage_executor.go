@@ -47,43 +47,46 @@ func (s *StageExecutor) debugLog(format string, args ...interface{}) {
 // The spec name is derived from the newly created spec directory.
 func (s *StageExecutor) ExecuteSpecify(featureDescription string) (string, error) {
 	s.debugLog("ExecuteSpecify called with description: %s", featureDescription)
+	s.resetSpecifyRetryState()
 
-	// Reset retry state for specify stage - each specify run creates a NEW spec,
-	// so retry state from previous specify runs should not persist.
+	result, err := s.runSpecifyStage(featureDescription)
+	if err != nil {
+		return "", s.formatSpecifyError(result, err)
+	}
+
+	return s.detectAndValidateSpec()
+}
+
+// resetSpecifyRetryState clears retry state before a new specify run
+func (s *StageExecutor) resetSpecifyRetryState() {
 	if err := retry.ResetRetryCount(s.executor.StateDir, "", string(StageSpecify)); err != nil {
 		s.debugLog("Warning: failed to reset specify retry state: %v", err)
 	}
+}
 
+// runSpecifyStage executes the specify stage command
+func (s *StageExecutor) runSpecifyStage(featureDescription string) (*StageResult, error) {
 	command := fmt.Sprintf("/autospec.specify \"%s\"", featureDescription)
-
-	// Use validation with detection since spec name is not known until Claude creates it.
 	validateFunc := MakeSpecSchemaValidatorWithDetection(s.specsDir)
+	return s.executor.ExecuteStage("", StageSpecify, command, validateFunc)
+}
 
-	result, err := s.executor.ExecuteStage(
-		"", // Spec name not known yet
-		StageSpecify,
-		command,
-		validateFunc,
-	)
+// formatSpecifyError formats an error from the specify stage
+func (s *StageExecutor) formatSpecifyError(result *StageResult, err error) error {
+	totalAttempts := result.RetryCount + 1
+	return fmt.Errorf("specify failed after %d total attempts (%d retries): %w",
+		totalAttempts, result.RetryCount, err)
+}
 
-	if err != nil {
-		totalAttempts := result.RetryCount + 1
-		return "", fmt.Errorf("specify failed after %d total attempts (%d retries): %w",
-			totalAttempts, result.RetryCount, err)
-	}
-
-	// Detect the newly created spec
+// detectAndValidateSpec detects and validates the newly created spec
+func (s *StageExecutor) detectAndValidateSpec() (string, error) {
 	metadata, err := spec.DetectCurrentSpec(s.specsDir)
 	if err != nil {
 		return "", fmt.Errorf("detecting created spec: %w", err)
 	}
-
-	// Validate spec.yaml exists
 	if err := s.executor.ValidateSpec(metadata.Directory); err != nil {
 		return "", fmt.Errorf("validating spec: %w", err)
 	}
-
-	// Return full spec directory name (e.g., "003-command-timeout")
 	specName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
 	s.debugLog("ExecuteSpecify completed successfully: %s", specName)
 	return specName, nil

@@ -120,7 +120,7 @@ phases:
       tasks:
         - id: "T007"
           title: "Create unit tests for ProgressController"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: "US-002"
@@ -136,7 +136,7 @@ phases:
             - "t.Parallel() called"
         - id: "T008"
           title: "Create unit tests for NotifyDispatcher"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: "US-003"
@@ -157,7 +157,7 @@ phases:
       tasks:
         - id: "T009"
           title: "Update NewWorkflowOrchestrator to compose components"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -171,7 +171,7 @@ phases:
             - "Backwards compatible: no API changes to NewWorkflowOrchestrator"
         - id: "T010"
           title: "Verify existing integration tests pass"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
@@ -183,7 +183,7 @@ phases:
             - "No regressions in retry behavior"
         - id: "T011"
           title: "Verify quality gates pass"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
@@ -200,7 +200,7 @@ phases:
       tasks:
         - id: "T012"
           title: "Add interface documentation to interfaces.go"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -212,7 +212,7 @@ phases:
             - "Document that ClaudeExecutor is the primary implementation"
         - id: "T013"
           title: "Verify function length compliance"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: true
           story_id: null
@@ -224,7 +224,7 @@ phases:
             - "All helpers have clear, descriptive names"
         - id: "T014"
           title: "Final regression test"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
