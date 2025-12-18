@@ -21,13 +21,13 @@ Build features systematically with AI-powered specification workflows.
 Built for Claude Code and inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec reimagines the specification workflow with **YAML-first artifacts** for programmatic access and validation. These principles ensure reliable, performant, and maintainable software that developers 
 can trust for their critical development workflows.
 
-## Installation
+## 📦 Installation
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/install.sh | sh
 ```
 
-## Key Features
+## 🎯 Key Features
 
 - **Automated Workflow Orchestration** — Runs stages in dependency order with automatic retry on failure
 - **YAML-First Artifacts** — Machine-readable `spec.yaml`, `plan.yaml`, `tasks.yaml` for programmatic access
@@ -44,7 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/ariel-frischer/autospec/main/instal
 - **OS Notifications** — Native desktop notifications with custom sound support
 - **History Tracking** — View and filter command execution history with status, duration, and exit codes
 
-## What Makes Autospec Different?
+## ✨ What Makes Autospec Different?
 
 Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Autospec is now a **fully standalone tool** with its own embedded commands and workflows.
 
@@ -58,7 +58,7 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 | Session Isolation | Single session | **Per-phase/task** (80%+ cost savings) |
 | Implementation | Shell scripts | **Go** (type-safe, single binary) |
 
-## Quick Start
+## 🚀 Quick Start
 
 > **New to autospec?** See the [Quickstart Guide](docs/QUICKSTART.md) for copy-paste commands or run the [interactive demo](scripts/quickstart-demo.sh).
 
@@ -87,7 +87,7 @@ Create project constitution (once per project, triggers Claude session):
 autospec constitution
 ```
 
-## Usage
+## 🎮 Usage
 
 ### Core Flow Commands
 
@@ -237,7 +237,7 @@ autospec history -n 10        # Last 10 entries
 autospec history --status failed
 ```
 
-## Output Structure
+## 📁 Output Structure
 
 Autospec generates structured YAML artifacts:
 
@@ -268,7 +268,7 @@ tasks:
     dependencies: [T002]
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 ### Config Files (YAML format)
 
@@ -355,7 +355,7 @@ autospec config migrate
 autospec config migrate --dry-run
 ```
 
-## Shell Completion
+## 🐚 Shell Completion
 
 The easiest way to set up shell completions (auto-detects your shell):
 
@@ -373,7 +373,7 @@ autospec completion install fish
 
 See [docs/SHELL-COMPLETION.md](docs/SHELL-COMPLETION.md) for detailed setup and manual instructions.
 
-## Exit Codes
+## 🔧 Exit Codes
 
 Uses standardized exit codes (0-5) for CI/CD integration. See [docs/reference.md](docs/reference.md#exit-codes) for full details.
 
@@ -381,7 +381,7 @@ Uses standardized exit codes (0-5) for CI/CD integration. See [docs/reference.md
 autospec run -a "feature" && echo "Success" || echo "Failed: $?"
 ```
 
-## Troubleshooting
+## 🔍 Troubleshooting
 
 ```bash
 autospec doctor
@@ -391,7 +391,7 @@ autospec config show
 
 See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and solutions.
 
-## Pro Tips
+## 💡 Pro Tips
 
 ### Optional Dependencies
 
@@ -418,7 +418,7 @@ custom_claude_cmd: "claude -p --verbose --output-format stream-json {{PROMPT}} |
 >
 > **Recommended:** Enable Claude Code's sandbox first (`/sandbox` command) which uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux or Seatbelt on macOS for OS-level isolation. See [Claude Settings docs](docs/claude-settings.md) for configuration via settings.json.
 
-## Build from Source
+## 📥 Build from Source
 
 Requires Go 1.21+
 
@@ -428,11 +428,11 @@ cd autospec
 make install
 ```
 
-## Contributing
+## 🤝 Contributing
 
 Contributions welcome! See [CONTRIBUTORS.md](CONTRIBUTORS.md) for development guidelines.
 
-## License
+## 📄 License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
