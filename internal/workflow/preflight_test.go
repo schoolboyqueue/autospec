@@ -810,61 +810,139 @@ func TestFindSpecsDirectory(t *testing.T) {
 	}
 }
 
+// copyValidTestdata copies a valid testdata artifact file to the specified directory
+func copyValidTestdata(t *testing.T, artifact, destDir string) {
+	t.Helper()
+	var srcPath string
+	switch artifact {
+	case "spec.yaml":
+		srcPath = filepath.Join("testdata", "spec", "valid", "spec.yaml")
+	case "plan.yaml":
+		srcPath = filepath.Join("testdata", "plan", "valid", "plan.yaml")
+	case "tasks.yaml":
+		srcPath = filepath.Join("testdata", "tasks", "valid", "tasks.yaml")
+	default:
+		t.Fatalf("unknown artifact: %s", artifact)
+	}
+
+	data, err := os.ReadFile(srcPath)
+	require.NoError(t, err, "reading testdata file %s", srcPath)
+
+	destPath := filepath.Join(destDir, artifact)
+	err = os.WriteFile(destPath, data, 0644)
+	require.NoError(t, err, "writing artifact file %s", destPath)
+}
+
 // TestCheckArtifactDependencies tests artifact dependency checking
 func TestCheckArtifactDependencies(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
 		stages      []Stage
-		setupFunc   func(specDir string)
+		setupFunc   func(t *testing.T, specDir string)
 		wantPassed  bool
 		wantMissing []string
+		wantInvalid []string // artifacts that exist but have invalid schemas
 	}{
 		"plan stage with spec.yaml present": {
 			stages: []Stage{StagePlan},
-			setupFunc: func(specDir string) {
-				os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte("test"), 0644)
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidTestdata(t, "spec.yaml", specDir)
 			},
 			wantPassed:  true,
 			wantMissing: []string{},
+			wantInvalid: []string{},
 		},
 		"plan stage with spec.yaml missing": {
 			stages:      []Stage{StagePlan},
-			setupFunc:   func(specDir string) {},
+			setupFunc:   func(t *testing.T, specDir string) {},
 			wantPassed:  false,
 			wantMissing: []string{"spec.yaml"},
+			wantInvalid: []string{},
+		},
+		"plan stage with spec.yaml invalid": {
+			stages: []Stage{StagePlan},
+			setupFunc: func(t *testing.T, specDir string) {
+				// Write invalid spec.yaml (missing required fields)
+				err := os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte("invalid: yaml"), 0644)
+				require.NoError(t, err)
+			},
+			wantPassed:  false,
+			wantMissing: []string{},
+			wantInvalid: []string{"spec.yaml"},
 		},
 		"implement stage with tasks.yaml present": {
 			stages: []Stage{StageImplement},
-			setupFunc: func(specDir string) {
-				os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte("test"), 0644)
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidTestdata(t, "tasks.yaml", specDir)
 			},
 			wantPassed:  true,
 			wantMissing: []string{},
+			wantInvalid: []string{},
 		},
 		"implement stage with tasks.yaml missing": {
 			stages:      []Stage{StageImplement},
-			setupFunc:   func(specDir string) {},
+			setupFunc:   func(t *testing.T, specDir string) {},
 			wantPassed:  false,
 			wantMissing: []string{"tasks.yaml"},
+			wantInvalid: []string{},
+		},
+		"implement stage with tasks.yaml invalid": {
+			stages: []Stage{StageImplement},
+			setupFunc: func(t *testing.T, specDir string) {
+				// Write invalid tasks.yaml (missing required fields)
+				err := os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte("tasks:\n  branch: foo"), 0644)
+				require.NoError(t, err)
+			},
+			wantPassed:  false,
+			wantMissing: []string{},
+			wantInvalid: []string{"tasks.yaml"},
 		},
 		"analyze stage with all artifacts present": {
 			stages: []Stage{StageAnalyze},
-			setupFunc: func(specDir string) {
-				os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte("test"), 0644)
-				os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte("test"), 0644)
-				os.WriteFile(filepath.Join(specDir, "tasks.yaml"), []byte("test"), 0644)
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidTestdata(t, "spec.yaml", specDir)
+				copyValidTestdata(t, "plan.yaml", specDir)
+				copyValidTestdata(t, "tasks.yaml", specDir)
 			},
 			wantPassed:  true,
 			wantMissing: []string{},
+			wantInvalid: []string{},
 		},
 		"analyze stage with some artifacts missing": {
 			stages: []Stage{StageAnalyze},
-			setupFunc: func(specDir string) {
-				os.WriteFile(filepath.Join(specDir, "spec.yaml"), []byte("test"), 0644)
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidTestdata(t, "spec.yaml", specDir)
 			},
 			wantPassed:  false,
 			wantMissing: []string{"plan.yaml", "tasks.yaml"},
+			wantInvalid: []string{},
+		},
+		"analyze stage with one invalid artifact": {
+			stages: []Stage{StageAnalyze},
+			setupFunc: func(t *testing.T, specDir string) {
+				copyValidTestdata(t, "spec.yaml", specDir)
+				// Write invalid plan.yaml
+				err := os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte("plan:\n  branch: foo"), 0644)
+				require.NoError(t, err)
+				copyValidTestdata(t, "tasks.yaml", specDir)
+			},
+			wantPassed:  false,
+			wantMissing: []string{},
+			wantInvalid: []string{"plan.yaml"},
+		},
+		"mixed missing and invalid artifacts": {
+			stages: []Stage{StageAnalyze},
+			setupFunc: func(t *testing.T, specDir string) {
+				// spec.yaml is missing (no file created)
+				// plan.yaml is invalid
+				err := os.WriteFile(filepath.Join(specDir, "plan.yaml"), []byte("plan:\n  branch: foo"), 0644)
+				require.NoError(t, err)
+				copyValidTestdata(t, "tasks.yaml", specDir)
+			},
+			wantPassed:  false,
+			wantMissing: []string{"spec.yaml"},
+			wantInvalid: []string{"plan.yaml"},
 		},
 	}
 
@@ -873,7 +951,7 @@ func TestCheckArtifactDependencies(t *testing.T) {
 			t.Parallel()
 
 			specDir := t.TempDir()
-			tc.setupFunc(specDir)
+			tc.setupFunc(t, specDir)
 
 			stageConfig := NewStageConfig()
 			for _, stage := range tc.stages {
@@ -896,6 +974,13 @@ func TestCheckArtifactDependencies(t *testing.T) {
 			assert.Equal(t, tc.wantPassed, result.Passed)
 			assert.ElementsMatch(t, tc.wantMissing, result.MissingArtifacts)
 
+			// Check invalid artifacts
+			invalidKeys := make([]string, 0, len(result.InvalidArtifacts))
+			for k := range result.InvalidArtifacts {
+				invalidKeys = append(invalidKeys, k)
+			}
+			assert.ElementsMatch(t, tc.wantInvalid, invalidKeys)
+
 			if !tc.wantPassed {
 				assert.NotEmpty(t, result.WarningMessage)
 			}
@@ -910,11 +995,13 @@ func TestGeneratePrerequisiteError(t *testing.T) {
 	tests := map[string]struct {
 		stages       []Stage
 		missing      []string
+		invalid      map[string]string // artifact -> error message
 		wantContains []string
 	}{
 		"missing spec.yaml": {
 			stages:  []Stage{StagePlan},
 			missing: []string{"spec.yaml"},
+			invalid: nil,
 			wantContains: []string{
 				"Missing required prerequisite",
 				"spec.yaml",
@@ -924,6 +1011,7 @@ func TestGeneratePrerequisiteError(t *testing.T) {
 		"missing plan.yaml": {
 			stages:  []Stage{StageTasks},
 			missing: []string{"plan.yaml"},
+			invalid: nil,
 			wantContains: []string{
 				"plan.yaml",
 				"Generate plan.yaml",
@@ -932,6 +1020,7 @@ func TestGeneratePrerequisiteError(t *testing.T) {
 		"missing tasks.yaml": {
 			stages:  []Stage{StageImplement},
 			missing: []string{"tasks.yaml"},
+			invalid: nil,
 			wantContains: []string{
 				"tasks.yaml",
 				"Generate tasks.yaml",
@@ -940,10 +1029,34 @@ func TestGeneratePrerequisiteError(t *testing.T) {
 		"multiple missing artifacts": {
 			stages:  []Stage{StageAnalyze},
 			missing: []string{"spec.yaml", "plan.yaml", "tasks.yaml"},
+			invalid: nil,
 			wantContains: []string{
 				"spec.yaml",
 				"plan.yaml",
 				"tasks.yaml",
+			},
+		},
+		"invalid spec.yaml": {
+			stages:  []Stage{StagePlan},
+			missing: nil,
+			invalid: map[string]string{"spec.yaml": "schema validation failed"},
+			wantContains: []string{
+				"Invalid artifact schemas",
+				"spec.yaml",
+				"schema validation failed",
+				"Regenerate spec.yaml",
+			},
+		},
+		"mixed missing and invalid": {
+			stages:  []Stage{StageAnalyze},
+			missing: []string{"plan.yaml"},
+			invalid: map[string]string{"spec.yaml": "missing required field"},
+			wantContains: []string{
+				"Missing required prerequisite",
+				"plan.yaml",
+				"Invalid artifact schemas",
+				"spec.yaml",
+				"missing required field",
 			},
 		},
 	}
@@ -966,7 +1079,7 @@ func TestGeneratePrerequisiteError(t *testing.T) {
 				}
 			}
 
-			errMsg := GeneratePrerequisiteError(stageConfig, tc.missing)
+			errMsg := GeneratePrerequisiteError(stageConfig, tc.missing, tc.invalid)
 
 			for _, want := range tc.wantContains {
 				assert.Contains(t, errMsg, want)
@@ -1025,8 +1138,8 @@ func TestGeneratePrerequisiteWarning(t *testing.T) {
 	missing := []string{"spec.yaml"}
 
 	// The warning should be the same as the error
-	warning := GeneratePrerequisiteWarning(stageConfig, missing)
-	errMsg := GeneratePrerequisiteError(stageConfig, missing)
+	warning := GeneratePrerequisiteWarning(stageConfig, missing, nil)
+	errMsg := GeneratePrerequisiteError(stageConfig, missing, nil)
 
 	assert.Equal(t, errMsg, warning)
 }

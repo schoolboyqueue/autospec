@@ -210,7 +210,15 @@ data_model:
           type: "uuid"
         - name: "email"
           type: "string"
+
+risks:  # optional
+  - risk: "Auth token expiry edge cases"
+    likelihood: "medium"
+    impact: "high"
+    mitigation: "Add comprehensive token refresh tests"
 ```
+
+See [risks.md](risks.md) for full schema and validation details.
 
 ### tasks.yaml
 

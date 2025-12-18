@@ -37,6 +37,7 @@ autospec doctor                          # Check dependencies
 | `docs/TIMEOUT.md` | Timeout configuration and behavior |
 | `docs/YAML-STRUCTURED-OUTPUT.md` | YAML artifact schemas and slash commands |
 | `docs/checklists.md` | Checklist generation, validation, and implementation gating |
+| `docs/risks.md` | Risk documentation in plan.yaml |
 | `docs/SHELL-COMPLETION.md` | Shell completion implementation |
 | `docs/troubleshooting.md` | Common issues and solutions |
 | `docs/claude-settings.md` | Claude Code settings and sandboxing configuration |
