@@ -735,3 +735,198 @@ After implementing improvements:
 - **Features analyzed**: 040-workflow-mock-coverage, 043-workflow-mock-coverage
 - **Estimated token waste per implement session**: 15-25K tokens (30-50% of context)
 - **Primary cause**: Redundant reads after phase context load
+
+---
+
+# Additional Analysis: autospec-block-task-reason Project Sessions
+
+**Analysis Date:** 2025-12-17
+**Project:** autospec-block-task-reason
+**Additional Conversations:** 3 implement sessions from new project fork
+**Features Covered:** 041-orchestrator-schema-validation
+
+---
+
+## Per-Conversation Analysis (Block-Task-Reason Fork)
+
+### File: cff29d20 (implement - core-feature-improvements)
+**Command:** `/autospec.implement`
+**Size:** 1.3M, 200 lines, 48 tool uses
+**Issues:**
+- Read `.dev/tasks/core-feature-improvements.md` **23 times** (extreme redundancy)
+- Read `docs/troubleshooting.md` 2 times
+- 6 references to checklists directory (doesn't exist)
+- 1 Serena MCP error
+
+**Key Finding:** Same file read 23 times indicates context loss between tool calls or aggressive re-verification. This is a severe inefficiency pattern.
+
+**Recommendations:**
+- Template should instruct to cache file contents in working memory
+- Consider adding "files_read" tracking to prevent duplicate reads
+
+---
+
+### File: d645bf41 (implement - orchestrator-schema-validation Phase 2)
+**Command:** `/autospec.implement`
+**Size:** 476K, 150 lines, 57 tool uses
+**Issues:**
+- Read phase-2.yaml context (contains bundled spec+plan+tasks) then **still read tasks.yaml separately**
+- Read `internal/workflow/schema_validation.go` **6 times**
+- 14 references to checklists directory (doesn't exist)
+- 3 large file handling issues (troubleshooting.md exceeds 960 > 950 line limit)
+- 12 sandbox restriction issues requiring workarounds
+- 57 individual artifact reads after phase context load
+- 1 Serena MCP error
+
+**Pattern Analysis:**
+```
+1. Read phase-2.yaml (contains full spec, plan, phase tasks)
+2. Immediately read tasks.yaml (REDUNDANT - already in phase context)
+3. Read schema_validation.go
+4. Read various validation files
+5. Re-read schema_validation.go (REDUNDANT)
+6. Re-read schema_validation.go (REDUNDANT)
+... and so on
+```
+
+**Recommendations:**
+- Template MUST explicitly state: "Phase context is self-sufficient, DO NOT read individual artifacts"
+- Add file deduplication guidance: "Do not re-read files you have already read in this session"
+
+---
+
+### File: 7223fd36 (implement - artifact validation tasks)
+**Command:** `/autospec.implement`
+**Size:** 580K, 154 lines, 57 tool uses
+**Issues:**
+- Read `artifact_tasks_test.go` 4 times
+- Read `artifact.go` 4 times
+- Read `artifact_tasks.go` 3 times
+- Read `artifact.go` (cli version) 3 times
+- 5 references to checklists directory (doesn't exist)
+- 15 sandbox restriction issues
+- 22 individual artifact reads after phase context
+
+**Pattern:** Files being read multiple times during implementation, likely due to:
+1. Initial reading for understanding
+2. Re-reading before making edits
+3. Re-reading after edits to verify
+4. Re-reading when referencing in other files
+
+**Recommendations:**
+- Template should suggest maintaining a "session cache" of file contents
+- Only re-read files if they have been edited by another process
+
+---
+
+## Cross-Session Pattern Analysis (Block-Task-Reason Fork)
+
+### New Patterns Identified
+
+| Pattern | Sessions | Token Waste |
+|---------|----------|-------------|
+| Same file read 5+ times | 3/3 | High (~15K per session) |
+| Phase context → tasks.yaml read | 3/3 | Medium (~3K per session) |
+| Checklists check (non-existent) | 3/3 | Low (~500 per session) |
+| Sandbox workarounds | 3/3 | Medium (~2K per session) |
+| Serena MCP errors | 2/3 | Medium (~1K per session) |
+
+### Severity Assessment
+
+**CRITICAL: Duplicate File Reads**
+- `schema_validation.go` read 6 times in one session
+- `.dev/tasks/core-feature-improvements.md` read 23 times in one session
+- This pattern wastes **significant context** and can exhaust token limits
+
+### Root Cause Analysis
+
+1. **No Session-Level File Cache**: Claude has no mechanism to remember file contents within a session
+2. **Template Doesn't Prevent Re-reads**: implement.md doesn't explicitly discourage re-reading
+3. **Verification Anxiety**: Pattern of reading → editing → re-reading → verifying suggests Claude doesn't trust its in-context memory
+4. **Checklists Check Not Cached**: Every phase checks for checklists even when none exist
+
+---
+
+## Updated Recommendations
+
+### Critical Priority (Immediate)
+
+1. **Add File Deduplication Guidance to implement.md**:
+   ```markdown
+   ## File Reading Strategy
+
+   CRITICAL: Minimize file reads to conserve context tokens.
+
+   1. **Read once, remember**: When you read a file, retain its contents in your working memory
+   2. **Don't re-read for verification**: If you just read a file, you already know its contents
+   3. **Only re-read if modified externally**: Only re-read files that may have changed outside your control
+   4. **Phase context is authoritative**: The phase-X.yaml file contains bundled artifacts - do NOT read spec.yaml, plan.yaml, or tasks.yaml separately
+   ```
+
+2. **Add has_checklists to Phase Context Metadata**:
+   ```yaml
+   _context_meta:
+     has_checklists: false
+     phase_artifacts_bundled: true  # Indicates spec/plan/tasks are included
+   ```
+
+3. **Track Files Read in TodoWrite**:
+   Consider adding a `_files_read` section to todos to track what's been loaded:
+   ```yaml
+   _files_read:
+     - path: "internal/workflow/schema_validation.go"
+       lines: 145
+       at_turn: 3
+   ```
+
+### High Priority (Next Sprint)
+
+4. **Sandbox Pre-Approval for Go Commands**:
+   Add to `.claude/settings.local.json`:
+   ```json
+   {
+     "permissions": {
+       "allow": [
+         "Bash(go build:*)",
+         "Bash(go test:*)",
+         "Bash(GOCACHE=/tmp/claude/go-cache go build:*)",
+         "Bash(GOCACHE=/tmp/claude/go-cache go test:*)"
+       ]
+     }
+   }
+   ```
+
+5. **Template-Level File Reference Strategy**:
+   Add to task definitions in tasks.yaml:
+   ```yaml
+   _reading_hints:
+     primary_files:
+       - path: "internal/workflow/schema_validation.go"
+         read_strategy: "Read once at task start"
+     reference_files:
+       - path: "internal/validation/artifact.go"
+         read_strategy: "Grep for specific patterns, read sections as needed"
+   ```
+
+---
+
+## Metrics Summary (Combined Analysis)
+
+| Metric | Original Analysis | Block-Task-Reason | Combined |
+|--------|------------------|-------------------|----------|
+| Sessions Analyzed | 20 | 3 | 23 |
+| Duplicate File Reads/Session | 2-3 | 4-23 | 2-23 |
+| Checklists Checks (unnecessary) | 15 | 3 | 18 |
+| Sandbox Workarounds | ~16 | 27 | ~43 |
+| Serena MCP Errors | ~10 | 2 | ~12 |
+| Est. Token Waste/Session | 15-25K | 20-35K | 15-35K |
+
+---
+
+## Action Items
+
+- [ ] Update implement.md with file deduplication guidance (CRITICAL)
+- [ ] Add `_context_meta.has_checklists` to phase context generation
+- [ ] Add `_context_meta.phase_artifacts_bundled` flag
+- [ ] Update sandbox allowlist in CLAUDE.md recommendations
+- [ ] Consider implementing file-read tracking in TodoWrite schema

@@ -26,3 +26,8 @@ f0ee6c81 -home-ari-repos-autospec 2025-12-17 implement
 b6a708ed -home-ari-repos-autospec 2025-12-17 implement
 f2f6064f -home-ari-repos-autospec 2025-12-17 implement
 c2eaa70d -home-ari-repos-autospec 2025-12-17 tasks
+
+# autospec-block-task-reason project sessions (analyzed 2025-12-17)
+cff29d20 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
+d645bf41 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
+7223fd36 -home-ari-repos-autospec-block-task-reason 2025-12-17 implement
