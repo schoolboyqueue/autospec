@@ -1,3 +1,7 @@
+// Package commands_test tests embedded template file access and retrieval.
+// Related: /home/ari/repos/autospec/internal/commands/embed.go
+// Tags: commands, embed, templates, filesystem
+
 package commands
 
 import (

@@ -1,3 +1,6 @@
+// Package config_test tests JSON to YAML configuration migration and legacy config handling.
+// Related: internal/config/migrate.go
+// Tags: config, migration, json, yaml, legacy, backup
 package config
 
 import (

@@ -141,6 +141,11 @@ func TestExecuteStage_Success(t *testing.T) {
 	assert.False(t, result.Exhausted)
 }
 
+// TestExecuteStage_ValidationFailure tests the retry exhaustion path.
+//
+// Scenario: Validation always fails → exhausts all 3 retries → returns exhausted error.
+// Verifies the full retry loop executes MaxRetries times before giving up,
+// and that result.Exhausted is true with correct RetryCount.
 func TestExecuteStage_ValidationFailure(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
@@ -170,6 +175,11 @@ func TestExecuteStage_ValidationFailure(t *testing.T) {
 	assert.True(t, result.Exhausted)      // Retries exhausted
 }
 
+// TestExecuteStage_RetryExhausted tests pre-exhausted retry state handling.
+//
+// Scenario: Retry state already at max (3/3) before execution → first failure
+// immediately returns exhausted error without attempting more retries.
+// Differs from TestExecuteStage_ValidationFailure which starts at 0 retries.
 func TestExecuteStage_RetryExhausted(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()
@@ -206,6 +216,10 @@ func TestExecuteStage_RetryExhausted(t *testing.T) {
 	assert.True(t, result.Exhausted)
 }
 
+// TestExecuteStage_ResetsRetryOnSuccess verifies retry count resets on success.
+//
+// Scenario: Pre-existing retry count (2/3) → validation succeeds → retry count
+// resets to 0. This ensures the next run starts fresh after recovery.
 func TestExecuteStage_ResetsRetryOnSuccess(t *testing.T) {
 	stateDir := t.TempDir()
 	specsDir := t.TempDir()

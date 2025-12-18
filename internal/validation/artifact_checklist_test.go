@@ -1,3 +1,6 @@
+// Package validation_test tests checklist.yaml artifact validation and quality dimensions.
+// Related: internal/validation/artifact_checklist.go
+// Tags: validation, checklist, artifact, yaml, quality-dimension, status, review
 package validation
 
 import (

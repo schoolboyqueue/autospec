@@ -1,3 +1,6 @@
+// Package config_test tests configuration loading, merging hierarchy, and environment variable overrides.
+// Related: internal/config/config.go
+// Tags: config, loading, merging, env-vars, yaml, json, precedence
 package config
 
 import (

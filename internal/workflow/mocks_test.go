@@ -1,3 +1,6 @@
+// Package workflow tests mock implementations for ClaudeExecutor and PreflightChecker.
+// Related: internal/workflow/claude.go, internal/workflow/preflight.go
+// Tags: workflow, mocks, testing, executor, preflight, test-doubles
 package workflow
 
 import (

@@ -1,3 +1,6 @@
+// Package validation_test tests analysis.yaml artifact validation and findings schema.
+// Related: internal/validation/artifact_analysis.go
+// Tags: validation, analysis, artifact, yaml, findings, severity, quality
 package validation
 
 import (

@@ -1,3 +1,6 @@
+// Package workflow_test tests workflow orchestration using mock infrastructure.
+// Related: internal/workflow/orchestrator.go, internal/testutil/mock_executor.go
+// Tags: workflow, integration, orchestration, mocks, git-isolation, retry, artifacts
 package workflow_test
 
 import (

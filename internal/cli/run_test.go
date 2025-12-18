@@ -1,3 +1,6 @@
+// Package cli_test tests the run command for executing custom stage combinations with implement_method config support.
+// Related: internal/cli/run.go
+// Tags: cli, run, workflow, stages, configuration, implement-method, consistency
 package cli
 
 import (

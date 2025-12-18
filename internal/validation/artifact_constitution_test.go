@@ -1,3 +1,6 @@
+// Package validation_test tests constitution.yaml artifact validation and principles schema.
+// Related: internal/validation/artifact_constitution.go
+// Tags: validation, constitution, artifact, yaml, principles, priority, governance
 package validation
 
 import (

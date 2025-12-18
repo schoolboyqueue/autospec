@@ -271,6 +271,15 @@ func (v *TasksValidator) validateBlockedReason(node *yaml.Node, path string, sta
 }
 
 // validateAllDependencies validates all task dependencies after collecting task IDs.
+// Performs triple-nested traversal: phases[i] → tasks[j] → dependencies[k]
+//
+// For each dependency, validates:
+//   - Self-reference (task depending on itself)
+//   - Existence (dependency must reference an existing task ID)
+//   - Duplicates (implicitly via map-based collection)
+//
+// Builds a dependency graph (map[taskID][]dependencyIDs) for circular detection.
+// Errors are accumulated rather than failing fast, reporting all issues at once.
 func (v *TasksValidator) validateAllDependencies(phasesNode *yaml.Node, taskIDs map[string]int, taskLines map[string]int, result *ValidationResult) {
 	// Build dependency graph for circular dependency detection
 	deps := make(map[string][]string) // task ID -> list of dependency IDs
@@ -340,7 +349,17 @@ func (v *TasksValidator) validateAllDependencies(phasesNode *yaml.Node, taskIDs 
 	v.detectCircularDependencies(deps, taskLines, result)
 }
 
-// detectCircularDependencies detects circular dependencies in the task graph.
+// detectCircularDependencies detects circular dependencies in the task graph using DFS.
+//
+// Algorithm: Depth-first search with recursion stack tracking.
+// Uses two state maps:
+//   - visited: tracks all nodes ever visited (prevents re-exploring completed subtrees)
+//   - recStack: tracks nodes in current DFS path (detects back-edges = cycles)
+//
+// A cycle exists when DFS encounters a node already in recStack (back-edge).
+// When found, reconstructs the cycle path from the recStack for error reporting.
+// Time complexity: O(V + E) where V=tasks, E=dependencies.
+// Reports only the first cycle found, then exits (subsequent cycles may exist).
 func (v *TasksValidator) detectCircularDependencies(deps map[string][]string, taskLines map[string]int, result *ValidationResult) {
 	visited := make(map[string]bool)
 	recStack := make(map[string]bool)

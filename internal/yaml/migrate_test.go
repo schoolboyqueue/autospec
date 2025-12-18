@@ -1,3 +1,6 @@
+// Package yaml_test tests markdown to YAML conversion, artifact migration, and directory-level migration.
+// Related: internal/yaml/migrate.go
+// Tags: yaml, migration, markdown, conversion, spec, plan, tasks
 package yaml
 
 import (

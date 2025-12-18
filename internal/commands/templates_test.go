@@ -1,3 +1,7 @@
+// Package commands_test tests template installation, versioning, and frontmatter parsing.
+// Related: /home/ari/repos/autospec/internal/commands/templates.go
+// Tags: commands, templates, versioning, installation, frontmatter
+
 package commands
 
 import (

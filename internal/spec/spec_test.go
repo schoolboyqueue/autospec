@@ -1,3 +1,7 @@
+// Package spec_test tests spec detection and directory resolution logic.
+// Related: /home/ari/repos/autospec/internal/spec/spec.go
+// Tags: spec, detection, directory, resolution
+
 package spec
 
 import (

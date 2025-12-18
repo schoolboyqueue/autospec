@@ -1,3 +1,7 @@
+// Package testutil_test tests filesystem helper utilities for test fixture creation.
+// Related: /home/ari/repos/autospec/internal/testutil/fs_helpers.go
+// Tags: testutil, helpers, fixtures, filesystem
+
 package testutil
 
 import (

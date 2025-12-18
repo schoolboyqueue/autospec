@@ -1,3 +1,6 @@
+// Package yaml_test tests YAML metadata extraction, version parsing, and artifact type validation.
+// Related: internal/yaml/meta.go
+// Tags: yaml, metadata, version, artifact-type, parsing
 package yaml
 
 import (

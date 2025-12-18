@@ -1,3 +1,7 @@
+// Package notify_test provides mock implementations for notification sender testing.
+// Related: /home/ari/repos/autospec/internal/notify/sender.go
+// Tags: notify, mocks, testing
+
 package notify
 
 import (

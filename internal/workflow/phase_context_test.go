@@ -57,6 +57,14 @@ func TestGetContextFilePath(t *testing.T) {
 	})
 }
 
+// TestBuildPhaseContext tests phase context assembly from multiple YAML sources.
+//
+// The context builder aggregates data from 3 files (spec.yaml, plan.yaml, tasks.yaml)
+// and filters tasks to only include those for the requested phase number.
+// Tests verify:
+//   - Content from all 3 files is loaded and accessible
+//   - Phase filtering extracts only matching tasks (phase 1 → T001,T002; phase 2 → T003)
+//   - Missing files are handled gracefully
 func TestBuildPhaseContext(t *testing.T) {
 	t.Run("builds context from spec, plan, and tasks files", func(t *testing.T) {
 		specDir := t.TempDir()

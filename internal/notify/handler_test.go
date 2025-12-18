@@ -1,3 +1,7 @@
+// Package notify_test tests notification handler command event dispatch and error handling.
+// Related: /home/ari/repos/autospec/internal/notify/handler.go
+// Tags: notify, handler, events, error-handling
+
 package notify
 
 import (

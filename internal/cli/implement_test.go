@@ -1,3 +1,6 @@
+// Package cli_test tests the implement command including execution modes (phases, tasks, single-session) and argument parsing.
+// Related: internal/cli/implement.go
+// Tags: cli, implement, command, workflow, phases, tasks, execution, modes
 package cli
 
 import (

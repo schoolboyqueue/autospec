@@ -1,3 +1,7 @@
+// Package main_test tests mock Claude CLI script behavior with configurable responses and delays.
+// Related: /home/ari/repos/autospec/mocks/scripts/mock-claude.sh
+// Tags: mocks, testing, claude, shell-script
+
 package main
 
 import (

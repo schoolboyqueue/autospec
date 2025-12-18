@@ -1,3 +1,7 @@
+// Package spec_test tests spec name extraction from git branch names.
+// Related: /home/ari/repos/autospec/internal/spec/branch.go
+// Tags: spec, git, branch, parsing
+
 package spec
 
 import (

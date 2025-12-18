@@ -1,3 +1,6 @@
+// Package cli_test tests the history command for viewing and filtering command execution history.
+// Related: internal/cli/history.go
+// Tags: cli, history, command, logging, filtering, status, execution
 package cli
 
 import (

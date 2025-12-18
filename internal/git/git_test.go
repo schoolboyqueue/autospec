@@ -1,3 +1,7 @@
+// Package git_test tests git operations for repository detection and branch retrieval.
+// Related: /home/ari/repos/autospec/internal/git/git.go
+// Tags: git, repository, branch, vcs
+
 package git
 
 import (

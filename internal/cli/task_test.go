@@ -1,3 +1,6 @@
+// Package cli_test tests the task command including block, unblock, and list subcommands for task management.
+// Related: internal/cli/task.go
+// Tags: cli, task, block, unblock, list, yaml, status, filtering
 package cli
 
 import (
@@ -254,6 +257,15 @@ func TestTruncateReason(t *testing.T) {
 	}
 }
 
+// TestBlockTaskIntegration is an end-to-end test for task blocking with file I/O.
+//
+// Test lifecycle:
+//   1. Setup: Create temp dir → write tasks.yaml with T001(Pending), T002(InProgress)
+//   2. Execute: Parse YAML → call findAndBlockTask → marshal → write file
+//   3. Verify: Re-read file → assert T001 is Blocked with reason, T002 unchanged
+//
+// Tests YAML round-trip preservation: ensures other tasks and fields survive
+// the unmarshal→mutate→marshal cycle without corruption.
 func TestBlockTaskIntegration(t *testing.T) {
 	t.Parallel()
 
@@ -390,6 +402,18 @@ tasks:
 
 // ==================== Unblock Task Tests ====================
 
+// TestFindAndUnblockTask tests the YAML AST manipulation for unblocking tasks.
+//
+// Coverage matrix (6 cases):
+//   - Blocked→Pending: standard unblock with reason removal
+//   - Blocked→InProgress: unblock to different target status
+//   - Blocked (no reason): handles missing blocked_reason field
+//   - Pending→Pending: warns when task wasn't blocked
+//   - InProgress→Pending: warns when task wasn't blocked
+//   - NonExistent: handles missing task ID gracefully
+//
+// Verifies both the unblockResult struct fields AND the mutated YAML output,
+// ensuring blocked_reason is removed and status is correctly updated.
 func TestFindAndUnblockTask(t *testing.T) {
 	t.Parallel()
 

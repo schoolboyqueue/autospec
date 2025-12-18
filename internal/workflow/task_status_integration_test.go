@@ -1,3 +1,6 @@
+// Package workflow_test tests task status updates and validation in isolated environment.
+// Related: internal/validation/tasks.go, internal/testutil/git_isolation.go
+// Tags: workflow, integration, tasks, status, validation, git-isolation, dependencies
 package workflow_test
 
 import (

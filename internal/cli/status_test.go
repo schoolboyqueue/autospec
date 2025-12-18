@@ -1,3 +1,6 @@
+// Package cli_test tests the status command for displaying spec progress and blocked task reasons.
+// Related: internal/cli/status.go
+// Tags: cli, status, progress, tasks, blocked, filtering, verbose
 package cli
 
 import (

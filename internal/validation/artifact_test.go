@@ -1,3 +1,6 @@
+// Package validation_test tests core YAML artifact validation and error reporting.
+// Related: internal/validation/artifact.go
+// Tags: validation, artifact, yaml, error, node, parsing, schema
 package validation
 
 import (

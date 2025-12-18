@@ -1,3 +1,6 @@
+// Package cli_test tests implement command integration including prerequisite validation, constitution checks, and phase options.
+// Related: internal/cli/implement.go
+// Tags: cli, implement, integration, validation, prerequisites, phases, constitution
 package cli
 
 import (

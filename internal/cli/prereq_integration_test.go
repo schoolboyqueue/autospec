@@ -1,3 +1,6 @@
+// Package cli_test tests run command prerequisite validation with smart artifact dependency checking and remediation.
+// Related: internal/cli/run.go
+// Tags: cli, run, integration, prerequisites, validation, artifacts, dependencies
 package cli
 
 import (

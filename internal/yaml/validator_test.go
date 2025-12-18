@@ -1,3 +1,6 @@
+// Package yaml_test tests YAML syntax validation, error reporting with line numbers, and file validation.
+// Related: internal/yaml/validator.go
+// Tags: yaml, validation, syntax, errors, line-numbers
 package yaml
 
 import (

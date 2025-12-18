@@ -1,3 +1,6 @@
+// Package workflow tests Claude command execution, shell quoting, and template expansion.
+// Related: internal/workflow/claude.go
+// Tags: workflow, claude, execution, templates, shell-quoting, timeout, custom-commands
 package workflow
 
 import (

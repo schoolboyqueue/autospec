@@ -1,3 +1,7 @@
+// Package completion_test tests shell completion installation with backup and idempotency.
+// Related: /home/ari/repos/autospec/internal/completion/install.go
+// Tags: completion, install, backup, idempotency
+
 package completion
 
 import (

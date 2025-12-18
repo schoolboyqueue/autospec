@@ -98,6 +98,17 @@ type StageResult struct {
 // ExecuteStage executes a workflow stage with validation and retry logic.
 // It uses lifecycle.RunStage to wrap the execution and handle stage notifications.
 // On validation failure, it retries with error context injected into the command.
+//
+// State machine flow:
+//  1. Load retry state → 2. Execute command → 3. Validate output
+//  4a. Success: persist state, return
+//  4b. Execution error: return immediately (unrecoverable)
+//  4c. Validation error: check retries remaining
+//       - If retries available: inject errors into command, loop back to step 2
+//       - If exhausted: mark result.Exhausted=true, return error
+//
+// The retry mechanism injects validation errors into subsequent commands,
+// allowing Claude to self-correct based on previous failures.
 func (e *Executor) ExecuteStage(specName string, stage Stage, command string, validateFunc func(string) error) (*StageResult, error) {
 	e.debugLog("ExecuteStage called - spec: %s, stage: %s, command: %s", specName, stage, command)
 	result := &StageResult{

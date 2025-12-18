@@ -1,3 +1,6 @@
+// Package cli_test tests the version and sauce commands for displaying version information and source repository URL.
+// Related: internal/cli/version.go
+// Tags: cli, version, sauce, metadata, build-info, formatting
 package cli
 
 import (

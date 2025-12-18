@@ -1,3 +1,6 @@
+// Package config_test tests configuration validation including YAML syntax, value constraints, and custom command templates.
+// Related: internal/config/validate.go
+// Tags: config, validation, yaml, syntax, notifications, implement-method
 package config
 
 import (

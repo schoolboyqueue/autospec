@@ -1,3 +1,6 @@
+// Package config_test tests default configuration values and template generation.
+// Related: internal/config/defaults.go
+// Tags: config, defaults, configuration, template, notifications
 package config
 
 import (
