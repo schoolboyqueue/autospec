@@ -1,4 +1,4 @@
-package cli
+package config
 
 import (
 	"bufio"
@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/claude"
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/spf13/cobra"
@@ -45,8 +46,7 @@ Configuration precedence (highest to lowest):
 }
 
 func init() {
-	initCmd.GroupID = GroupGettingStarted
-	rootCmd.AddCommand(initCmd)
+	initCmd.GroupID = shared.GroupGettingStarted
 	initCmd.Flags().BoolP("project", "p", false, "Create project-level config (.autospec/config.yml)")
 	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config with defaults")
 	// Keep --global as hidden alias for backward compatibility

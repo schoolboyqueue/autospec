@@ -1,8 +1,11 @@
-package cli
+package admin
 
 import (
+	"bufio"
 	"fmt"
+	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/uninstall"
 	"github.com/spf13/cobra"
 )
@@ -41,8 +44,7 @@ you may need to run this command with elevated privileges (sudo).`,
 }
 
 func init() {
-	uninstallCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(uninstallCmd)
+	uninstallCmd.GroupID = shared.GroupConfiguration
 	uninstallCmd.Flags().BoolP("dry-run", "n", false, "Show what would be removed without removing")
 	uninstallCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt")
 }
@@ -193,4 +195,15 @@ func printUninstallSummary(out interface {
 	if successCount > 0 {
 		fmt.Fprintln(out, "\nautospec has been uninstalled.")
 	}
+}
+
+// promptYesNo prompts the user for a yes/no answer
+func promptYesNo(cmd *cobra.Command, question string) bool {
+	fmt.Fprintf(cmd.OutOrStdout(), "%s [y/N]: ", question)
+
+	reader := bufio.NewReader(cmd.InOrStdin())
+	answer, _ := reader.ReadString('\n')
+	answer = strings.TrimSpace(strings.ToLower(answer))
+
+	return answer == "y" || answer == "yes"
 }

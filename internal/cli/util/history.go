@@ -1,10 +1,11 @@
-package cli
+package util
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/history"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -22,8 +23,7 @@ var historyCmd = &cobra.Command{
 }
 
 func init() {
-	historyCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(historyCmd)
+	historyCmd.GroupID = shared.GroupConfiguration
 	historyCmd.Flags().StringP("spec", "s", "", "Filter by spec name")
 	historyCmd.Flags().IntP("limit", "n", 0, "Limit to last N entries (most recent)")
 	historyCmd.Flags().Bool("clear", false, "Clear all history")

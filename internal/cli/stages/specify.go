@@ -1,10 +1,11 @@
-package cli
+package stages
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -80,7 +81,7 @@ The feature description should be a clear, concise description of what you want 
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
 				fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
-				return NewExitError(ExitInvalidArguments)
+				return shared.NewExitError(shared.ExitInvalidArguments)
 			}
 
 			// Create workflow orchestrator
@@ -100,8 +101,7 @@ The feature description should be a clear, concise description of what you want 
 }
 
 func init() {
-	specifyCmd.GroupID = GroupCoreStages
-	rootCmd.AddCommand(specifyCmd)
+	specifyCmd.GroupID = shared.GroupCoreStages
 
 	// Command-specific flags
 	specifyCmd.Flags().IntP("max-retries", "r", 0, "Override max retry attempts (0 = use config)")

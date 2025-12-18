@@ -1,4 +1,4 @@
-package cli
+package util
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/spec"
@@ -44,7 +45,7 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to detect spec: %w", err)
 		}
-		PrintSpecInfo(metadata)
+		shared.PrintSpecInfo(metadata)
 
 		// Check which artifact files exist
 		artifacts := []string{"spec.yaml", "plan.yaml", "tasks.yaml"}
@@ -104,8 +105,7 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	statusCmd.GroupID = GroupGettingStarted
-	rootCmd.AddCommand(statusCmd)
+	statusCmd.GroupID = shared.GroupGettingStarted
 	statusCmd.Flags().BoolP("verbose", "v", false, "Show all tasks, not just unchecked")
 }
 

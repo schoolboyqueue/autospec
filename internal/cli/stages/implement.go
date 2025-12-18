@@ -1,4 +1,4 @@
-package cli
+package stages
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -165,7 +166,7 @@ The --tasks mode provides maximum context isolation:
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
-			return NewExitError(ExitInvalidArguments)
+			return shared.NewExitError(shared.ExitInvalidArguments)
 		}
 
 		// Auto-detect spec directory for prerequisite validation
@@ -173,13 +174,13 @@ The --tasks mode provides maximum context isolation:
 		if err != nil {
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
-		PrintSpecInfo(metadata)
+		shared.PrintSpecInfo(metadata)
 
 		// Validate tasks.yaml exists (required for implement stage)
 		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageImplement, metadata.Directory)
 		if !prereqResult.Valid {
 			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
-			return NewExitError(ExitInvalidArguments)
+			return shared.NewExitError(shared.ExitInvalidArguments)
 		}
 
 		// Create notification handler and history logger
@@ -287,8 +288,7 @@ func resolveExecutionMode(flags ExecutionModeFlags, flagsChanged bool, configMet
 }
 
 func init() {
-	implementCmd.GroupID = GroupCoreStages
-	rootCmd.AddCommand(implementCmd)
+	implementCmd.GroupID = shared.GroupCoreStages
 
 	// Command-specific flags
 	implementCmd.Flags().Bool("resume", false, "Resume implementation from where it left off")

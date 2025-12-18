@@ -1,10 +1,11 @@
-package cli
+package config
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -75,8 +76,7 @@ The original JSON files are renamed to .bak after successful migration.`,
 }
 
 func init() {
-	configCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(configCmd)
+	configCmd.GroupID = shared.GroupConfiguration
 
 	// Add subcommands
 	configCmd.AddCommand(configShowCmd)

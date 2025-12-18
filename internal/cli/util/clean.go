@@ -1,9 +1,12 @@
-package cli
+package util
 
 import (
+	"bufio"
 	"fmt"
+	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/clean"
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -45,8 +48,7 @@ global state (~/.autospec/). Use 'rm -rf' manually if needed.`,
 }
 
 func init() {
-	cleanCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(cleanCmd)
+	cleanCmd.GroupID = shared.GroupConfiguration
 	cleanCmd.Flags().BoolP("dry-run", "n", false, "Show what would be removed without removing")
 	cleanCmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompt (specs/ will be preserved)")
 	cleanCmd.Flags().BoolP("keep-specs", "k", false, "Skip specs prompt and preserve specs/")
@@ -208,4 +210,15 @@ func runClean(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// promptYesNo prompts the user for a yes/no answer
+func promptYesNo(cmd *cobra.Command, question string) bool {
+	fmt.Fprintf(cmd.OutOrStdout(), "%s [y/N]: ", question)
+
+	reader := bufio.NewReader(cmd.InOrStdin())
+	answer, _ := reader.ReadString('\n')
+	answer = strings.TrimSpace(strings.ToLower(answer))
+
+	return answer == "y" || answer == "yes"
 }

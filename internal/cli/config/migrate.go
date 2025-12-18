@@ -1,6 +1,7 @@
-package cli
+package config
 
 import (
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,5 @@ var migrateCmd = &cobra.Command{
 }
 
 func init() {
-	migrateCmd.GroupID = GroupInternal
-	rootCmd.AddCommand(migrateCmd)
+	migrateCmd.GroupID = shared.GroupInternal
 }

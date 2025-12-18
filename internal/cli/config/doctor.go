@@ -1,9 +1,10 @@
-package cli
+package config
 
 import (
 	"fmt"
 	"os"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/health"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +42,5 @@ Each check will display a checkmark if passed or an X with an error message if f
 }
 
 func init() {
-	doctorCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(doctorCmd)
+	doctorCmd.GroupID = shared.GroupConfiguration
 }

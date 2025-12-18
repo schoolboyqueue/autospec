@@ -1,10 +1,11 @@
-package cli
+package stages
 
 import (
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -70,7 +71,7 @@ You can optionally provide a prompt to guide the task generation.`,
 		if !constitutionCheck.Exists {
 			fmt.Fprint(os.Stderr, constitutionCheck.ErrorMessage)
 			cmd.SilenceUsage = true
-			return NewExitError(ExitInvalidArguments)
+			return shared.NewExitError(shared.ExitInvalidArguments)
 		}
 
 		// Auto-detect spec directory for prerequisite validation
@@ -79,14 +80,14 @@ You can optionally provide a prompt to guide the task generation.`,
 			cmd.SilenceUsage = true
 			return fmt.Errorf("failed to detect current spec: %w\n\nRun 'autospec specify' to create a new spec first", err)
 		}
-		PrintSpecInfo(metadata)
+		shared.PrintSpecInfo(metadata)
 
 		// Validate plan.yaml exists (required for tasks stage)
 		prereqResult := workflow.ValidateStagePrerequisites(workflow.StageTasks, metadata.Directory)
 		if !prereqResult.Valid {
 			fmt.Fprint(os.Stderr, prereqResult.ErrorMessage)
 			cmd.SilenceUsage = true
-			return NewExitError(ExitInvalidArguments)
+			return shared.NewExitError(shared.ExitInvalidArguments)
 		}
 
 		// Create notification handler and history logger
@@ -111,6 +112,5 @@ You can optionally provide a prompt to guide the task generation.`,
 }
 
 func init() {
-	tasksCmd.GroupID = GroupCoreStages
-	rootCmd.AddCommand(tasksCmd)
+	tasksCmd.GroupID = shared.GroupCoreStages
 }

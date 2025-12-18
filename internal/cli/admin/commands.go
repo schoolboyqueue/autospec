@@ -1,6 +1,7 @@
-package cli
+package admin
 
 import (
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +12,5 @@ var commandsCmd = &cobra.Command{
 }
 
 func init() {
-	commandsCmd.GroupID = GroupInternal
-	rootCmd.AddCommand(commandsCmd)
+	commandsCmd.GroupID = shared.GroupInternal
 }

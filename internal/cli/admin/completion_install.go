@@ -1,12 +1,17 @@
-package cli
+package admin
 
 import (
 	"fmt"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/completion"
 	"github.com/spf13/cobra"
 )
+
+// rootCmdRef holds a reference to the root command for completion generation.
+// This is set during Register() to avoid circular imports.
+var rootCmdRef *cobra.Command
 
 // completionCmd is our custom completion command that includes the install subcommand
 var completionCmd = &cobra.Command{
@@ -76,7 +81,7 @@ You will need to start a new shell for this setup to take effect.
 `,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return rootCmd.GenBashCompletionV2(cmd.OutOrStdout(), true)
+		return rootCmdRef.GenBashCompletionV2(cmd.OutOrStdout(), true)
 	},
 }
 
@@ -108,7 +113,7 @@ You will need to start a new shell for this setup to take effect.
 `,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return rootCmd.GenZshCompletion(cmd.OutOrStdout())
+		return rootCmdRef.GenZshCompletion(cmd.OutOrStdout())
 	},
 }
 
@@ -129,7 +134,7 @@ You will need to start a new shell for this setup to take effect.
 `,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return rootCmd.GenFishCompletion(cmd.OutOrStdout(), true)
+		return rootCmdRef.GenFishCompletion(cmd.OutOrStdout(), true)
 	},
 }
 
@@ -147,19 +152,14 @@ to your powershell profile.
 `,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return rootCmd.GenPowerShellCompletionWithDesc(cmd.OutOrStdout())
+		return rootCmdRef.GenPowerShellCompletionWithDesc(cmd.OutOrStdout())
 	},
 }
 
 var manualFlag bool
 
 func init() {
-	// Disable Cobra's default completion command so we can add our own
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-
-	// Add our custom completion command with proper grouping
-	completionCmd.GroupID = GroupConfiguration
-	rootCmd.AddCommand(completionCmd)
+	completionCmd.GroupID = shared.GroupConfiguration
 
 	// Add shell-specific generation commands
 	completionCmd.AddCommand(completionBashCmd)

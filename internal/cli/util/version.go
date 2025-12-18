@@ -1,4 +1,4 @@
-package cli
+package util
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -60,9 +61,8 @@ var versionCmd = &cobra.Command{
 }
 
 func init() {
-	versionCmd.GroupID = GroupGettingStarted
+	versionCmd.GroupID = shared.GroupGettingStarted
 	versionCmd.Flags().BoolVar(&versionPlain, "plain", false, "Plain output without formatting")
-	rootCmd.AddCommand(versionCmd)
 }
 
 // printPlainVersion prints a simple version output for scripting
@@ -84,10 +84,6 @@ var sauceCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Println(SourceURL)
 	},
-}
-
-func init() {
-	rootCmd.AddCommand(sauceCmd)
 }
 
 // getTerminalWidth returns the terminal width, defaulting to 80 if unavailable
