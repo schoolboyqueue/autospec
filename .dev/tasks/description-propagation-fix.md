@@ -13,10 +13,23 @@ This is problematic because:
 2. Raw descriptions can conflict with refined specifications created by earlier stages
 3. It can cause Claude to ignore structured workflow artifacts in favor of the original description
 
-**This is NOT a problem for individual stage runs**:
-- `autospec run -p "focus on security"` - CORRECT, the hint goes to plan stage only
-- `autospec run -i "skip tests"` - CORRECT, the hint goes to implement stage only
-- The argument is intended as stage-specific guidance when running individual stages
+**This is NOT a problem for**:
+
+1. **Individual CLI commands** (always accept hints):
+   - `autospec implement "skip tests"` - CORRECT, hint goes to implement
+   - `autospec plan "focus on security"` - CORRECT, hint goes to plan
+   - `autospec tasks "prioritize P1"` - CORRECT, hint goes to tasks
+   - `autospec clarify "focus on auth flow"` - CORRECT, hint goes to clarify
+   - `autospec checklist "security focus"` - CORRECT, hint goes to checklist
+   - `autospec analyze "check consistency"` - CORRECT, hint goes to analyze
+   - `autospec constitution "add testing principles"` - CORRECT, hint goes to constitution
+
+2. **Individual stage runs via `run` command**:
+   - `autospec run -p "focus on security"` - CORRECT, hint goes to plan stage
+   - `autospec run -i "skip tests"` - CORRECT, hint goes to implement stage
+   - `autospec run -ti "focus on tests"` - CORRECT, hint goes to both stages
+
+The argument is intended as stage-specific guidance when running individual stages or commands
 
 ## Current Behavior Analysis
 
@@ -54,12 +67,15 @@ The docs state `autospec run -a` is "equivalent to" `autospec all`, but they hav
 
 | Use Case | Command | Expected Behavior |
 |----------|---------|-------------------|
-| Full workflow from description | `autospec run -a "add auth"` | Description to specify only |
-| Full workflow from description | `autospec all "add auth"` | Description to specify only |
-| Plan with hint | `autospec run -p "focus on security"` | Hint to plan stage |
-| Tasks with hint | `autospec run -t "prioritize P1"` | Hint to tasks stage |
-| Implement with hint | `autospec run -i "skip docs"` | Hint to implement stage |
-| Multiple stages with hint | `autospec run -ti "focus on tests"` | Hint to both stages |
+| **Full workflow** | `autospec run -a "add auth"` | Description to specify only |
+| **Full workflow** | `autospec all "add auth"` | Description to specify only |
+| **Direct command** | `autospec implement "skip docs"` | Hint to implement (always works) |
+| **Direct command** | `autospec plan "focus on security"` | Hint to plan (always works) |
+| **Direct command** | `autospec tasks "prioritize P1"` | Hint to tasks (always works) |
+| **Direct command** | `autospec clarify "focus on auth"` | Hint to clarify (always works) |
+| **Via run flag** | `autospec run -p "focus on security"` | Hint to plan stage |
+| **Via run flag** | `autospec run -i "skip docs"` | Hint to implement stage |
+| **Via run flags** | `autospec run -ti "focus on tests"` | Hint to both stages |
 
 The key distinction:
 - **Feature description** (for `-a`/`all`): Initial input that creates the spec - should ONLY go to specify
@@ -120,13 +136,18 @@ The current `autospec run -a` conflates these - using the feature description as
 
 ## Tasks
 
-### Task 1: Fix `autospec run -a` behavior
+### Task 1: Fix `autospec run -a` behavior ONLY
 **File**: `internal/cli/run.go`
 **Priority**: High
 
+**Scope**: This fix ONLY affects `autospec run -a`. It does NOT change:
+- Direct commands (`autospec implement "hint"`, `autospec plan "hint"`, etc.) - these always work correctly
+- Individual flags (`autospec run -p "hint"`, `autospec run -i "hint"`) - these always work correctly
+- Multiple flags (`autospec run -ti "hint"`) - these always work correctly
+
 Modify the stage execution to differentiate between:
 - Running with `-a` (full workflow): description only to specify
-- Running individual stages: argument goes to selected stages
+- All other cases: argument goes to selected stages as before
 
 **Implementation approach**:
 ```go
@@ -298,9 +319,17 @@ User explicitly selected specify, plan, and tasks (not using `-a`). Should the d
 |----------|---------|---------|------|-------|-----------|
 | Full workflow | `run -a "desc"` | "desc" | "" | "" | "" |
 | Full workflow | `all "desc"` | "desc" | "" | "" | "" |
-| Individual stage | `run -p "hint"` | - | "hint" | - | - |
-| Individual stage | `run -i "hint"` | - | - | - | "hint" |
-| Multiple stages | `run -ti "hint"` | - | - | "hint" | "hint" |
+| Direct command | `plan "hint"` | - | "hint" | - | - |
+| Direct command | `tasks "hint"` | - | - | "hint" | - |
+| Direct command | `implement "hint"` | - | - | - | "hint" |
+| Via run flag | `run -p "hint"` | - | "hint" | - | - |
+| Via run flag | `run -i "hint"` | - | - | - | "hint" |
+| Multiple flags | `run -ti "hint"` | - | - | "hint" | "hint" |
 | Explicit selection | `run -spt "desc"` | "desc" | "desc" | "desc" | - |
 
-The fix ensures `-a` behaves like `all` - description only to specify. Individual stage runs continue to work as intended with stage-specific hints.
+**Key points**:
+1. Direct commands (`autospec plan`, `autospec implement`, etc.) ALWAYS accept hints - no changes needed
+2. `autospec run` with individual flags (`-p`, `-t`, `-i`) ALWAYS passes hints - no changes needed
+3. Only `autospec run -a` needs fixing to match `autospec all` behavior
+
+The fix ensures `-a` behaves like `all` - description only to specify. Direct commands and individual stage runs continue to work as intended with stage-specific hints.
