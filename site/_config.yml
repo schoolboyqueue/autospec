@@ -71,26 +71,13 @@ exclude:
   - README.md
 
 # Default frontmatter values
+# Note: parent is set explicitly in each child page's frontmatter
+# to avoid circular references with index pages
 defaults:
   - scope:
       path: ""
     values:
       layout: default
-  - scope:
-      path: "reference"
-    values:
-      layout: default
-      parent: Reference
-  - scope:
-      path: "guides"
-    values:
-      layout: default
-      parent: Guides
-  - scope:
-      path: "architecture"
-    values:
-      layout: default
-      parent: Architecture
 
 # Plugins
 plugins:
