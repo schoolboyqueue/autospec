@@ -28,7 +28,7 @@ autospec specify "Add optional 'requirement_ids' field to tasks in tasks.yaml li
 # 5. Spec Dependencies Field
 autospec specify "Add optional 'depends_on_specs' field to spec.yaml for multi-feature dependencies. PROBLEM: Features often depend on other features but this isn't captured. SCHEMA CHANGE: Add depends_on_specs array field to feature section (e.g., ['007-auth-base']). VALIDATION: Emit warning if dependent spec not found or not Completed. DISPLAY: Show dependency graph in 'autospec list' with --deps flag. CLI: Block 'autospec implement' if dependencies not complete. BENEFIT: Prevents implementing features that depend on unfinished prerequisites."
 
-# 6. Plan Risk Assessment Section
+# 6. Plan Risk Assessment Section - DONE
 autospec specify "Add optional 'risks' section to plan.yaml for documenting implementation risks. PROBLEM: Risks identified during planning aren't captured in artifacts. SCHEMA CHANGE: Add risks array to plan.yaml with fields: id, description, likelihood (low/medium/high), impact (low/medium/high), mitigation. VALIDATION: Emit warning if high-impact risks have no mitigation. DISPLAY: Show risks summary in 'autospec st' for specs in planning phase. BENEFIT: Forces explicit risk acknowledgment before implementation."
 
 # 7. NeedsReview Task Status - REJECTED
