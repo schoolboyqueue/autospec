@@ -69,23 +69,20 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 
 ### Initialize Your Project
 
-Navigate to your git repo/project directory, then check dependencies:
+1. Navigate to your git repo/project directory, then check dependencies:
+   ```bash
+   autospec doctor
+   ```
 
-```bash
-autospec doctor
-```
+2. Initialize Autospec (config, commands, and scripts):
+   ```bash
+   autospec init
+   ```
 
-Initialize Autospec (config, commands, and scripts):
-
-```bash
-autospec init
-```
-
-Create project constitution (once per project, triggers Claude session):
-
-```bash
-autospec constitution
-```
+3. Create project constitution (once per project, triggers Claude session):
+   ```bash
+   autospec constitution
+   ```
 
 ## 🎮 Usage
 
