@@ -32,7 +32,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Add WithArtifactDir method to MockExecutorBuilder in internal/testutil/mock_executor.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -44,7 +44,7 @@ phases:
             - "Method returns *MockExecutorBuilder for fluent chaining"
         - id: "T003"
           title: "Add helper to create test WorkflowOrchestrator with mock ClaudeCmd in internal/testutil/mock_executor.go"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: true
           story_id: null
@@ -57,7 +57,7 @@ phases:
             - "Returns *WorkflowOrchestrator ready for testing"
         - id: "T004"
           title: "Create valid mock artifact fixture files in mocks/fixtures/"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
