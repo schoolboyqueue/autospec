@@ -148,7 +148,7 @@ phases:
             - "Function wraps read errors with context"
         - id: "T010"
           title: "Add TestPromptUserToContinue_WithReader in preflight_test.go"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-003"
