@@ -50,7 +50,7 @@ autospec specify "Add severity configuration for validation warnings. PROBLEM: A
 
 ---
 
-## 0. Orchestrator Schema Validation (HIGH PRIORITY)
+## 0. Orchestrator Schema Validation (HIGH PRIORITY) - DONE
 
 **See full spec:** [.dev/tasks/orchestrator-schema-validation.md](orchestrator-schema-validation.md)
 
