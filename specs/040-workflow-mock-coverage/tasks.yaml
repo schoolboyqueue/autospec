@@ -44,7 +44,7 @@ phases:
             - "Method returns *MockExecutorBuilder for fluent chaining"
         - id: "T003"
           title: "Add helper to create test WorkflowOrchestrator with mock ClaudeCmd in internal/testutil/mock_executor.go"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null

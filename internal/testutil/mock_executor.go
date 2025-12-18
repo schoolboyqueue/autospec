@@ -440,3 +440,98 @@ func writeArtifact(dir, filename, content string) {
 	path := filepath.Join(dir, filename)
 	_ = os.WriteFile(path, []byte(content), 0644)
 }
+
+// NewTestOrchestrator creates a WorkflowOrchestrator configured for testing.
+// It uses mock-claude.sh as the Claude command to avoid real API calls.
+// The specsDir parameter should be an isolated temp directory (e.g., t.TempDir()).
+func NewTestOrchestrator(t *testing.T, specsDir string) *workflow.WorkflowOrchestrator {
+	t.Helper()
+
+	// Find the mock-claude.sh script path
+	mockClaudePath := findMockClaudePath(t)
+
+	// Create state directory within the test temp area
+	stateDir := filepath.Join(specsDir, ".autospec", "state")
+	if err := os.MkdirAll(stateDir, 0755); err != nil {
+		t.Fatalf("failed to create state directory: %v", err)
+	}
+
+	cfg := &config.Configuration{
+		ClaudeCmd:     mockClaudePath,
+		ClaudeArgs:    []string{},
+		SpecsDir:      specsDir,
+		StateDir:      stateDir,
+		MaxRetries:    1, // Minimal retries for faster tests
+		SkipPreflight: true,
+		Timeout:       30, // 30 second timeout for tests
+	}
+
+	return workflow.NewWorkflowOrchestrator(cfg)
+}
+
+// findMockClaudePath locates the mock-claude.sh script relative to the repo root.
+func findMockClaudePath(t *testing.T) string {
+	t.Helper()
+
+	// Get the path to the current source file
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("failed to determine current file location")
+	}
+
+	// Navigate from internal/testutil/ to repo root
+	repoRoot := filepath.Join(filepath.Dir(currentFile), "..", "..")
+
+	// Try the primary location first
+	mockPath := filepath.Join(repoRoot, "mocks", "scripts", "mock-claude.sh")
+	if _, err := os.Stat(mockPath); err == nil {
+		return mockPath
+	}
+
+	// Fallback location
+	mockPath = filepath.Join(repoRoot, "tests", "mocks", "mock-claude.sh")
+	if _, err := os.Stat(mockPath); err == nil {
+		return mockPath
+	}
+
+	t.Fatalf("mock-claude.sh not found at expected locations")
+	return ""
+}
+
+// SetupSpecDirectory creates a test spec directory with the given name.
+// Returns the full path to the spec directory.
+func SetupSpecDirectory(t *testing.T, specsDir, specName string) string {
+	t.Helper()
+
+	specDir := filepath.Join(specsDir, specName)
+	if err := os.MkdirAll(specDir, 0755); err != nil {
+		t.Fatalf("failed to create spec directory: %v", err)
+	}
+	return specDir
+}
+
+// WriteTestSpec writes a valid spec.yaml to the given spec directory.
+func WriteTestSpec(t *testing.T, specDir string) {
+	t.Helper()
+	ArtifactGenerators.Spec(specDir)
+}
+
+// WriteTestPlan writes a valid plan.yaml to the given spec directory.
+func WriteTestPlan(t *testing.T, specDir string) {
+	t.Helper()
+	ArtifactGenerators.Plan(specDir)
+}
+
+// WriteTestTasks writes a valid tasks.yaml to the given spec directory.
+func WriteTestTasks(t *testing.T, specDir string) {
+	t.Helper()
+	ArtifactGenerators.Tasks(specDir)
+}
+
+// WriteAllTestArtifacts writes all three artifact files (spec, plan, tasks) to the spec directory.
+func WriteAllTestArtifacts(t *testing.T, specDir string) {
+	t.Helper()
+	WriteTestSpec(t, specDir)
+	WriteTestPlan(t, specDir)
+	WriteTestTasks(t, specDir)
+}
