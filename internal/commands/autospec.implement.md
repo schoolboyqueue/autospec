@@ -35,7 +35,40 @@ You **MUST** consider the user input before proceeding (if not empty).
 
    If the script fails, it will output an error message instructing the user to run `/autospec.tasks` first.
 
-2. **Check checklists status** (if FEATURE_DIR/checklists/ exists):
+2. **Phase Context Metadata** (CRITICAL - Token Optimization):
+
+   **IMMEDIATELY** after running prereqs, check if `--context-file` was used. If so, parse the `_context_meta` section FIRST before any other file reads.
+
+   **`_context_meta` Fields**:
+   - `phase_artifacts_bundled: true` - Indicates that spec.yaml, plan.yaml, and tasks.yaml (phase-filtered) are already bundled in this context file
+   - `bundled_artifacts` - Lists the artifacts included: `["spec.yaml", "plan.yaml", "tasks.yaml (phase-filtered)"]`
+   - `has_checklists` - Boolean indicating whether a `checklists/` directory exists for this feature
+     - If `false`: **DO NOT** check for, scan, or read from the checklists directory - it doesn't exist, skip step 3 entirely
+     - If `true`: Checklists directory exists, proceed to step 3
+   - `skip_reads` - Explicit list of file paths that are already bundled and **MUST NOT** be read separately
+
+   **CRITICAL INSTRUCTION**:
+   ```
+   DO NOT read files listed in skip_reads when _context_meta.phase_artifacts_bundled is true.
+   DO NOT check for checklists directory when _context_meta.has_checklists is false.
+   ```
+
+   **Example `_context_meta` section**:
+   ```yaml
+   _context_meta:
+     phase_artifacts_bundled: true
+     bundled_artifacts:
+       - spec.yaml
+       - plan.yaml
+       - tasks.yaml (phase-filtered)
+     has_checklists: false
+     skip_reads:
+       - specs/my-feature/spec.yaml
+       - specs/my-feature/plan.yaml
+       - specs/my-feature/tasks.yaml
+   ```
+
+3. **Check checklists status** (SKIP if `_context_meta.has_checklists: false`):
    - Scan all `*.yaml` checklist files in the checklists/ directory
    - For each checklist YAML file, parse and count:
      - Total items: All items across all categories (`categories[].items[]`)
@@ -60,50 +93,11 @@ You **MUST** consider the user input before proceeding (if not empty).
      - **STOP** and ask: "Some checklists are incomplete. Do you want to proceed with implementation anyway? (yes/no)"
      - Wait for user response before continuing
      - If user says "no" or "wait" or "stop", halt execution
-     - If user says "yes" or "proceed" or "continue", proceed to step 3
+     - If user says "yes" or "proceed" or "continue", proceed to step 4
 
    - **If all checklists are complete**:
      - Display the table showing all checklists passed
-     - Automatically proceed to step 3
-
-3. **Phase Context Metadata** (CRITICAL - Token Optimization):
-
-   When using `--phase N --context-file <path>`, the context file contains a `_context_meta` section with machine-readable metadata. **You MUST honor these signals to avoid redundant file reads.**
-
-   **`_context_meta` Fields**:
-   - `phase_artifacts_bundled: true` - Indicates that spec.yaml, plan.yaml, and tasks.yaml (phase-filtered) are already bundled in this context file
-   - `bundled_artifacts` - Lists the artifacts included: `["spec.yaml", "plan.yaml", "tasks.yaml (phase-filtered)"]`
-   - `has_checklists` - Boolean indicating whether a `checklists/` directory exists for this feature
-     - If `false`: **DO NOT** check for or read from the checklists directory (it doesn't exist)
-     - If `true`: Checklists directory exists and may contain checklist files
-   - `skip_reads` - Explicit list of file paths that are already bundled and **MUST NOT** be read separately
-
-   **CRITICAL INSTRUCTION**:
-   ```
-   DO NOT read files listed in skip_reads when _context_meta.phase_artifacts_bundled is true.
-   ```
-
-   The `skip_reads` list contains paths like:
-   - `specs/<feature>/spec.yaml`
-   - `specs/<feature>/plan.yaml`
-   - `specs/<feature>/tasks.yaml`
-
-   These files are **already included** in the context file you just read. Reading them again wastes 5-15K tokens per session.
-
-   **Example `_context_meta` section**:
-   ```yaml
-   _context_meta:
-     phase_artifacts_bundled: true
-     bundled_artifacts:
-       - spec.yaml
-       - plan.yaml
-       - tasks.yaml (phase-filtered)
-     has_checklists: false
-     skip_reads:
-       - specs/my-feature/spec.yaml
-       - specs/my-feature/plan.yaml
-       - specs/my-feature/tasks.yaml
-   ```
+     - Automatically proceed to step 4
 
 4. **Load and analyze the implementation context** (if NOT using `--context-file`):
 

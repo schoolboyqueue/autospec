@@ -59,7 +59,7 @@ phases:
       tasks:
         - id: "T004"
           title: "Create homepage with hero and navigation"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -73,7 +73,7 @@ phases:
             - "Links to major documentation sections"
         - id: "T005"
           title: "Define navigation structure in _config.yml"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -92,7 +92,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Create reference section parent page"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -105,7 +105,7 @@ phases:
             - "nav_order places it correctly in navigation"
         - id: "T007"
           title: "Create CLI reference page from docs/reference.md"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -119,7 +119,7 @@ phases:
             - "Syntax highlighting applied to command examples"
         - id: "T008"
           title: "Create configuration reference page"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -132,7 +132,7 @@ phases:
             - "YAML examples with syntax highlighting"
         - id: "T009"
           title: "Create YAML schema reference page"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -151,7 +151,7 @@ phases:
       tasks:
         - id: "T010"
           title: "Create quickstart page with installation and first workflow"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"

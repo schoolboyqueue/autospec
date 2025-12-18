@@ -26,7 +26,15 @@ color_scheme: light
 enable_copy_code_button: true
 
 # Navigation structure
+# Just the Docs uses frontmatter nav_order for ordering pages
+# Main sections: Home (1), Quickstart (2), Reference (3), Guides (4), Architecture (5)
 nav_sort: case_insensitive
+
+# Navigation settings
+nav_enabled: true
+nav_external_links:
+  - title: GitHub
+    url: https://github.com/ariel-frischer/autospec
 
 # Heading anchor links
 heading_anchors: true
@@ -62,20 +70,48 @@ exclude:
   - vendor/
   - README.md
 
-# Collections for organizing content
-collections:
-  docs:
-    output: true
-    permalink: /:collection/:path/
-
 # Default frontmatter values
 defaults:
   - scope:
       path: ""
     values:
       layout: default
+  - scope:
+      path: "reference"
+    values:
+      layout: default
+      parent: Reference
+  - scope:
+      path: "guides"
+    values:
+      layout: default
+      parent: Guides
+  - scope:
+      path: "architecture"
+    values:
+      layout: default
+      parent: Architecture
 
 # Plugins
 plugins:
   - jekyll-seo-tag
   - jekyll-sitemap
+
+# Mermaid diagram support (optional)
+mermaid:
+  version: "10.6.0"
+
+# Callouts
+callouts:
+  note:
+    title: Note
+    color: blue
+  warning:
+    title: Warning
+    color: red
+  tip:
+    title: Tip
+    color: green
+  important:
+    title: Important
+    color: yellow
