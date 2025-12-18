@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- GitHub Pages documentation website with architecture overview, internals guide, FAQ, and troubleshooting pages
+- `ContextMeta` struct to reduce redundant artifact file reads during phase execution
 - `task block` and `task unblock` commands to mark tasks as blocked with documented reasons
 - `BlockedReason` field in tasks.yaml to track why tasks are blocked (with validation warnings when missing)
 - `risks` section in plan.yaml for documenting implementation risks and mitigation strategies
@@ -15,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `notes` field in tasks.yaml for additional task context (max 1000 chars)
 
 ### Changed
+- Documentation restructured into feature cards for better presentation
+- Custom sidebar styles for improved layout and usability
 - Pre-flight validation now distinguishes between missing and invalid artifacts with specific error messages
 - Retry state resets automatically when starting the specify stage
 
