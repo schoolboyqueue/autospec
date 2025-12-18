@@ -246,6 +246,57 @@ func (e *Executor) displayCommandExecution(command string) {
 	e.debugLog("About to call Claude.Execute()")
 }
 
+// failStageProgress marks a stage as failed in the progress display.
+// Uses Progress controller if set, falls back to deprecated ProgressDisplay field.
+func (e *Executor) failStageProgress(stageInfo progress.StageInfo, err error) {
+	// Prefer new Progress controller
+	if e.Progress != nil {
+		e.Progress.FailStage(stageInfo, err)
+		return
+	}
+
+	// Fallback to deprecated ProgressDisplay field
+	if e.ProgressDisplay != nil {
+		e.ProgressDisplay.FailStage(stageInfo, err)
+	}
+}
+
+// completeStageProgress marks a stage as completed in the progress display.
+// Uses Progress controller if set, falls back to deprecated ProgressDisplay field.
+func (e *Executor) completeStageProgress(stageInfo progress.StageInfo) {
+	// Prefer new Progress controller
+	if e.Progress != nil {
+		if err := e.Progress.CompleteStage(stageInfo); err != nil {
+			fmt.Printf("Warning: progress display error: %v\n", err)
+		}
+		return
+	}
+
+	// Fallback to deprecated ProgressDisplay field
+	if e.ProgressDisplay != nil {
+		if err := e.ProgressDisplay.CompleteStage(stageInfo); err != nil {
+			fmt.Printf("Warning: progress display error: %v\n", err)
+		}
+	}
+}
+
+// sendErrorNotification dispatches an error notification.
+// Uses Notify dispatcher if set, falls back to deprecated NotificationHandler field.
+func (e *Executor) sendErrorNotification(stageName string, err error) {
+	e.debugLog("Sending error notification for stage %s", stageName)
+
+	// Prefer new Notify dispatcher
+	if e.Notify != nil {
+		e.Notify.OnError(stageName, err)
+		return
+	}
+
+	// Fallback to deprecated NotificationHandler field
+	if e.NotificationHandler != nil {
+		e.NotificationHandler.OnError(stageName, err)
+	}
+}
+
 // handleExecutionFailure handles command execution failure without sending stage notification.
 // Stage notification is handled by lifecycle.RunStage wrapper.
 // Uses Progress/Notify controllers if set, falls back to deprecated fields.

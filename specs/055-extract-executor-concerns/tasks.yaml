@@ -82,7 +82,7 @@ phases:
             - "FormatCommand returns predictable string"
         - id: "T005"
           title: "Refactor Executor to use ClaudeRunner interface"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -99,7 +99,7 @@ phases:
             - "All errors wrapped with context"
         - id: "T006"
           title: "Add unit tests for Executor with mock ClaudeRunner"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
