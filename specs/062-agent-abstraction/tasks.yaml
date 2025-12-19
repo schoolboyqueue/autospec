@@ -233,7 +233,7 @@ phases:
       tasks:
         - id: "T017"
           title: "Add agent_preset and custom_agent_cmd fields to Config struct"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -246,7 +246,7 @@ phases:
             - "Fields can be set via environment variables"
         - id: "T018"
           title: "Implement GetAgent() method with priority order"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -258,7 +258,7 @@ phases:
             - "Handles all combinations of fields correctly"
         - id: "T019"
           title: "Implement deprecation warnings for legacy config fields"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -271,7 +271,7 @@ phases:
             - "Legacy fields still function correctly"
         - id: "T020"
           title: "Add tests for config priority and backward compatibility"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-005"
@@ -290,7 +290,7 @@ phases:
       tasks:
         - id: "T021"
           title: "Refactor workflow/claude.go to use Agent interface"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: false
           story_id: "US-004"
@@ -303,7 +303,7 @@ phases:
             - "Existing tests pass after refactor"
         - id: "T022"
           title: "Add --agent flag to run command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -315,7 +315,7 @@ phases:
             - "Unknown agent name shows error with available agents list"
         - id: "T023"
           title: "Add --agent flag to implement command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -326,7 +326,7 @@ phases:
             - "Flag overrides agent_preset for single execution"
         - id: "T024"
           title: "Add --agent flag to prep command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -337,7 +337,7 @@ phases:
             - "Flag overrides agent_preset for single execution"
         - id: "T025"
           title: "Add --agent flag to specify, plan, tasks commands"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
