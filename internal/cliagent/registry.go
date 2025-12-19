@@ -123,3 +123,59 @@ func Available() []Agent {
 func Automatable() []Agent {
 	return Default.Automatable()
 }
+
+// AgentStatus represents the diagnostic status of an agent.
+type AgentStatus struct {
+	Name      string
+	Installed bool
+	Version   string
+	Valid     bool
+	Error     string
+}
+
+// Doctor returns diagnostic status for all registered agents.
+// Returns statuses in alphabetical order by agent name.
+func (r *Registry) Doctor() []AgentStatus {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	statuses := make([]AgentStatus, 0, len(r.agents))
+	for _, agent := range r.agents {
+		status := AgentStatus{
+			Name: agent.Name(),
+		}
+
+		// Check validation (installed and env vars)
+		err := agent.Validate()
+		if err == nil {
+			status.Installed = true
+			status.Valid = true
+		} else {
+			status.Error = err.Error()
+			// Agent may be installed but invalid (e.g., missing env vars)
+			// We can't easily distinguish, so assume not installed if validation fails
+			status.Installed = false
+			status.Valid = false
+		}
+
+		// Try to get version if installed
+		if status.Installed {
+			version, verErr := agent.Version()
+			if verErr == nil {
+				status.Version = version
+			}
+		}
+
+		statuses = append(statuses, status)
+	}
+
+	sort.Slice(statuses, func(i, j int) bool {
+		return statuses[i].Name < statuses[j].Name
+	})
+	return statuses
+}
+
+// Doctor returns diagnostic status for all agents in the default registry.
+func Doctor() []AgentStatus {
+	return Default.Doctor()
+}

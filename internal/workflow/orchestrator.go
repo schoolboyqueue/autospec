@@ -66,16 +66,15 @@ func (w *WorkflowOrchestrator) debugLog(format string, args ...interface{}) {
 // - ProgressController wraps nil display (CLI commands don't provide progress display)
 // - NotifyDispatcher wraps nil handler (CLI commands set handler via deprecated field)
 //
+// Agent resolution priority:
+// 1. cfg.GetAgent() - uses new agent abstraction (agent_preset or custom_agent_cmd)
+// 2. Legacy fields (ClaudeCmd, ClaudeArgs, CustomClaudeCmd) if GetAgent() returns nil
+//
 // Note: CLI commands typically set Executor.NotificationHandler after construction.
 // The Executor methods support both new controllers and deprecated fields via fallback.
 func NewWorkflowOrchestrator(cfg *config.Configuration) *WorkflowOrchestrator {
-	// Create ClaudeExecutor as ClaudeRunner interface implementation
-	claude := &ClaudeExecutor{
-		ClaudeCmd:       cfg.ClaudeCmd,
-		ClaudeArgs:      cfg.ClaudeArgs,
-		CustomClaudeCmd: cfg.CustomClaudeCmd,
-		Timeout:         cfg.Timeout,
-	}
+	// Create ClaudeExecutor with agent from config
+	claude := newClaudeExecutorFromConfig(cfg)
 
 	// Create ProgressController with nil display (no-op, CLI commands don't use progress display)
 	progressCtrl := NewProgressController(nil)
@@ -557,4 +556,25 @@ func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string)
 		return fmt.Errorf("resolving spec name: %w", err)
 	}
 	return w.stageExecutor.ExecuteAnalyze(specName, prompt)
+}
+
+// newClaudeExecutorFromConfig creates a ClaudeExecutor from configuration.
+// Tries to use the new Agent abstraction first, falling back to legacy fields.
+func newClaudeExecutorFromConfig(cfg *config.Configuration) *ClaudeExecutor {
+	// Try new agent abstraction first
+	agent, err := cfg.GetAgent()
+	if err == nil && agent != nil {
+		return &ClaudeExecutor{
+			Agent:   agent,
+			Timeout: cfg.Timeout,
+		}
+	}
+
+	// Fall back to legacy configuration
+	return &ClaudeExecutor{
+		ClaudeCmd:       cfg.ClaudeCmd,
+		ClaudeArgs:      cfg.ClaudeArgs,
+		CustomClaudeCmd: cfg.CustomClaudeCmd,
+		Timeout:         cfg.Timeout,
+	}
 }

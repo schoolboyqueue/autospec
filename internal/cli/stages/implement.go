@@ -139,6 +139,11 @@ The --tasks mode provides maximum context isolation:
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Apply agent override from --agent flag
+		if _, err := shared.ApplyAgentOverride(cmd, cfg); err != nil {
+			return err
+		}
+
 		// Resolve execution mode based on flags and config
 		anyFlagsChanged := cmd.Flags().Changed("phases") ||
 			cmd.Flags().Changed("tasks") ||
@@ -321,4 +326,7 @@ func init() {
 	implementCmd.MarkFlagsMutuallyExclusive("single-session", "phase")
 	implementCmd.MarkFlagsMutuallyExclusive("single-session", "from-phase")
 	implementCmd.MarkFlagsMutuallyExclusive("single-session", "tasks")
+
+	// Agent override flag
+	shared.AddAgentFlag(implementCmd)
 }
