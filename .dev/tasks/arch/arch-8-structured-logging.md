@@ -1,5 +1,11 @@
 # Arch 8: Structured Logging (LOW PRIORITY)
 
+> **Status: SKIP**
+>
+> **Reason:** Over-engineered for a CLI tool. The 5 debugLog methods (4 lines each, 43 call sites) use `fmt.Printf`—which is optimal for CLI debug output read by humans in terminals. Structured logging (slog) solves server observability problems: log aggregation, machine parsing, production monitoring. None apply here. Users run commands interactively and grep terminal output. Adding slog abstraction would increase complexity for no user benefit. Minor DRY improvement (consolidating debugLog into shared helper) can be done opportunistically during other refactoring if desired.
+>
+> **Reviewed:** 2025-12-18
+
 **Location:** Multiple packages
 **Impact:** LOW - Improves observability
 **Effort:** LOW

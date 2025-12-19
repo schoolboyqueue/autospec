@@ -1,4 +1,19 @@
-# Arch 9: Validator Composition Pattern (LOW PRIORITY)
+# Arch 9: Validator Composition Pattern (SKIPPED)
+
+**Status:** SKIPPED
+**Decision Date:** 2025-12-18
+
+### Skip Reason
+
+The problem as described does not match the actual codebase:
+
+1. **`baseValidator` is minimal** — only holds `artifactType` and provides `Type()` (5 lines)
+2. **Validators have real logic** — `SpecValidator.Validate()` has ~50 lines of actual validation, not pass-through wrappers
+3. **Helpers are already standalone functions** — `parseYAMLFile()`, `findNode()`, `validateRequiredField()` are package-level functions, not methods on baseValidator
+
+The proposed `ValidatorEngine` abstraction would add complexity without solving a real problem. Current pattern is idiomatic Go: minimal embedding for shared type + standalone helper functions.
+
+---
 
 **Location:** `internal/validation/`
 **Impact:** LOW - More idiomatic Go

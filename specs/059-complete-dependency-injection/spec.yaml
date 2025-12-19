@@ -1,7 +1,14 @@
 feature:
   branch: "059-complete-dependency-injection"
   created: "2025-12-18"
-  status: "Draft"
+  status: "Skipped"
+  skipped_at: "2025-12-18"
+  skip_reason: |
+    Superseded by arch-10 (targeted-test-coverage). After analysis, arch-1/2 already solved
+    the core testability problem via executor interfaces. Adding ConfigProvider, ArtifactValidator,
+    and RetryStateStore interfaces would be abstraction for abstraction's sake - config is already
+    a simple struct, validation should be tested in its own package, and retry can use temp files.
+    The 7-field OrchestratorDeps was a code smell suggesting over-engineering.
   input: |
     # Arch 4: Complete Dependency Injection (REVISED)
 

@@ -1,5 +1,11 @@
 # Arch 7: Type-Safe Enums (LOW PRIORITY)
 
+> **Status: SKIP**
+>
+> **Reason:** False premise. The codebase already uses typed constants correctly—all 21 Stage comparisons use `case StageSpecify:` not string literals like `== "specify"`. The claimed typo problem (`stage == "specfy"` compiling) doesn't exist because no code uses raw strings. Converting to int-based enums would BREAK YAML/JSON serialization (would serialize as 0,1,2 instead of "specify","plan") and require custom UnmarshalYAML/JSON methods. The current `type Stage string` pattern already catches typos at compile time when using constants.
+>
+> **Reviewed:** 2025-12-18
+
 **Location:** Multiple packages (workflow, validation)
 **Impact:** LOW - Improves type safety
 **Effort:** LOW

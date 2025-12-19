@@ -1,5 +1,11 @@
 # Arch 6: Split Validation Schema File (LOW PRIORITY)
 
+> **Status: SKIP**
+>
+> **Reason:** The file is 687 LOC of well-organized data definitions (not 761). Each schema would become <100 LOC files—too small to justify separation. Splitting would require cross-file imports for `GetSchema()` lookup or a registry pattern, adding complexity. No shared fields exist between schemas to DRY up. Only 7 commits to this file in history—it's stable. Reconsider only if artifact types grow to 10+ (>1200 LOC), and prefer generating schemas from YAML over file splitting.
+>
+> **Reviewed:** 2025-12-18
+
 **Location:** `internal/validation/schema.go` (761 LOC)
 **Impact:** LOW - Improves code organization
 **Effort:** LOW

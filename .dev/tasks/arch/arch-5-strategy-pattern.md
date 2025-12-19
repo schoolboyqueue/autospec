@@ -1,5 +1,11 @@
 # Arch 5: Strategy Pattern for Execute Methods (MEDIUM PRIORITY)
 
+> **Status: SKIP**
+>
+> **Reason:** The codebase already implements Strategy pattern correctly via `StageExecutorInterface`, `PhaseExecutorInterface`, and `TaskExecutorInterface`. The 12 Execute* methods on WorkflowOrchestrator are thin 8-12 line delegation wrappers—exactly what an orchestrator should be. Adding another strategy layer would create indirection with no benefit. The "combinatorial explosion" claim is inaccurate; the orchestrator correctly delegates to existing strategy implementations.
+>
+> **Reviewed:** 2025-12-18
+
 **Location:** `internal/workflow/workflow.go`
 **Impact:** MEDIUM - Reduces method count, improves maintainability
 **Effort:** MEDIUM
