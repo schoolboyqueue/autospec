@@ -58,6 +58,10 @@ type Configuration struct {
 	// Oldest entries are pruned when this limit is exceeded.
 	// Default: 500. Can be set via AUTOSPEC_MAX_HISTORY_ENTRIES env var.
 	MaxHistoryEntries int `koanf:"max_history_entries"`
+
+	// ViewLimit sets the number of recent specs displayed by the view command.
+	// Default: 5. Can be set via AUTOSPEC_VIEW_LIMIT env var.
+	ViewLimit int `koanf:"view_limit"`
 }
 
 // LoadOptions configures how configuration is loaded

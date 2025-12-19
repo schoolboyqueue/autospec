@@ -29,6 +29,9 @@ implement_method: phases              # Default: phases | tasks | single-session
 # History settings
 max_history_entries: 500              # Max command history entries to retain
 
+# View dashboard settings
+view_limit: 5                         # Number of recent specs to display
+
 # Notifications (all platforms)
 notifications:
   enabled: false                      # Enable notifications (opt-in)
@@ -78,5 +81,8 @@ func GetDefaults() map[string]interface{} {
 		// max_history_entries: Maximum number of command history entries to retain.
 		// Oldest entries are pruned when this limit is exceeded.
 		"max_history_entries": 500,
+		// view_limit: Number of recent specs to display in the view command.
+		// Default: 5. Can be overridden with --limit flag.
+		"view_limit": 5,
 	}
 }

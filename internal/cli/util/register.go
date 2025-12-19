@@ -14,4 +14,5 @@ func Register(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(sauceCmd)
 	rootCmd.AddCommand(cleanCmd)
+	rootCmd.AddCommand(viewCmd)
 }
