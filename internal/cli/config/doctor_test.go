@@ -11,7 +11,6 @@ import (
 )
 
 func TestDoctorCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "doctor", doctorCmd.Use)
 	assert.NotEmpty(t, doctorCmd.Short)
@@ -20,28 +19,24 @@ func TestDoctorCmd_Structure(t *testing.T) {
 }
 
 func TestDoctorCmd_Aliases(t *testing.T) {
-	t.Parallel()
 
 	aliases := doctorCmd.Aliases
 	assert.Contains(t, aliases, "doc", "Should have 'doc' alias")
 }
 
 func TestDoctorCmd_GroupID(t *testing.T) {
-	t.Parallel()
 
 	// doctorCmd should be in the configuration group
 	assert.Equal(t, "configuration", doctorCmd.GroupID)
 }
 
 func TestDoctorCmd_HasRunFunc(t *testing.T) {
-	t.Parallel()
 
 	// Doctor uses Run, not RunE (because it handles errors internally)
 	assert.NotNil(t, doctorCmd.Run, "Doctor command should have a Run function")
 }
 
 func TestDoctorCmd_DescriptionContents(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		wantContains string
@@ -67,7 +62,6 @@ func TestDoctorCmd_DescriptionContents(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			var content string
 			switch tt.field {
@@ -85,7 +79,6 @@ func TestDoctorCmd_DescriptionContents(t *testing.T) {
 }
 
 func TestDoctorCmd_IsExecutable(t *testing.T) {
-	t.Parallel()
 
 	// Doctor command should be executable (has Run function)
 	// Verify Run or RunE is set

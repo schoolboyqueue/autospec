@@ -182,6 +182,167 @@ func TestStageCommands_HaveExamples(t *testing.T) {
 	}
 }
 
+func TestSpecifyCmd_LongDescriptionContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	long := specifyCmd.Long
+	assert.Contains(t, long, "spec.yaml", "Long description should mention spec.yaml")
+	assert.Contains(t, long, "specification", "Long description should explain purpose")
+}
+
+func TestPlanCmd_LongDescriptionContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	long := planCmd.Long
+	assert.Contains(t, long, "plan.yaml", "Long description should mention plan.yaml")
+	assert.Contains(t, long, "planning", "Long description should explain purpose")
+}
+
+func TestTasksCmd_LongDescriptionContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	long := tasksCmd.Long
+	assert.Contains(t, long, "tasks.yaml", "Long description should mention tasks.yaml")
+	assert.Contains(t, long, "task", "Long description should explain purpose")
+}
+
+func TestImplementCmd_LongDescriptionContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	long := implementCmd.Long
+	assert.Contains(t, long, "tasks.yaml", "Long description should mention tasks.yaml")
+	assert.Contains(t, long, "--phases", "Long description should document phases flag")
+	assert.Contains(t, long, "--tasks", "Long description should document tasks flag")
+	assert.Contains(t, long, "--single-session", "Long description should document single-session flag")
+	assert.Contains(t, long, "--resume", "Long description should document resume flag")
+	assert.Contains(t, long, "implement_method", "Long description should document config option")
+}
+
+func TestSpecifyCmd_ShortDescriptionAliases(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	short := specifyCmd.Short
+	assert.Contains(t, short, "spec", "Short description should mention alias")
+	assert.Contains(t, short, "s", "Short description should mention single-letter alias")
+}
+
+func TestPlanCmd_ShortDescriptionAliases(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	short := planCmd.Short
+	assert.Contains(t, short, "p", "Short description should mention alias")
+}
+
+func TestTasksCmd_ShortDescriptionAliases(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	short := tasksCmd.Short
+	assert.Contains(t, short, "t", "Short description should mention alias")
+}
+
+func TestImplementCmd_ShortDescriptionAliases(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	short := implementCmd.Short
+	assert.Contains(t, short, "impl", "Short description should mention alias")
+	assert.Contains(t, short, "i", "Short description should mention single-letter alias")
+}
+
+func TestSpecifyCmd_HasMaxRetriesFlag(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	flag := specifyCmd.Flags().Lookup("max-retries")
+	assert.NotNil(t, flag, "max-retries flag should exist")
+	assert.Equal(t, "r", flag.Shorthand, "max-retries should have shorthand 'r'")
+	assert.Equal(t, "0", flag.DefValue, "max-retries should default to 0")
+}
+
+func TestPlanCmd_InheritsRootFlags(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	// Plan command doesn't define its own flags (inherits from root)
+	// Verify the command can be executed with inherited flags
+	assert.NotNil(t, planCmd.RunE, "Plan command should have RunE")
+}
+
+func TestTasksCmd_InheritsRootFlags(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	// Tasks command doesn't define its own flags (inherits from root)
+	// Verify the command can be executed with inherited flags
+	assert.NotNil(t, tasksCmd.RunE, "Tasks command should have RunE")
+}
+
+func TestSpecifyCmd_ArgsValidationCases(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	tests := map[string]struct {
+		args    []string
+		wantErr bool
+	}{
+		"empty args returns error": {
+			args:    []string{},
+			wantErr: true,
+		},
+		"single word description valid": {
+			args:    []string{"feature"},
+			wantErr: false,
+		},
+		"multi word description valid": {
+			args:    []string{"Add", "user", "authentication"},
+			wantErr: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Cannot run in parallel - accesses global command state
+
+			err := specifyCmd.Args(specifyCmd, tt.args)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestImplementCmd_ExampleContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	example := implementCmd.Example
+	assert.Contains(t, example, "--resume", "Example should show resume flag usage")
+	assert.Contains(t, example, "--phases", "Example should show phases flag usage")
+	assert.Contains(t, example, "--phase", "Example should show phase flag usage")
+	assert.Contains(t, example, "--from-phase", "Example should show from-phase flag usage")
+	assert.Contains(t, example, "--tasks", "Example should show tasks flag usage")
+	assert.Contains(t, example, "--from-task", "Example should show from-task flag usage")
+	assert.Contains(t, example, "--single-session", "Example should show single-session flag usage")
+}
+
+func TestPlanCmd_ExampleContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	example := planCmd.Example
+	assert.Contains(t, example, "autospec plan", "Example should show basic usage")
+}
+
+func TestTasksCmd_ExampleContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	example := tasksCmd.Example
+	assert.Contains(t, example, "autospec tasks", "Example should show basic usage")
+}
+
+func TestSpecifyCmd_ExampleContent(t *testing.T) {
+	// Cannot run in parallel - accesses global command state
+
+	example := specifyCmd.Example
+	assert.Contains(t, example, "autospec specify", "Example should show basic usage")
+	assert.Contains(t, example, "authentication", "Example should show realistic usage")
+}
+
 func TestSpecifyCmd_ArgsFunction(t *testing.T) {
 	// Cannot run in parallel - accesses global command state
 

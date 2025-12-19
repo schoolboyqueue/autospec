@@ -56,7 +56,6 @@ func TestRunInit_InstallsCommands(t *testing.T) {
 }
 
 func TestCountResults(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		results       []commands.InstallResult
@@ -106,7 +105,6 @@ func TestCountResults(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			installed, updated := countResults(tt.results)
 			assert.Equal(t, tt.wantInstalled, installed)
@@ -116,7 +114,6 @@ func TestCountResults(t *testing.T) {
 }
 
 func TestPromptYesNo(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		input    string
@@ -158,7 +155,6 @@ func TestPromptYesNo(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			cmd := &cobra.Command{Use: "test"}
 			var outBuf bytes.Buffer
@@ -172,7 +168,6 @@ func TestPromptYesNo(t *testing.T) {
 }
 
 func TestFileExistsCheck(t *testing.T) {
-	t.Parallel()
 
 	tmpDir := t.TempDir()
 
@@ -206,7 +201,6 @@ func TestFileExistsCheck(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			path := tt.setup()
 			result := fileExistsCheck(path)
@@ -216,7 +210,6 @@ func TestFileExistsCheck(t *testing.T) {
 }
 
 func TestGetConfigPath(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		project bool
@@ -234,7 +227,6 @@ func TestGetConfigPath(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			path, err := getConfigPath(tt.project)
 			if tt.wantErr {
@@ -248,7 +240,6 @@ func TestGetConfigPath(t *testing.T) {
 }
 
 func TestWriteDefaultConfig(t *testing.T) {
-	t.Parallel()
 
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "subdir", "config.yml")
@@ -266,7 +257,6 @@ func TestWriteDefaultConfig(t *testing.T) {
 }
 
 func TestWriteDefaultConfig_ErrorOnInvalidPath(t *testing.T) {
-	t.Parallel()
 
 	// Use a path that will fail (empty string would cause issues)
 	// On most systems, trying to write to root's protected areas would fail
@@ -279,7 +269,6 @@ func TestWriteDefaultConfig_ErrorOnInvalidPath(t *testing.T) {
 }
 
 func TestCopyConstitution(t *testing.T) {
-	t.Parallel()
 
 	tmpDir := t.TempDir()
 	srcPath := filepath.Join(tmpDir, "source.yaml")
@@ -302,7 +291,6 @@ func TestCopyConstitution(t *testing.T) {
 }
 
 func TestCopyConstitution_SourceNotFound(t *testing.T) {
-	t.Parallel()
 
 	tmpDir := t.TempDir()
 	srcPath := filepath.Join(tmpDir, "nonexistent.yaml")
@@ -425,7 +413,6 @@ func TestCheckGitignore_WithoutAutospec(t *testing.T) {
 }
 
 func TestPrintSummary_WithConstitution(t *testing.T) {
-	t.Parallel()
 
 	var buf bytes.Buffer
 	printSummary(&buf, true)
@@ -436,7 +423,6 @@ func TestPrintSummary_WithConstitution(t *testing.T) {
 }
 
 func TestPrintSummary_WithoutConstitution(t *testing.T) {
-	t.Parallel()
 
 	var buf bytes.Buffer
 	printSummary(&buf, false)
@@ -447,7 +433,6 @@ func TestPrintSummary_WithoutConstitution(t *testing.T) {
 }
 
 func TestInitCmd_RunE(t *testing.T) {
-	t.Parallel()
 
 	// Verify initCmd has a RunE function set
 	assert.NotNil(t, initCmd.RunE)

@@ -14,7 +14,6 @@ import (
 )
 
 func TestRegister(t *testing.T) {
-	t.Parallel()
 
 	rootCmd := &cobra.Command{
 		Use:   "test",
@@ -39,7 +38,6 @@ func TestRegister(t *testing.T) {
 }
 
 func TestCommandsCmdStructure(t *testing.T) {
-	t.Parallel()
 
 	// Test commandsCmd structure
 	assert.Equal(t, "commands", commandsCmd.Use)
@@ -48,7 +46,6 @@ func TestCommandsCmdStructure(t *testing.T) {
 }
 
 func TestRegister_DisablesDefaultCompletion(t *testing.T) {
-	t.Parallel()
 
 	rootCmd := &cobra.Command{
 		Use:   "test",
@@ -79,7 +76,6 @@ func TestRegister_SetsRootCmdRef(t *testing.T) {
 }
 
 func TestCommandsCmd_HasSubcommands(t *testing.T) {
-	t.Parallel()
 
 	// The commands command should have subcommands
 	subcommands := commandsCmd.Commands()
@@ -96,21 +92,18 @@ func TestCommandsCmd_HasSubcommands(t *testing.T) {
 }
 
 func TestUninstallCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "uninstall", uninstallCmd.Use)
 	assert.NotEmpty(t, uninstallCmd.Short)
 }
 
 func TestCompletionCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.NotNil(t, completionCmd)
 	// completionCmd is defined in completion_install.go
 }
 
 func TestRegister_CommandGroups(t *testing.T) {
-	t.Parallel()
 
 	rootCmd := &cobra.Command{
 		Use: "test",
@@ -134,7 +127,6 @@ func TestRegister_CommandGroups(t *testing.T) {
 }
 
 func TestCommandsCmd_RunsWithoutArgs(t *testing.T) {
-	t.Parallel()
 
 	// Create isolated command for testing
 	cmd := &cobra.Command{

@@ -11,7 +11,6 @@ import (
 )
 
 func TestMigrateCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "migrate", migrateCmd.Use)
 	assert.NotEmpty(t, migrateCmd.Short)
@@ -20,14 +19,12 @@ func TestMigrateCmd_Structure(t *testing.T) {
 }
 
 func TestMigrateCmd_GroupID(t *testing.T) {
-	t.Parallel()
 
 	// migrateCmd should be in the internal group
 	assert.Equal(t, "internal", migrateCmd.GroupID)
 }
 
 func TestMigrateCmd_NoSubcommands(t *testing.T) {
-	t.Parallel()
 
 	// The standalone migrateCmd (not config migrate) should not have subcommands
 	// as it's a parent command for md-to-yaml migration
@@ -37,7 +34,6 @@ func TestMigrateCmd_NoSubcommands(t *testing.T) {
 }
 
 func TestMigrateCmd_HasValidFields(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		field    string
@@ -63,7 +59,6 @@ func TestMigrateCmd_HasValidFields(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			value := tt.getValue()
 			if tt.wantSet {

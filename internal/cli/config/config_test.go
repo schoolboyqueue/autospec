@@ -13,7 +13,6 @@ import (
 )
 
 func TestRunConfigShow_YAMLOutput(t *testing.T) {
-	t.Parallel()
 
 	// Create isolated command
 	cmd := &cobra.Command{
@@ -37,7 +36,6 @@ func TestRunConfigShow_YAMLOutput(t *testing.T) {
 }
 
 func TestRunConfigShow_JSONOutput(t *testing.T) {
-	t.Parallel()
 
 	// Create isolated command
 	cmd := &cobra.Command{
@@ -63,7 +61,6 @@ func TestRunConfigShow_JSONOutput(t *testing.T) {
 }
 
 func TestConfigShowCmd_OutputFormats(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		jsonFlag bool
@@ -81,7 +78,6 @@ func TestConfigShowCmd_OutputFormats(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			// Create a fresh command for each test
 			cmd := &cobra.Command{
@@ -113,7 +109,6 @@ func TestConfigShowCmd_OutputFormats(t *testing.T) {
 }
 
 func TestRunConfigMigrate_DryRun(t *testing.T) {
-	t.Parallel()
 
 	cmd := &cobra.Command{
 		Use:  "migrate",
@@ -135,7 +130,6 @@ func TestRunConfigMigrate_DryRun(t *testing.T) {
 }
 
 func TestRunConfigMigrate_UserOnly(t *testing.T) {
-	t.Parallel()
 
 	cmd := &cobra.Command{
 		Use:  "migrate",
@@ -155,7 +149,6 @@ func TestRunConfigMigrate_UserOnly(t *testing.T) {
 }
 
 func TestRunConfigMigrate_ProjectOnly(t *testing.T) {
-	t.Parallel()
 
 	cmd := &cobra.Command{
 		Use:  "migrate",
@@ -175,7 +168,6 @@ func TestRunConfigMigrate_ProjectOnly(t *testing.T) {
 }
 
 func TestPrintMigrationSummary_Migrated(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		migrated int
@@ -205,7 +197,6 @@ func TestPrintMigrationSummary_Migrated(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			var buf bytes.Buffer
 			printMigrationSummary(&buf, tt.migrated, tt.skipped, tt.dryRun)
@@ -217,7 +208,6 @@ func TestPrintMigrationSummary_Migrated(t *testing.T) {
 }
 
 func TestConfigCmd_SubcommandExecution(t *testing.T) {
-	t.Parallel()
 
 	// Verify that config command has subcommands properly set up
 	subcommands := configCmd.Commands()
@@ -233,13 +223,11 @@ func TestConfigCmd_SubcommandExecution(t *testing.T) {
 }
 
 func TestConfigShowCmd_HasRunE(t *testing.T) {
-	t.Parallel()
 
 	assert.NotNil(t, configShowCmd.RunE)
 }
 
 func TestConfigMigrateCmd_HasRunE(t *testing.T) {
-	t.Parallel()
 
 	assert.NotNil(t, configMigrateCmd.RunE)
 }

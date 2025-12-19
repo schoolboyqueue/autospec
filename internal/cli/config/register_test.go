@@ -14,7 +14,6 @@ import (
 )
 
 func TestRegister(t *testing.T) {
-	t.Parallel()
 
 	rootCmd := &cobra.Command{
 		Use:   "test",
@@ -41,7 +40,6 @@ func TestRegister(t *testing.T) {
 }
 
 func TestRegister_CommandAnnotations(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		cmdUse  string
@@ -67,7 +65,6 @@ func TestRegister_CommandAnnotations(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			rootCmd := &cobra.Command{
 				Use: "test",
@@ -87,7 +84,6 @@ func TestRegister_CommandAnnotations(t *testing.T) {
 }
 
 func TestInitCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "init", initCmd.Use)
 	assert.NotEmpty(t, initCmd.Short)
@@ -96,7 +92,6 @@ func TestInitCmd_Structure(t *testing.T) {
 }
 
 func TestInitCmd_Flags(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		flagName string
@@ -118,7 +113,6 @@ func TestInitCmd_Flags(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			flag := initCmd.Flags().Lookup(tt.flagName)
 			if tt.wantFlag {
@@ -131,7 +125,6 @@ func TestInitCmd_Flags(t *testing.T) {
 }
 
 func TestConfigCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "config", configCmd.Use)
 	assert.NotEmpty(t, configCmd.Short)
@@ -139,7 +132,6 @@ func TestConfigCmd_Structure(t *testing.T) {
 }
 
 func TestConfigCmd_HasSubcommands(t *testing.T) {
-	t.Parallel()
 
 	subcommands := configCmd.Commands()
 	subcommandNames := make(map[string]bool)
@@ -152,7 +144,6 @@ func TestConfigCmd_HasSubcommands(t *testing.T) {
 }
 
 func TestConfigShowCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "show", configShowCmd.Use)
 	assert.NotEmpty(t, configShowCmd.Short)
@@ -160,7 +151,6 @@ func TestConfigShowCmd_Structure(t *testing.T) {
 }
 
 func TestConfigShowCmd_Flags(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		flagName string
@@ -178,7 +168,6 @@ func TestConfigShowCmd_Flags(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			flag := configShowCmd.Flags().Lookup(tt.flagName)
 			if tt.wantFlag {
@@ -191,7 +180,6 @@ func TestConfigShowCmd_Flags(t *testing.T) {
 }
 
 func TestConfigMigrateCmd_Structure(t *testing.T) {
-	t.Parallel()
 
 	assert.Equal(t, "migrate", configMigrateCmd.Use)
 	assert.NotEmpty(t, configMigrateCmd.Short)
@@ -199,7 +187,6 @@ func TestConfigMigrateCmd_Structure(t *testing.T) {
 }
 
 func TestConfigMigrateCmd_Flags(t *testing.T) {
-	t.Parallel()
 
 	tests := map[string]struct {
 		flagName string
@@ -221,7 +208,6 @@ func TestConfigMigrateCmd_Flags(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			flag := configMigrateCmd.Flags().Lookup(tt.flagName)
 			if tt.wantFlag {
@@ -234,7 +220,6 @@ func TestConfigMigrateCmd_Flags(t *testing.T) {
 }
 
 func TestRegister_CommandCount(t *testing.T) {
-	t.Parallel()
 
 	rootCmd := &cobra.Command{
 		Use: "test",
@@ -247,7 +232,6 @@ func TestRegister_CommandCount(t *testing.T) {
 }
 
 func TestConfigCmd_RunsWithoutArgs(t *testing.T) {
-	t.Parallel()
 
 	// Create isolated command for testing
 	cmd := &cobra.Command{
