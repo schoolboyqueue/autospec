@@ -38,9 +38,11 @@ func TestCommandsInstallCmd_Execute(t *testing.T) {
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	// Check output
@@ -65,9 +67,11 @@ func TestCommandsInstallCmd_CreatesDirectory(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	// Directory should be created

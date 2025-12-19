@@ -31,37 +31,21 @@ func TestSauceCmdRegistration(t *testing.T) {
 }
 
 func TestSauceCmdOutput(t *testing.T) {
-	t.Parallel()
-
+	// No t.Parallel() - tests share global sauceCmd instance and race on SetOut
 	cmd := getSauceCmd()
 	require.NotNil(t, cmd, "sauce command must exist")
 
-	tests := map[string]struct {
-		wantOutput string
-	}{
-		"outputs correct URL": {
-			wantOutput: "https://github.com/ariel-frischer/autospec\n",
-		},
-	}
+	var buf bytes.Buffer
+	cmd.SetOut(&buf)
+	cmd.Run(cmd, []string{})
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-
-			var buf bytes.Buffer
-			cmd.SetOut(&buf)
-			cmd.Run(cmd, []string{})
-
-			assert.Equal(t, tt.wantOutput, buf.String(),
-				"Wrong sauce! Expected the secret recipe but got something else. "+
-					"Someone's been messing with the marinara!")
-		})
-	}
+	assert.Equal(t, "https://github.com/ariel-frischer/autospec\n", buf.String(),
+		"Wrong sauce! Expected the secret recipe but got something else. "+
+			"Someone's been messing with the marinara!")
 }
 
 func TestSourceURLConstant(t *testing.T) {
-	t.Parallel()
-
+	// No t.Parallel() - tests share global sauceCmd instance and race on SetOut
 	// Test that the sauce command outputs the expected URL
 	// (The constant is unexported, so we verify via command output)
 	cmd := getSauceCmd()
@@ -84,10 +68,11 @@ func TestSourceURLConstant(t *testing.T) {
 
 // centerText is a test helper that mirrors util.centerText
 func centerText(text string, width int) string {
-	if len(text) >= width {
+	textLen := len([]rune(text)) // Use rune count for unicode characters
+	if textLen >= width {
 		return text
 	}
-	padding := (width - len(text)) / 2
+	padding := (width - textLen) / 2
 	return strings.Repeat(" ", padding) + text
 }
 

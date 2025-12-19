@@ -123,9 +123,11 @@ func TestRunClean_DryRun(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run"})
 
-	err := cmd.Execute()
+	// Set flags directly instead of using SetArgs
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -156,9 +158,12 @@ func TestRunClean_KeepSpecs_DryRun(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run", "--keep-specs"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("dry-run", "true")
+	cmd.Flags().Set("keep-specs", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -191,9 +196,14 @@ func TestRunClean_YesFlag(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--yes"})
 
-	err := cmd.Execute()
+	// Reset flags and set the one we want
+	cmd.Flags().Set("dry-run", "false")
+	cmd.Flags().Set("yes", "true")
+	cmd.Flags().Set("keep-specs", "false")
+	cmd.Flags().Set("remove-specs", "false")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -226,9 +236,14 @@ func TestRunClean_WithCommandFiles(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--yes"})
 
-	err := cmd.Execute()
+	// Reset flags and set the one we want
+	cmd.Flags().Set("dry-run", "false")
+	cmd.Flags().Set("yes", "true")
+	cmd.Flags().Set("keep-specs", "false")
+	cmd.Flags().Set("remove-specs", "false")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -259,9 +274,11 @@ func TestRunClean_OutputFormat(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -286,9 +303,11 @@ func TestRunClean_FileTypeIndicator(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -313,9 +332,14 @@ func TestRunClean_Summary(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--yes"})
 
-	err := cmd.Execute()
+	// Reset flags and set the one we want
+	cmd.Flags().Set("dry-run", "false")
+	cmd.Flags().Set("yes", "true")
+	cmd.Flags().Set("keep-specs", "false")
+	cmd.Flags().Set("remove-specs", "false")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -338,9 +362,14 @@ func TestRunClean_RemoveSpecsFlag(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--yes", "--remove-specs"})
 
-	err := cmd.Execute()
+	// Reset flags and set the ones we want
+	cmd.Flags().Set("dry-run", "false")
+	cmd.Flags().Set("yes", "true")
+	cmd.Flags().Set("keep-specs", "false")
+	cmd.Flags().Set("remove-specs", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -369,9 +398,12 @@ func TestRunClean_RemoveSpecsFlag_DryRun(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run", "--remove-specs"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("dry-run", "true")
+	cmd.Flags().Set("remove-specs", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()

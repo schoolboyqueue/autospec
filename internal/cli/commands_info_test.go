@@ -37,9 +37,11 @@ func TestCommandsInfoCmd_ListAll(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -61,9 +63,11 @@ func TestCommandsInfoCmd_ListInstalled(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err = cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err = cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -76,9 +80,8 @@ func TestCommandsInfoCmd_SpecificCommand(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"autospec.specify"})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{"autospec.specify"})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -94,9 +97,8 @@ func TestCommandsInfoCmd_NotFound(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	cmd.SetArgs([]string{"nonexistent"})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{"nonexistent"})
 	// The command may or may not return an error depending on implementation
 	// Either we get an error, or we check that the output indicates not found
 	if err != nil {

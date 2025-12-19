@@ -37,9 +37,11 @@ func TestCommandsCheckCmd_NotInstalled(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -60,9 +62,11 @@ func TestCommandsCheckCmd_AllCurrent(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--target", targetDir})
 
-	err = cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("target", targetDir)
+
+	err = cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()

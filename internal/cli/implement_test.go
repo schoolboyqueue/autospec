@@ -13,7 +13,7 @@ import (
 // getImplementCmd finds the implement command from rootCmd
 func getImplementCmd() *cobra.Command {
 	for _, cmd := range rootCmd.Commands() {
-		if cmd.Use == "implement [spec-name] [prompt]" {
+		if cmd.Use == "implement [spec-name-or-prompt]" {
 			return cmd
 		}
 	}

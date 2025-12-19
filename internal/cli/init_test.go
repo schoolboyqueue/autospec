@@ -208,9 +208,8 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -233,12 +232,14 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
-	cmd.SetArgs([]string{"--project"})
+
+	// Set flag directly
+	cmd.Flags().Set("project", "true")
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	// Verify project config was created
@@ -268,12 +269,15 @@ func TestRunInit_ForceOverwrite(t *testing.T) {
 
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
-	cmd.SetArgs([]string{"--project", "--force"})
+
+	// Set flags directly
+	cmd.Flags().Set("project", "true")
+	cmd.Flags().Set("force", "true")
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	// Verify config was overwritten

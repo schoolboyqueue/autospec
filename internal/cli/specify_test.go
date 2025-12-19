@@ -5,6 +5,8 @@ package cli
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -119,8 +121,13 @@ func TestSpecifyCmd_MaxRetriesDefault(t *testing.T) {
 // Background: The specify command was refactored to use lifecycle.Run() wrapper
 // which handles timing and notification dispatch automatically.
 func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
+	// Get the directory containing this test file
+	_, thisFile, _, ok := runtime.Caller(0)
+	require.True(t, ok, "failed to get test file path")
+	baseDir := filepath.Dir(thisFile)
+
 	// Read the specify.go source file (now in stages subpackage)
-	sourceFile := "stages/specify.go"
+	sourceFile := filepath.Join(baseDir, "stages/specify.go")
 	content, err := os.ReadFile(sourceFile)
 	require.NoError(t, err, "failed to read stages/specify.go source file")
 
@@ -172,26 +179,34 @@ func TestSpecifyCmd_NotificationIntegration(t *testing.T) {
 func TestAllCommandsHaveNotificationSupport(t *testing.T) {
 	t.Parallel()
 
+	// Get the directory containing this test file
+	_, thisFile, _, ok := runtime.Caller(0)
+	require.True(t, ok, "failed to get test file path")
+	baseDir := filepath.Dir(thisFile)
+
 	// Commands that should have notification support via lifecycle.Run()
 	// Key is command name, value is relative path from internal/cli/
+	// Note: Only specify, plan, tasks, implement were moved to stages/
+	// Others remain in the main cli package
 	commandFiles := map[string]string{
 		"specify":      "stages/specify.go",
-		"prep":         "stages/prep.go",
-		"run":          "stages/run.go",
+		"prep":         "prep.go",
+		"run":          "run.go",
 		"implement":    "stages/implement.go",
-		"all":          "stages/all.go",
-		"clarify":      "stages/clarify.go",
-		"analyze":      "stages/analyze.go",
+		"all":          "all.go",
+		"clarify":      "clarify.go",
+		"analyze":      "analyze.go",
 		"plan":         "stages/plan.go",
 		"tasks":        "stages/tasks.go",
-		"checklist":    "stages/checklist.go",
-		"constitution": "stages/constitution.go",
+		"checklist":    "checklist.go",
+		"constitution": "constitution.go",
 	}
 
 	for cmdName, fileName := range commandFiles {
 		t.Run(cmdName, func(t *testing.T) {
 			t.Parallel()
-			content, err := os.ReadFile(fileName)
+			fullPath := filepath.Join(baseDir, fileName)
+			content, err := os.ReadFile(fullPath)
 			require.NoError(t, err, "failed to read %s", fileName)
 			source := string(content)
 

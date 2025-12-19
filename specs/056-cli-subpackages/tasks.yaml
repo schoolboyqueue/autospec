@@ -302,7 +302,7 @@ phases:
       tasks:
         - id: "T022"
           title: "Update root.go to import and call subpackage Register functions"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -317,7 +317,7 @@ phases:
             - "Remove individual command registrations that were moved"
         - id: "T023"
           title: "Verify all commands are registered and accessible"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -341,7 +341,7 @@ phases:
       tasks:
         - id: "T024"
           title: "Verify stages/ directory contains all stage commands"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -359,7 +359,7 @@ phases:
       tasks:
         - id: "T025"
           title: "Verify config/ directory contains all config commands"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -375,7 +375,7 @@ phases:
       tasks:
         - id: "T026"
           title: "Update CLAUDE.md Package Structure section"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -387,7 +387,7 @@ phases:
             - "No references to old flat structure"
         - id: "T027"
           title: "Run make fmt to fix import formatting"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: true
           story_id: null
@@ -398,7 +398,7 @@ phases:
             - "No formatting changes remain uncommitted"
         - id: "T028"
           title: "Run make test and verify all tests pass"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -410,7 +410,7 @@ phases:
             - "No test failures related to reorganization"
         - id: "T029"
           title: "Run make lint and fix any issues"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: false
           story_id: null
@@ -422,7 +422,7 @@ phases:
             - "No circular import warnings"
         - id: "T030"
           title: "Run make build and verify binary works"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -434,7 +434,7 @@ phases:
             - "All commands accessible via CLI"
         - id: "T031"
           title: "Verify no circular imports between subpackages"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -446,7 +446,7 @@ phases:
             - "Shared types accessible via cli.RootCmd() or exported constants"
         - id: "T032"
           title: "Final validation: all quality gates pass"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null

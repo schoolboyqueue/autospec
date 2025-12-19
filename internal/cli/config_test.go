@@ -75,9 +75,8 @@ func TestConfigShowCmd_DefaultOutput(t *testing.T) {
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -98,9 +97,11 @@ func TestConfigShowCmd_JSONOutput(t *testing.T) {
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--json"})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("json", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -136,9 +137,11 @@ func TestConfigShowCmd_AllFields(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--json"})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("json", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	// Extract and parse JSON
@@ -192,9 +195,11 @@ func TestConfigMigrateCmd_DryRunOutput(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--dry-run"})
 
-	err := cmd.Execute()
+	// Set flag directly
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -207,9 +212,12 @@ func TestConfigMigrateCmd_UserOnlyFlag(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--user", "--dry-run"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("user", "true")
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 	// Should not error even if no config exists
 }
@@ -220,9 +228,12 @@ func TestConfigMigrateCmd_ProjectOnlyFlag(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{"--project", "--dry-run"})
 
-	err := cmd.Execute()
+	// Set flags directly
+	cmd.Flags().Set("project", "true")
+	cmd.Flags().Set("dry-run", "true")
+
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 }
 
@@ -321,9 +332,8 @@ func TestConfigMigrateCmd_NoConfigsToMigrate(t *testing.T) {
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{})
 	require.NoError(t, err)
 
 	output := buf.String()

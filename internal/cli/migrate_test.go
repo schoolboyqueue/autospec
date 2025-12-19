@@ -82,9 +82,8 @@ Test spec.
 	// Run migration
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{specPath})
 
-	err = cmd.Execute()
+	err = cmd.RunE(cmd, []string{specPath})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -140,9 +139,8 @@ Test plan.
 	// Run migration
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
-	cmd.SetArgs([]string{tmpDir})
 
-	err = cmd.Execute()
+	err = cmd.RunE(cmd, []string{tmpDir})
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -162,9 +160,8 @@ func TestMigrateMdToYaml_NonExistentPath(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	cmd.SetArgs([]string{"/nonexistent/path"})
 
-	err := cmd.Execute()
+	err := cmd.RunE(cmd, []string{"/nonexistent/path"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
@@ -181,9 +178,8 @@ func TestMigrateMdToYaml_NonMarkdownFile(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	cmd.SetArgs([]string{txtPath})
 
-	err = cmd.Execute()
+	err = cmd.RunE(cmd, []string{txtPath})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not a markdown file")
 }
@@ -200,9 +196,8 @@ func TestMigrateMdToYaml_UnknownArtifactType(t *testing.T) {
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	cmd.SetArgs([]string{unknownPath})
 
-	err = cmd.Execute()
+	err = cmd.RunE(cmd, []string{unknownPath})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unknown artifact type")
 }
