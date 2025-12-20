@@ -135,6 +135,17 @@ func handleAgentConfiguration(cmd *cobra.Command, out io.Writer, project, noAgen
 			if _, err := cliagent.Configure(agent, ".", specsDir); err != nil {
 				fmt.Fprintf(out, "⚠ Claude configuration: %v\n", err)
 			}
+
+			// Check and handle sandbox configuration
+			if info := checkSandboxConfiguration("claude", agent, ".", specsDir); info != nil {
+				// Sandbox needs configuration - prompt user
+				if err := promptAndConfigureSandbox(cmd, out, *info, ".", specsDir); err != nil {
+					fmt.Fprintf(out, "⚠ Sandbox configuration failed: %v\n", err)
+				}
+			} else {
+				// Sandbox is fully configured - show checkmark
+				fmt.Fprintln(out, "✓ Sandbox: configured")
+			}
 		}
 		return nil
 	}

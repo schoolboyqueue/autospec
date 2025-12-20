@@ -376,7 +376,7 @@ func TestLoad_YAMLEmptyFile(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// Should use defaults
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
+	assert.Equal(t, "", cfg.AgentPreset) // Empty preset means use default claude agent
 	assert.Equal(t, 0, cfg.MaxRetries)
 }
 
@@ -386,8 +386,8 @@ func TestLoad_YAMLInvalidSyntax(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yml")
 
-	// Write invalid YAML
-	invalidYAML := `claude_cmd: "claude
+	// Write invalid YAML (unclosed quote)
+	invalidYAML := `agent_preset: "claude
 max_retries: 3
 `
 	err := os.WriteFile(configPath, []byte(invalidYAML), 0644)
@@ -441,12 +441,12 @@ func TestLoad_YAMLTakesPrecedenceOverJSON(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Dir(yamlPath), 0755))
 
 	// Write both YAML and JSON configs
-	yamlContent := `claude_cmd: yaml-claude
+	yamlContent := `agent_preset: gemini
 max_retries: 7
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
 `
-	jsonContent := `{"claude_cmd": "json-claude", "max_retries": 5}`
+	jsonContent := `{"agent_preset": "claude", "max_retries": 5}`
 
 	require.NoError(t, os.WriteFile(yamlPath, []byte(yamlContent), 0644))
 	require.NoError(t, os.WriteFile(jsonPath, []byte(jsonContent), 0644))
@@ -474,7 +474,7 @@ state_dir: "~/.autospec/state"
 	require.NoError(t, err)
 
 	// YAML values should be used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 7, cfg.MaxRetries)
 
 	// Should have warning about ignored JSON
@@ -485,7 +485,7 @@ state_dir: "~/.autospec/state"
 		t.Logf("Warning text: %s", warningText)
 	}
 	// The key assertion is that YAML values are used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd, "YAML should take precedence")
+	assert.Equal(t, "gemini", cfg.AgentPreset, "YAML should take precedence")
 }
 
 func TestLoad_UserAndProjectPrecedence(t *testing.T) {
@@ -501,7 +501,7 @@ func TestLoad_UserAndProjectPrecedence(t *testing.T) {
 	require.NoError(t, os.MkdirAll(projectDir, 0755))
 
 	// Write user config (lower priority)
-	userConfig := `claude_cmd: user-claude
+	userConfig := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -530,8 +530,8 @@ timeout: 300
 	})
 	require.NoError(t, err)
 
-	// User value for claude_cmd
-	assert.Equal(t, "user-claude", cfg.ClaudeCmd)
+	// User value for agent_preset
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	// Project value for max_retries (overrides user)
 	assert.Equal(t, 5, cfg.MaxRetries)
 	// Project value for timeout (overrides user)
@@ -547,7 +547,7 @@ func TestLoad_EnvOverridesAll(t *testing.T) {
 	require.NoError(t, os.MkdirAll(projectDir, 0755))
 
 	// Write project config
-	projectConfig := `claude_cmd: project-claude
+	projectConfig := `agent_preset: claude
 max_retries: 5
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -570,8 +570,8 @@ state_dir: "~/.autospec/state"
 
 	// Environment should override project config
 	assert.Equal(t, 9, cfg.MaxRetries)
-	// Project value for claude_cmd
-	assert.Equal(t, "project-claude", cfg.ClaudeCmd)
+	// Project value for agent_preset
+	assert.Equal(t, "claude", cfg.AgentPreset)
 }
 
 func TestLoad_UserYAMLWithLegacyJSONWarning(t *testing.T) {
@@ -588,7 +588,7 @@ func TestLoad_UserYAMLWithLegacyJSONWarning(t *testing.T) {
 
 	// Write user YAML config
 	userYAMLPath := filepath.Join(userConfigDir, "config.yml")
-	userYAMLContent := `claude_cmd: yaml-claude
+	userYAMLContent := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -597,7 +597,7 @@ state_dir: "~/.autospec/state"
 
 	// Write legacy JSON config
 	legacyJSONPath := filepath.Join(legacyUserDir, "config.json")
-	legacyJSONContent := `{"claude_cmd": "json-claude", "max_retries": 5}`
+	legacyJSONContent := `{"agent_preset": "claude", "max_retries": 5}`
 	require.NoError(t, os.WriteFile(legacyJSONPath, []byte(legacyJSONContent), 0644))
 
 	// Set environment to use temp directories
@@ -612,7 +612,7 @@ state_dir: "~/.autospec/state"
 	require.NoError(t, err)
 
 	// YAML values should be used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 2, cfg.MaxRetries)
 
 	// Should warn about legacy JSON being ignored
@@ -629,7 +629,7 @@ func TestLoad_InvalidUserYAMLSyntax(t *testing.T) {
 
 	// Write invalid user YAML config
 	userYAMLPath := filepath.Join(userConfigDir, "config.yml")
-	invalidYAMLContent := `claude_cmd: "unclosed quote
+	invalidYAMLContent := `agent_preset: "unclosed quote
 max_retries: 3
 `
 	require.NoError(t, os.WriteFile(userYAMLPath, []byte(invalidYAMLContent), 0644))
@@ -838,36 +838,25 @@ func TestConfiguration_GetAgent_Priority(t *testing.T) {
 			cfg:      Configuration{},
 			wantName: "claude",
 		},
-		"agent_preset takes precedence over legacy": {
+		"agent_preset gemini": {
 			cfg: Configuration{
 				AgentPreset: "gemini",
-				ClaudeCmd:   "custom-claude",
 			},
 			wantName: "gemini",
 		},
-		"custom_agent_cmd takes highest precedence": {
+		"custom_agent takes highest precedence": {
 			cfg: Configuration{
-				CustomAgentCmd: "echo {{PROMPT}}",
-				AgentPreset:    "gemini",
-				ClaudeCmd:      "custom-claude",
-			},
-			wantName: "custom",
-		},
-		"legacy custom_claude_cmd when no new fields": {
-			cfg: Configuration{
-				CustomClaudeCmd: "my-tool --prompt {{PROMPT}}",
+				CustomAgent: &cliagent.CustomAgentConfig{
+					Command: "echo",
+					Args:    []string{"{{PROMPT}}"},
+				},
+				AgentPreset: "gemini",
 			},
 			wantName: "custom",
 		},
 		"unknown agent_preset returns error": {
 			cfg: Configuration{
 				AgentPreset: "nonexistent-agent",
-			},
-			wantErr: true,
-		},
-		"invalid custom_agent_cmd returns error": {
-			cfg: Configuration{
-				CustomAgentCmd: "no-placeholder-here",
 			},
 			wantErr: true,
 		},
@@ -898,161 +887,6 @@ func TestConfiguration_GetAgent_AllPresets(t *testing.T) {
 			agent, err := cfg.GetAgent()
 			require.NoError(t, err)
 			assert.Equal(t, preset, agent.Name())
-		})
-	}
-}
-
-func TestBuildLegacyConfig(t *testing.T) {
-	t.Parallel()
-
-	tests := map[string]struct {
-		cmd      string
-		args     []string
-		wantCmd  string
-		wantArgs []string
-	}{
-		"with -p flag": {
-			cmd:      "claude",
-			args:     []string{"-p", "--verbose"},
-			wantCmd:  "claude",
-			wantArgs: []string{"-p", "{{PROMPT}}", "--verbose"},
-		},
-		"without -p flag": {
-			cmd:      "my-tool",
-			args:     []string{"--verbose"},
-			wantCmd:  "my-tool",
-			wantArgs: []string{"--verbose", "-p", "{{PROMPT}}"},
-		},
-		"empty args": {
-			cmd:      "simple",
-			args:     nil,
-			wantCmd:  "simple",
-			wantArgs: []string{"-p", "{{PROMPT}}"},
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			result := buildLegacyConfig(tt.cmd, tt.args)
-			assert.Equal(t, tt.wantCmd, result.Command)
-			assert.Equal(t, tt.wantArgs, result.Args)
-		})
-	}
-}
-
-func TestEmitLegacyWarnings(t *testing.T) {
-	t.Parallel()
-
-	tests := map[string]struct {
-		cfg           Configuration
-		expectWarning bool
-		contains      string
-	}{
-		"no warning when agent_preset set": {
-			cfg: Configuration{
-				AgentPreset:     "claude",
-				CustomClaudeCmd: "old-tool {{PROMPT}}",
-			},
-			expectWarning: false,
-		},
-		"no warning when custom_agent set": {
-			cfg: Configuration{
-				CustomAgent: &cliagent.CustomAgentConfig{
-					Command: "new-tool",
-					Args:    []string{"{{PROMPT}}"},
-				},
-				CustomClaudeCmd: "old-tool {{PROMPT}}",
-			},
-			expectWarning: false,
-		},
-		"warning for custom_agent_cmd": {
-			cfg: Configuration{
-				CustomAgentCmd: "old-tool {{PROMPT}}",
-			},
-			expectWarning: true,
-			contains:      "custom_agent_cmd",
-		},
-		"warning for custom_claude_cmd": {
-			cfg: Configuration{
-				CustomClaudeCmd: "old-tool {{PROMPT}}",
-			},
-			expectWarning: true,
-			contains:      "custom_claude_cmd",
-		},
-		"warning for non-default claude_cmd": {
-			cfg: Configuration{
-				ClaudeCmd: "my-custom-claude",
-			},
-			expectWarning: true,
-			contains:      "deprecated",
-		},
-		"no warning for default claude_cmd": {
-			cfg: Configuration{
-				ClaudeCmd:  "claude",
-				ClaudeArgs: []string{"-p", "--verbose", "--output-format", "stream-json"},
-			},
-			expectWarning: false,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			var buf strings.Builder
-			emitLegacyWarnings(&tt.cfg, &buf)
-
-			if tt.expectWarning {
-				assert.NotEmpty(t, buf.String())
-				if tt.contains != "" {
-					assert.Contains(t, buf.String(), tt.contains)
-				}
-			} else {
-				assert.Empty(t, buf.String())
-			}
-		})
-	}
-}
-
-func TestStringSliceEqual(t *testing.T) {
-	t.Parallel()
-
-	tests := map[string]struct {
-		a, b   []string
-		expect bool
-	}{
-		"equal slices": {
-			a:      []string{"a", "b", "c"},
-			b:      []string{"a", "b", "c"},
-			expect: true,
-		},
-		"different lengths": {
-			a:      []string{"a", "b"},
-			b:      []string{"a", "b", "c"},
-			expect: false,
-		},
-		"different values": {
-			a:      []string{"a", "b", "c"},
-			b:      []string{"a", "x", "c"},
-			expect: false,
-		},
-		"both empty": {
-			a:      []string{},
-			b:      []string{},
-			expect: true,
-		},
-		"one nil one empty": {
-			a:      nil,
-			b:      []string{},
-			expect: true, // both have len 0
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			result := stringSliceEqual(tt.a, tt.b)
-			assert.Equal(t, tt.expect, result)
 		})
 	}
 }
