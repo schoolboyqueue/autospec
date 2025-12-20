@@ -74,6 +74,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 	}
 	out := cmd.OutOrStdout()
 
+	// ═══════════════════════════════════════════════════════════════════════
+	// Phase 1: Fast setup (immediate file operations)
+	// ═══════════════════════════════════════════════════════════════════════
 	if err := installCommandTemplates(out); err != nil {
 		return fmt.Errorf("installing command templates: %w", err)
 	}
@@ -89,36 +92,37 @@ func runInit(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("configuring agents: %w", err)
 	}
 
+	// Check current state of constitution and worktree script
 	constitutionExists := handleConstitution(out)
-	handleGitignorePrompt(cmd, out)
-
-	// If no constitution, prompt user to create one
-	if !constitutionExists {
-		fmt.Fprintf(out, "\n📜 Constitution required (one-time setup per project)\n")
-		fmt.Fprintf(out, "   → Defines your project's coding standards and principles\n")
-		fmt.Fprintf(out, "   → Required before running any autospec workflows\n")
-		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
-		if promptYesNoDefaultYes(cmd, "Create constitution now?") {
-			configPath, _ := cmd.Flags().GetString("config")
-			if runConstitutionFromInit(cmd, configPath) {
-				constitutionExists = true
-			}
-		}
-	}
-
-	// Prompt for worktree setup script generation if not already present
 	worktreeScriptPath := filepath.Join(".autospec", "scripts", "setup-worktree.sh")
-	if !fileExistsCheck(worktreeScriptPath) {
-		if promptYesNo(cmd, "\nGenerate a worktree setup script for running parallel autospec sessions?\n  → Runs a Claude session to create .autospec/scripts/setup-worktree.sh\n  → Script bootstraps isolated workspaces tailored to your project") {
-			configPath, _ := cmd.Flags().GetString("config")
-			runWorktreeGenScriptFromInit(cmd, configPath)
-		}
-	} else {
+	worktreeScriptExists := fileExistsCheck(worktreeScriptPath)
+	if worktreeScriptExists {
 		fmt.Fprintf(out, "✓ Worktree setup script: already exists at %s\n", worktreeScriptPath)
 	}
 
-	// Load config to get specsDir for summary
+	// ═══════════════════════════════════════════════════════════════════════
+	// Phase 2: Collect all user choices (no changes applied yet)
+	// ═══════════════════════════════════════════════════════════════════════
+	pending := collectPendingActions(cmd, out, constitutionExists, worktreeScriptExists)
+
+	// ═══════════════════════════════════════════════════════════════════════
+	// Phase 3: Show summary and confirm (if any Claude sessions will run)
+	// ═══════════════════════════════════════════════════════════════════════
+	if pending.createConstitution || pending.createWorktree {
+		if !confirmPendingActions(cmd, out, pending) {
+			fmt.Fprintf(out, "\n⏭ Skipped: Claude sessions cancelled\n")
+			pending.createConstitution = false
+			pending.createWorktree = false
+		}
+	}
+
+	// ═══════════════════════════════════════════════════════════════════════
+	// Phase 4: Apply all pending changes atomically
+	// ═══════════════════════════════════════════════════════════════════════
 	configPath, _ := getConfigPath(project)
+	constitutionExists = applyPendingActions(cmd, out, pending, configPath, constitutionExists)
+
+	// Load config to get specsDir for summary
 	cfg, _ := config.Load(configPath)
 	specsDir := "specs"
 	if cfg != nil && cfg.SpecsDir != "" {
@@ -217,6 +221,14 @@ type sandboxPromptInfo struct {
 	pathsToAdd  []string
 	existing    []string
 	needsEnable bool // true if sandbox.enabled needs to be set to true
+}
+
+// pendingActions holds all user choices collected during init prompts.
+// Changes are applied atomically after all questions are answered.
+type pendingActions struct {
+	addGitignore       bool // add .autospec/ to .gitignore
+	createConstitution bool // run constitution workflow
+	createWorktree     bool // run worktree gen-script workflow
 }
 
 // configureSelectedAgents configures each selected agent and persists preferences.
@@ -795,20 +807,28 @@ func addAutospecToGitignore(gitignorePath string) error {
 	return nil
 }
 
+// gitignoreNeedsUpdate checks if .autospec/ needs to be added to .gitignore.
+// Returns true if gitignore doesn't exist or doesn't contain .autospec/.
+func gitignoreNeedsUpdate() bool {
+	data, err := os.ReadFile(".gitignore")
+	if err != nil {
+		return true // File doesn't exist
+	}
+	return !gitignoreHasAutospec(string(data))
+}
+
 // handleGitignorePrompt checks if .autospec/ is in .gitignore and prompts to add it.
-// For shared/public/company repos, recommends adding it; personal projects can skip.
+// This is kept for test compatibility - the main flow uses collectPendingActions/applyPendingActions.
 func handleGitignorePrompt(cmd *cobra.Command, out io.Writer) {
 	gitignorePath := ".gitignore"
 
 	data, err := os.ReadFile(gitignorePath)
 	if err == nil {
-		// .gitignore exists - check if .autospec is already there
 		if gitignoreHasAutospec(string(data)) {
 			fmt.Fprintf(out, "✓ Gitignore: .autospec/ already present\n")
 			return
 		}
 	}
-	// Either .gitignore doesn't exist or doesn't have .autospec/
 
 	fmt.Fprintf(out, "\n💡 Add .autospec/ to .gitignore?\n")
 	fmt.Fprintf(out, "   → Recommended for shared/public/company repos (prevents config conflicts)\n")
@@ -823,6 +843,109 @@ func handleGitignorePrompt(cmd *cobra.Command, out io.Writer) {
 	} else {
 		fmt.Fprintf(out, "⏭ Gitignore: skipped\n")
 	}
+}
+
+// collectPendingActions prompts the user for all choices without applying any changes.
+// Returns the collected choices for later atomic application.
+func collectPendingActions(cmd *cobra.Command, out io.Writer, constitutionExists, worktreeScriptExists bool) pendingActions {
+	var pending pendingActions
+
+	fmt.Fprintf(out, "\n")
+	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+	fmt.Fprintf(out, "                         OPTIONAL SETUP\n")
+	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+
+	// Question 1: Gitignore
+	if gitignoreNeedsUpdate() {
+		fmt.Fprintf(out, "\n💡 Add .autospec/ to .gitignore?\n")
+		fmt.Fprintf(out, "   → Recommended for shared/public/company repos (prevents config conflicts)\n")
+		fmt.Fprintf(out, "   → Personal projects can keep .autospec/ tracked for backup\n")
+		pending.addGitignore = promptYesNo(cmd, "Add .autospec/ to .gitignore?")
+	} else {
+		fmt.Fprintf(out, "✓ Gitignore: .autospec/ already present\n")
+	}
+
+	// Question 2: Constitution (only if not exists)
+	if !constitutionExists {
+		fmt.Fprintf(out, "\n📜 Constitution (one-time setup per project)\n")
+		fmt.Fprintf(out, "   → Defines your project's coding standards and principles\n")
+		fmt.Fprintf(out, "   → Required before running any autospec workflows\n")
+		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
+		pending.createConstitution = promptYesNoDefaultYes(cmd, "Create constitution?")
+	}
+
+	// Question 3: Worktree script (only if not exists)
+	if !worktreeScriptExists {
+		fmt.Fprintf(out, "\n🌳 Worktree setup script (optional)\n")
+		fmt.Fprintf(out, "   → Creates .autospec/scripts/setup-worktree.sh\n")
+		fmt.Fprintf(out, "   → Bootstraps isolated workspaces for parallel autospec sessions\n")
+		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
+		pending.createWorktree = promptYesNo(cmd, "Generate worktree setup script?")
+	}
+
+	return pending
+}
+
+// confirmPendingActions shows a summary of Claude sessions that will run and asks for confirmation.
+// Returns true if user confirms, false to skip Claude sessions.
+func confirmPendingActions(cmd *cobra.Command, out io.Writer, pending pendingActions) bool {
+	fmt.Fprintf(out, "\n")
+	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+	fmt.Fprintf(out, "                      PENDING CLAUDE SESSIONS\n")
+	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+	fmt.Fprintf(out, "\n")
+	fmt.Fprintf(out, "The following Claude sessions will run:\n\n")
+
+	if pending.createConstitution {
+		fmt.Fprintf(out, "  1. Constitution generation\n")
+		fmt.Fprintf(out, "     → Analyzes your project and creates coding standards\n")
+	}
+	if pending.createWorktree {
+		num := 1
+		if pending.createConstitution {
+			num = 2
+		}
+		fmt.Fprintf(out, "  %d. Worktree setup script generation\n", num)
+		fmt.Fprintf(out, "     → Creates project-specific workspace bootstrap script\n")
+	}
+
+	fmt.Fprintf(out, "\n")
+	return promptYesNoDefaultYes(cmd, "Proceed with Claude sessions?")
+}
+
+// applyPendingActions applies all collected user choices.
+// Returns updated constitutionExists value.
+func applyPendingActions(cmd *cobra.Command, out io.Writer, pending pendingActions, configPath string, constitutionExists bool) bool {
+	// Apply gitignore change (fast, no Claude)
+	if pending.addGitignore {
+		if err := addAutospecToGitignore(".gitignore"); err != nil {
+			fmt.Fprintf(out, "⚠ Failed to update .gitignore: %v\n", err)
+		} else {
+			fmt.Fprintf(out, "✓ Gitignore: added .autospec/\n")
+		}
+	}
+
+	// Run constitution workflow (Claude session)
+	if pending.createConstitution {
+		fmt.Fprintf(out, "\n")
+		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		fmt.Fprintf(out, "                    RUNNING: CONSTITUTION\n")
+		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		if runConstitutionFromInit(cmd, configPath) {
+			constitutionExists = true
+		}
+	}
+
+	// Run worktree script workflow (Claude session)
+	if pending.createWorktree {
+		fmt.Fprintf(out, "\n")
+		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		fmt.Fprintf(out, "                    RUNNING: WORKTREE SCRIPT\n")
+		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		runWorktreeGenScriptFromInit(cmd, configPath)
+	}
+
+	return constitutionExists
 }
 
 func printSummary(out io.Writer, constitutionExists bool, specsDir string) {
