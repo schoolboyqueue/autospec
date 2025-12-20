@@ -129,7 +129,7 @@ func (c *Claude) GetSandboxDiff(projectDir, specsDir string) (*claude.SandboxCon
 }
 
 // ConfigureSandbox implements the SandboxConfigurator interface for Claude.
-// It adds required write paths to the sandbox configuration.
+// It enables sandbox and adds required write paths to the sandbox configuration.
 func (c *Claude) ConfigureSandbox(projectDir, specsDir string) (SandboxResult, error) {
 	settings, err := claude.Load(projectDir)
 	if err != nil {
@@ -139,22 +139,38 @@ func (c *Claude) ConfigureSandbox(projectDir, specsDir string) (SandboxResult, e
 	requiredPaths := c.GetSandboxPaths(specsDir)
 	diff := settings.GetSandboxConfigDiff(requiredPaths)
 
-	if len(diff.PathsToAdd) == 0 {
+	wasEnabled := diff.Enabled
+	needsEnable := !wasEnabled
+	needsPaths := len(diff.PathsToAdd) > 0
+
+	// Already fully configured: sandbox enabled and all paths present
+	if !needsEnable && !needsPaths {
 		return SandboxResult{
 			AlreadyConfigured: true,
 			ExistingPaths:     diff.ExistingPaths,
-			SandboxEnabled:    diff.Enabled,
+			SandboxEnabled:    true,
 		}, nil
 	}
 
-	added := settings.AddWritePaths(diff.PathsToAdd)
+	// Enable sandbox if not already enabled
+	if needsEnable {
+		settings.EnableSandbox()
+	}
+
+	// Add required paths
+	var added []string
+	if needsPaths {
+		added = settings.AddWritePaths(diff.PathsToAdd)
+	}
+
 	if err := settings.Save(); err != nil {
 		return SandboxResult{}, fmt.Errorf("saving claude settings: %w", err)
 	}
 
 	return SandboxResult{
-		PathsAdded:     added,
-		ExistingPaths:  diff.ExistingPaths,
-		SandboxEnabled: diff.Enabled,
+		PathsAdded:        added,
+		ExistingPaths:     diff.ExistingPaths,
+		SandboxEnabled:    true,
+		SandboxWasEnabled: needsEnable,
 	}, nil
 }

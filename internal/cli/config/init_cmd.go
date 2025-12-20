@@ -157,6 +157,7 @@ type sandboxPromptInfo struct {
 	displayName string
 	pathsToAdd  []string
 	existing    []string
+	needsEnable bool // true if sandbox.enabled needs to be set to true
 }
 
 // configureSelectedAgents configures each selected agent and persists preferences.
@@ -205,7 +206,7 @@ func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Confi
 }
 
 // checkSandboxConfiguration checks if an agent needs sandbox configuration.
-// Returns nil if sandbox is not enabled or no paths need to be added.
+// Returns nil only if sandbox is fully configured (enabled with all required paths).
 func checkSandboxConfiguration(agentName string, agent cliagent.Agent, projectDir, specsDir string) *sandboxPromptInfo {
 	// Only Claude currently supports sandbox configuration
 	claudeAgent, ok := agent.(*cliagent.Claude)
@@ -218,8 +219,11 @@ func checkSandboxConfiguration(agentName string, agent cliagent.Agent, projectDi
 		return nil
 	}
 
-	// Only prompt if sandbox is enabled and paths need to be added
-	if !diff.Enabled || len(diff.PathsToAdd) == 0 {
+	needsEnable := !diff.Enabled
+	needsPaths := len(diff.PathsToAdd) > 0
+
+	// Only skip if sandbox is enabled AND all paths are present
+	if !needsEnable && !needsPaths {
 		return nil
 	}
 
@@ -233,6 +237,7 @@ func checkSandboxConfiguration(agentName string, agent cliagent.Agent, projectDi
 		displayName: displayName,
 		pathsToAdd:  diff.PathsToAdd,
 		existing:    diff.ExistingPaths,
+		needsEnable: needsEnable,
 	}
 }
 
@@ -257,13 +262,24 @@ func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []san
 
 // promptAndConfigureSandbox displays the sandbox diff and prompts for confirmation.
 func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPromptInfo, projectDir, specsDir string) error {
-	// Display the proposed changes
-	fmt.Fprintf(out, "\n%s sandbox configuration detected.\n\n", info.displayName)
-	fmt.Fprintf(out, "Proposed changes to .claude/settings.local.json:\n\n")
-	fmt.Fprintf(out, "  sandbox.additionalAllowWritePaths:\n")
+	// Display the proposed changes with different messaging based on current state
+	if info.needsEnable {
+		fmt.Fprintf(out, "\n%s sandbox not enabled. Enabling sandbox improves security.\n\n", info.displayName)
+	} else {
+		fmt.Fprintf(out, "\n%s sandbox configuration detected.\n\n", info.displayName)
+	}
 
-	for _, path := range info.pathsToAdd {
-		fmt.Fprintf(out, "  + %q\n", path)
+	fmt.Fprintf(out, "Proposed changes to .claude/settings.local.json:\n\n")
+
+	if info.needsEnable {
+		fmt.Fprintf(out, "  sandbox.enabled: true\n")
+	}
+
+	if len(info.pathsToAdd) > 0 {
+		fmt.Fprintf(out, "  sandbox.additionalAllowWritePaths:\n")
+		for _, path := range info.pathsToAdd {
+			fmt.Fprintf(out, "  + %q\n", path)
+		}
 	}
 
 	if len(info.existing) > 0 {
@@ -294,9 +310,15 @@ func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPr
 		return nil
 	}
 
-	fmt.Fprintf(out, "✓ %s sandbox: configured with paths:\n", info.displayName)
-	for _, path := range result.PathsAdded {
-		fmt.Fprintf(out, "    + %s\n", path)
+	// Show what was configured
+	if result.SandboxWasEnabled {
+		fmt.Fprintf(out, "✓ %s sandbox: enabled\n", info.displayName)
+	}
+	if len(result.PathsAdded) > 0 {
+		fmt.Fprintf(out, "✓ %s sandbox: configured with paths:\n", info.displayName)
+		for _, path := range result.PathsAdded {
+			fmt.Fprintf(out, "    + %s\n", path)
+		}
 	}
 
 	return nil

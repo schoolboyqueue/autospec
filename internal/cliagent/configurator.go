@@ -41,10 +41,14 @@ type SandboxResult struct {
 	PathsAdded []string
 	// ExistingPaths lists paths that were already configured.
 	ExistingPaths []string
-	// AlreadyConfigured is true if all required paths were already present.
+	// AlreadyConfigured is true if all required configuration was already present
+	// (sandbox enabled AND all paths present).
 	AlreadyConfigured bool
-	// SandboxEnabled indicates if sandbox is enabled in settings.
+	// SandboxEnabled indicates if sandbox is enabled in settings (after configuration).
 	SandboxEnabled bool
+	// SandboxWasEnabled is true if sandbox was enabled during this configuration
+	// (i.e., it was disabled before and we enabled it).
+	SandboxWasEnabled bool
 }
 
 // SandboxConfigurator is an optional interface that agents can implement to
