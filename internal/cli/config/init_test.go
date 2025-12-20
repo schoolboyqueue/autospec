@@ -714,8 +714,9 @@ func TestConfigureSelectedAgents_NoAgentsSelected(t *testing.T) {
 
 	var buf bytes.Buffer
 	cfg := &config.Configuration{SpecsDir: "specs"}
+	tmpDir := t.TempDir()
 
-	err := configureSelectedAgents(&buf, []string{}, cfg, "config.yml")
+	_, err := configureSelectedAgents(&buf, []string{}, cfg, "config.yml", tmpDir)
 	require.NoError(t, err)
 
 	assert.Contains(t, buf.String(), "Warning")
@@ -774,15 +775,13 @@ func TestConfigureSelectedAgents_FilePermissionError(t *testing.T) {
 	// Select multiple agents - Claude will be configured, others have no config
 	selected := []string{"claude", "gemini", "cline"}
 
-	// Use an invalid project dir that will cause Claude's config to fail to save
-	// Note: In the real implementation, configureSelectedAgents handles errors
-	// gracefully by printing a warning and continuing
+	// Use a temp project dir for agent config files
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yml")
 	_ = os.WriteFile(configPath, []byte("specs_dir: specs\ndefault_agents: []\n"), 0644)
 
 	// Run configuration - even if one agent fails, others should complete
-	err := configureSelectedAgents(&buf, selected, cfg, configPath)
+	_, err := configureSelectedAgents(&buf, selected, cfg, configPath, tmpDir)
 	require.NoError(t, err)
 
 	// Verify output mentions Claude was configured (or tried to configure)
@@ -807,7 +806,7 @@ func TestConfigureSelectedAgents_PartialConfigContinues(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yml")
 	_ = os.WriteFile(configPath, []byte("default_agents: []\n"), 0644)
 
-	err := configureSelectedAgents(&buf, selected, cfg, configPath)
+	_, err := configureSelectedAgents(&buf, selected, cfg, configPath, tmpDir)
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -966,7 +965,7 @@ func TestFullIdempotencyFlow(t *testing.T) {
 	var finalOutput string
 	for i := 0; i < 3; i++ {
 		var buf bytes.Buffer
-		err := configureSelectedAgents(&buf, selected, cfg, configPath)
+		_, err := configureSelectedAgents(&buf, selected, cfg, configPath, tmpDir)
 		require.NoError(t, err, "run %d failed", i+1)
 		finalOutput = buf.String()
 	}

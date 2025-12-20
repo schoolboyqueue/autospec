@@ -141,13 +141,14 @@ func handleAgentConfiguration(cmd *cobra.Command, out io.Writer, project, noAgen
 	selected := promptAgentSelection(cmd.InOrStdin(), out, agents)
 
 	// Configure selected agents and save preferences
-	sandboxPrompts, err := configureSelectedAgents(out, selected, cfg, configPath)
+	// Use "." as project directory for real init command
+	sandboxPrompts, err := configureSelectedAgents(out, selected, cfg, configPath, ".")
 	if err != nil {
 		return err
 	}
 
 	// Handle sandbox configuration prompts
-	return handleSandboxConfiguration(cmd, out, sandboxPrompts, cfg.SpecsDir)
+	return handleSandboxConfiguration(cmd, out, sandboxPrompts, ".", cfg.SpecsDir)
 }
 
 // sandboxPromptInfo holds information needed to prompt for sandbox configuration.
@@ -160,7 +161,8 @@ type sandboxPromptInfo struct {
 
 // configureSelectedAgents configures each selected agent and persists preferences.
 // Returns a list of agents that have sandbox enabled and need configuration.
-func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Configuration, configPath string) ([]sandboxPromptInfo, error) {
+// projectDir specifies where to write agent config files (e.g., .claude/settings.local.json).
+func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Configuration, configPath, projectDir string) ([]sandboxPromptInfo, error) {
 	if len(selected) == 0 {
 		fmt.Fprintln(out, "⚠ Warning: No agents selected. You may need to configure agent permissions manually.")
 		return nil, nil
@@ -180,7 +182,7 @@ func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Confi
 			continue
 		}
 
-		result, err := cliagent.Configure(agent, ".", specsDir)
+		result, err := cliagent.Configure(agent, projectDir, specsDir)
 		if err != nil {
 			fmt.Fprintf(out, "⚠ %s: configuration failed: %v\n", agentDisplayNames[agentName], err)
 			continue
@@ -189,7 +191,7 @@ func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Confi
 		displayAgentConfigResult(out, agentName, result)
 
 		// Check if agent supports sandbox configuration
-		if info := checkSandboxConfiguration(agentName, agent, specsDir); info != nil {
+		if info := checkSandboxConfiguration(agentName, agent, projectDir, specsDir); info != nil {
 			sandboxPrompts = append(sandboxPrompts, *info)
 		}
 	}
@@ -204,14 +206,14 @@ func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Confi
 
 // checkSandboxConfiguration checks if an agent needs sandbox configuration.
 // Returns nil if sandbox is not enabled or no paths need to be added.
-func checkSandboxConfiguration(agentName string, agent cliagent.Agent, specsDir string) *sandboxPromptInfo {
+func checkSandboxConfiguration(agentName string, agent cliagent.Agent, projectDir, specsDir string) *sandboxPromptInfo {
 	// Only Claude currently supports sandbox configuration
 	claudeAgent, ok := agent.(*cliagent.Claude)
 	if !ok {
 		return nil
 	}
 
-	diff, err := claudeAgent.GetSandboxDiff(".", specsDir)
+	diff, err := claudeAgent.GetSandboxDiff(projectDir, specsDir)
 	if err != nil || diff == nil {
 		return nil
 	}
@@ -235,7 +237,7 @@ func checkSandboxConfiguration(agentName string, agent cliagent.Agent, specsDir 
 }
 
 // handleSandboxConfiguration prompts for and applies sandbox configuration.
-func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []sandboxPromptInfo, specsDir string) error {
+func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []sandboxPromptInfo, projectDir, specsDir string) error {
 	if len(prompts) == 0 {
 		return nil
 	}
@@ -245,7 +247,7 @@ func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []san
 	}
 
 	for _, info := range prompts {
-		if err := promptAndConfigureSandbox(cmd, out, info, specsDir); err != nil {
+		if err := promptAndConfigureSandbox(cmd, out, info, projectDir, specsDir); err != nil {
 			fmt.Fprintf(out, "⚠ %s sandbox configuration failed: %v\n", info.displayName, err)
 		}
 	}
@@ -254,7 +256,7 @@ func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []san
 }
 
 // promptAndConfigureSandbox displays the sandbox diff and prompts for confirmation.
-func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPromptInfo, specsDir string) error {
+func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPromptInfo, projectDir, specsDir string) error {
 	// Display the proposed changes
 	fmt.Fprintf(out, "\n%s sandbox configuration detected.\n\n", info.displayName)
 	fmt.Fprintf(out, "Proposed changes to .claude/settings.local.json:\n\n")
@@ -270,8 +272,8 @@ func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPr
 
 	fmt.Fprintf(out, "\n")
 
-	// Prompt for confirmation
-	if !promptYesNo(cmd, "Configure Claude sandbox for autospec?") {
+	// Prompt for confirmation (defaults to Yes)
+	if !promptYesNoDefaultYes(cmd, "Configure Claude sandbox for autospec?") {
 		fmt.Fprintf(out, "⏭ Sandbox configuration: skipped\n")
 		return nil
 	}
@@ -282,7 +284,7 @@ func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPr
 		return fmt.Errorf("agent %s not found", info.agentName)
 	}
 
-	result, err := cliagent.ConfigureSandbox(agent, ".", specsDir)
+	result, err := cliagent.ConfigureSandbox(agent, projectDir, specsDir)
 	if err != nil {
 		return err
 	}
