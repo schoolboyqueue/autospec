@@ -6,35 +6,67 @@ import (
 	"testing"
 )
 
-func TestNewCustomAgent(t *testing.T) {
+func TestNewCustomAgentFromConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		template string
-		wantErr  bool
-		errMsg   string
+		config  CustomAgentConfig
+		wantErr bool
+		errMsg  string
 	}{
-		"valid template": {
-			template: "echo {{PROMPT}}",
-			wantErr:  false,
+		"valid config": {
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
+			wantErr: false,
 		},
-		"missing placeholder": {
-			template: "echo hello",
-			wantErr:  true,
-			errMsg:   "must contain {{PROMPT}}",
+		"missing command": {
+			config: CustomAgentConfig{
+				Args: []string{"{{PROMPT}}"},
+			},
+			wantErr: true,
+			errMsg:  "command is required",
 		},
-		"complex template": {
-			template: "aider --model sonnet --yes-always --message {{PROMPT}}",
-			wantErr:  false,
+		"missing prompt placeholder": {
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"hello"},
+			},
+			wantErr: true,
+			errMsg:  "must contain {{PROMPT}}",
+		},
+		"complex config": {
+			config: CustomAgentConfig{
+				Command: "aider",
+				Args:    []string{"--model", "sonnet", "--yes-always", "--message", "{{PROMPT}}"},
+			},
+			wantErr: false,
+		},
+		"with env vars": {
+			config: CustomAgentConfig{
+				Command: "claude",
+				Args:    []string{"-p", "{{PROMPT}}"},
+				Env:     map[string]string{"ANTHROPIC_API_KEY": "test"},
+			},
+			wantErr: false,
+		},
+		"with post processor": {
+			config: CustomAgentConfig{
+				Command:       "claude",
+				Args:          []string{"-p", "{{PROMPT}}"},
+				PostProcessor: "cclean",
+			},
+			wantErr: false,
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			_, err := NewCustomAgent(tt.template)
+			_, err := NewCustomAgentFromConfig(tt.config)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("NewCustomAgent() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("NewCustomAgentFromConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr && tt.errMsg != "" && err != nil {
 				if !strings.Contains(err.Error(), tt.errMsg) {
@@ -45,9 +77,50 @@ func TestNewCustomAgent(t *testing.T) {
 	}
 }
 
+func TestCustomAgentConfig_IsValid(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		config *CustomAgentConfig
+		want   bool
+	}{
+		"nil config": {
+			config: nil,
+			want:   false,
+		},
+		"empty config": {
+			config: &CustomAgentConfig{},
+			want:   false,
+		},
+		"command only": {
+			config: &CustomAgentConfig{Command: "echo"},
+			want:   true,
+		},
+		"full config": {
+			config: &CustomAgentConfig{
+				Command: "claude",
+				Args:    []string{"-p", "{{PROMPT}}"},
+			},
+			want: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			if got := tt.config.IsValid(); got != tt.want {
+				t.Errorf("IsValid() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestCustomAgent_Name(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("echo {{PROMPT}}")
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command: "echo",
+		Args:    []string{"{{PROMPT}}"},
+	})
 	if got := agent.Name(); got != "custom" {
 		t.Errorf("Name() = %q, want %q", got, "custom")
 	}
@@ -55,7 +128,10 @@ func TestCustomAgent_Name(t *testing.T) {
 
 func TestCustomAgent_Version(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("echo {{PROMPT}}")
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command: "echo",
+		Args:    []string{"{{PROMPT}}"},
+	})
 	ver, err := agent.Version()
 	if err != nil {
 		t.Fatalf("Version() error = %v", err)
@@ -67,7 +143,10 @@ func TestCustomAgent_Version(t *testing.T) {
 
 func TestCustomAgent_Capabilities(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("echo {{PROMPT}}")
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command: "echo",
+		Args:    []string{"{{PROMPT}}"},
+	})
 	caps := agent.Capabilities()
 	if !caps.Automatable {
 		t.Error("Automatable should be true")
@@ -81,32 +160,42 @@ func TestCustomAgent_Validate(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		template string
-		wantErr  bool
-		errMsg   string
+		config  CustomAgentConfig
+		wantErr bool
+		errMsg  string
 	}{
 		"valid command": {
-			template: "echo {{PROMPT}}",
-			wantErr:  false,
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
+			wantErr: false,
 		},
 		"command not found": {
-			template: "nonexistent-cmd-12345 {{PROMPT}}",
-			wantErr:  true,
-			errMsg:   "not found in PATH",
+			config: CustomAgentConfig{
+				Command: "nonexistent-cmd-12345",
+				Args:    []string{"{{PROMPT}}"},
+			},
+			wantErr: true,
+			errMsg:  "not found in PATH",
 		},
-		"invalid shell syntax": {
-			template: "echo '{{PROMPT}}", // unmatched quote
-			wantErr:  true,
-			errMsg:   "invalid template",
+		"post processor not found": {
+			config: CustomAgentConfig{
+				Command:       "echo",
+				Args:          []string{"{{PROMPT}}"},
+				PostProcessor: "nonexistent-processor-12345",
+			},
+			wantErr: true,
+			errMsg:  "post_processor",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			agent, err := NewCustomAgent(tt.template)
+			agent, err := NewCustomAgentFromConfig(tt.config)
 			if err != nil {
-				t.Fatalf("NewCustomAgent() error = %v", err)
+				t.Fatalf("NewCustomAgentFromConfig() error = %v", err)
 			}
 			err = agent.Validate()
 			if (err != nil) != tt.wantErr {
@@ -125,25 +214,34 @@ func TestCustomAgent_BuildCommand(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		template string
+		config   CustomAgentConfig
 		prompt   string
 		wantCmd  string
 		wantArgs []string
 	}{
 		"basic substitution": {
-			template: "echo {{PROMPT}}",
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
 			prompt:   "hello world",
 			wantCmd:  "echo",
 			wantArgs: []string{"hello world"},
 		},
 		"multiple args": {
-			template: "myapp --message {{PROMPT}} --verbose",
+			config: CustomAgentConfig{
+				Command: "myapp",
+				Args:    []string{"--message", "{{PROMPT}}", "--verbose"},
+			},
 			prompt:   "do something",
 			wantCmd:  "myapp",
 			wantArgs: []string{"--message", "do something", "--verbose"},
 		},
 		"prompt with special chars": {
-			template: "echo {{PROMPT}}",
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
 			prompt:   "hello \"world\" with 'quotes'",
 			wantCmd:  "echo",
 			wantArgs: []string{"hello \"world\" with 'quotes'"},
@@ -153,7 +251,7 @@ func TestCustomAgent_BuildCommand(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			agent, _ := NewCustomAgent(tt.template)
+			agent, _ := NewCustomAgentFromConfig(tt.config)
 			cmd, err := agent.BuildCommand(tt.prompt, ExecOptions{})
 			if err != nil {
 				t.Fatalf("BuildCommand() error = %v", err)
@@ -161,7 +259,7 @@ func TestCustomAgent_BuildCommand(t *testing.T) {
 			if cmd.Path == "" {
 				t.Error("cmd.Path should not be empty")
 			}
-			// Args[0] is the program path, actual args start at [1]
+			// For direct execution (no post-processor), Args[0] is the program path
 			gotArgs := cmd.Args[1:]
 			if len(gotArgs) != len(tt.wantArgs) {
 				t.Errorf("args = %v, want %v", gotArgs, tt.wantArgs)
@@ -176,23 +274,57 @@ func TestCustomAgent_BuildCommand(t *testing.T) {
 	}
 }
 
+func TestCustomAgent_BuildCommand_WithPostProcessor(t *testing.T) {
+	t.Parallel()
+
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command:       "echo",
+		Args:          []string{"{{PROMPT}}"},
+		PostProcessor: "cat",
+	})
+	cmd, err := agent.BuildCommand("hello", ExecOptions{})
+	if err != nil {
+		t.Fatalf("BuildCommand() error = %v", err)
+	}
+	// Should use sh -c for piping
+	if cmd.Args[0] != "sh" {
+		t.Errorf("expected sh for shell execution, got %q", cmd.Args[0])
+	}
+	if cmd.Args[1] != "-c" {
+		t.Errorf("expected -c flag, got %q", cmd.Args[1])
+	}
+	// The shell command should contain the pipe
+	if !strings.Contains(cmd.Args[2], "|") {
+		t.Errorf("expected pipe in shell command, got %q", cmd.Args[2])
+	}
+	if !strings.Contains(cmd.Args[2], "'cat'") {
+		t.Errorf("expected post processor in shell command, got %q", cmd.Args[2])
+	}
+}
+
 func TestCustomAgent_Execute(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		template   string
+		config     CustomAgentConfig
 		prompt     string
 		wantStdout string
 		wantExit   int
 	}{
 		"echo prompt": {
-			template:   "echo {{PROMPT}}",
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
 			prompt:     "hello",
 			wantStdout: "hello\n",
 			wantExit:   0,
 		},
 		"exit code": {
-			template: "sh -c {{PROMPT}}",
+			config: CustomAgentConfig{
+				Command: "sh",
+				Args:    []string{"-c", "{{PROMPT}}"},
+			},
 			prompt:   "exit 42",
 			wantExit: 42,
 		},
@@ -201,7 +333,7 @@ func TestCustomAgent_Execute(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			agent, _ := NewCustomAgent(tt.template)
+			agent, _ := NewCustomAgentFromConfig(tt.config)
 			result, err := agent.Execute(context.Background(), tt.prompt, ExecOptions{})
 			if err != nil {
 				t.Fatalf("Execute() error = %v", err)
@@ -218,7 +350,10 @@ func TestCustomAgent_Execute(t *testing.T) {
 
 func TestCustomAgent_PromptWithNewlines(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("echo {{PROMPT}}")
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command: "echo",
+		Args:    []string{"{{PROMPT}}"},
+	})
 	prompt := "line1\nline2\nline3"
 	cmd, err := agent.BuildCommand(prompt, ExecOptions{})
 	if err != nil {
@@ -235,7 +370,10 @@ func TestCustomAgent_PromptWithNewlines(t *testing.T) {
 
 func TestCustomAgent_WorkDir(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("pwd {{PROMPT}}")
+	agent, _ := NewCustomAgentFromConfig(CustomAgentConfig{
+		Command: "pwd",
+		Args:    []string{"{{PROMPT}}"},
+	})
 	cmd, _ := agent.BuildCommand("ignored", ExecOptions{WorkDir: "/tmp"})
 	if cmd.Dir != "/tmp" {
 		t.Errorf("cmd.Dir = %q, want %q", cmd.Dir, "/tmp")
@@ -244,18 +382,58 @@ func TestCustomAgent_WorkDir(t *testing.T) {
 
 func TestCustomAgent_Env(t *testing.T) {
 	t.Parallel()
-	agent, _ := NewCustomAgent("echo {{PROMPT}}")
-	cmd, _ := agent.BuildCommand("test", ExecOptions{
-		Env: map[string]string{"MY_VAR": "my_value"},
-	})
-	found := false
-	for _, e := range cmd.Env {
-		if e == "MY_VAR=my_value" {
-			found = true
-			break
-		}
+
+	tests := map[string]struct {
+		config   CustomAgentConfig
+		opts     ExecOptions
+		wantEnvs []string
+	}{
+		"config env vars": {
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+				Env:     map[string]string{"CONFIG_VAR": "config_value"},
+			},
+			opts:     ExecOptions{},
+			wantEnvs: []string{"CONFIG_VAR=config_value"},
+		},
+		"exec env vars": {
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+			},
+			opts:     ExecOptions{Env: map[string]string{"EXEC_VAR": "exec_value"}},
+			wantEnvs: []string{"EXEC_VAR=exec_value"},
+		},
+		"both env vars": {
+			config: CustomAgentConfig{
+				Command: "echo",
+				Args:    []string{"{{PROMPT}}"},
+				Env:     map[string]string{"CONFIG_VAR": "config_value"},
+			},
+			opts:     ExecOptions{Env: map[string]string{"EXEC_VAR": "exec_value"}},
+			wantEnvs: []string{"CONFIG_VAR=config_value", "EXEC_VAR=exec_value"},
+		},
 	}
-	if !found {
-		t.Error("expected MY_VAR=my_value in env")
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			agent, _ := NewCustomAgentFromConfig(tt.config)
+			cmd, _ := agent.BuildCommand("test", tt.opts)
+
+			for _, wantEnv := range tt.wantEnvs {
+				found := false
+				for _, e := range cmd.Env {
+					if e == wantEnv {
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("expected %s in env", wantEnv)
+				}
+			}
+		})
 	}
 }

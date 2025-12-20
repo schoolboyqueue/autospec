@@ -137,10 +137,12 @@ func runInteractiveSelect(f *os.File, w io.Writer, agents []AgentOption) []strin
 
 	cursor := 0
 	buf := make([]byte, 3)
+	menuLines := len(agents) + 3 // agents + header + instructions + blank line
+
+	// Initial render
+	renderInteractiveMenu(w, agents, cursor)
 
 	for {
-		renderInteractiveMenu(w, agents, cursor)
-
 		// Read keypress
 		n, err := f.Read(buf)
 		if err != nil || n == 0 {
@@ -149,14 +151,14 @@ func runInteractiveSelect(f *os.File, w io.Writer, agents []AgentOption) []strin
 
 		switch {
 		case buf[0] == 13 || buf[0] == 10: // Enter
-			clearMenu(w, len(agents))
+			clearMenu(w, menuLines)
 			return getSelectedAgentNames(agents)
 
 		case buf[0] == ' ': // Space - toggle selection
 			agents[cursor].Selected = !agents[cursor].Selected
 
 		case buf[0] == 3 || buf[0] == 4: // Ctrl+C or Ctrl+D
-			clearMenu(w, len(agents))
+			clearMenu(w, menuLines)
 			return getSelectedAgentNames(agents)
 
 		case n == 3 && buf[0] == 27 && buf[1] == 91: // Arrow keys
@@ -180,7 +182,14 @@ func runInteractiveSelect(f *os.File, w io.Writer, agents []AgentOption) []strin
 			if cursor < len(agents)-1 {
 				cursor++
 			}
+
+		default:
+			continue // Don't redraw for unhandled keys
 		}
+
+		// Move cursor back to start of menu and redraw
+		moveUp(w, menuLines)
+		renderInteractiveMenu(w, agents, cursor)
 	}
 
 	return getSelectedAgentNames(agents)
@@ -189,9 +198,6 @@ func runInteractiveSelect(f *os.File, w io.Writer, agents []AgentOption) []strin
 // renderInteractiveMenu draws the menu with cursor highlight.
 // Uses \r\n for line endings because raw mode doesn't auto-convert \n.
 func renderInteractiveMenu(w io.Writer, agents []AgentOption, cursor int) {
-	// Move cursor to start and clear from cursor to end of screen
-	fmt.Fprint(w, "\r\x1b[J")
-
 	fmt.Fprint(w, "Select AI coding agents to configure:\r\n")
 	fmt.Fprint(w, "(↑/↓ move, Space select, Enter confirm)\r\n")
 	fmt.Fprint(w, "\r\n")
@@ -207,21 +213,27 @@ func renderInteractiveMenu(w io.Writer, agents []AgentOption, cursor int) {
 			label += " (Recommended)"
 		}
 
-		// Highlight current cursor position
+		// Highlight current cursor position with inverse video
 		if i == cursor {
-			fmt.Fprintf(w, "  \x1b[7m %s %s \x1b[0m\r\n", checkbox, label)
+			fmt.Fprintf(w, "  \x1b[7m %s %s \x1b[0m\x1b[K\r\n", checkbox, label)
 		} else {
-			fmt.Fprintf(w, "   %s %s\r\n", checkbox, label)
+			fmt.Fprintf(w, "   %s %s\x1b[K\r\n", checkbox, label)
 		}
 	}
 }
 
-// clearMenu moves cursor up and clears the menu area.
-func clearMenu(w io.Writer, numAgents int) {
-	lines := numAgents + 4 // agents + header + instructions + blank line + prompt area
+// moveUp moves cursor up n lines.
+func moveUp(w io.Writer, n int) {
+	fmt.Fprintf(w, "\x1b[%dA\r", n)
+}
+
+// clearMenu clears the menu area by overwriting with blank lines.
+func clearMenu(w io.Writer, lines int) {
+	moveUp(w, lines)
 	for range lines {
-		fmt.Fprint(w, "\x1b[A\x1b[K") // Move up and clear line
+		fmt.Fprint(w, "\x1b[K\r\n") // Clear line and move down
 	}
+	moveUp(w, lines)
 }
 
 // runTextBasedSelect is the fallback for non-interactive input.

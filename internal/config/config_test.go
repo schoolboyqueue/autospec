@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ariel-frischer/autospec/internal/cliagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -921,38 +922,41 @@ func TestConfiguration_GetAgent_AllPresets(t *testing.T) {
 	}
 }
 
-func TestBuildLegacyTemplate(t *testing.T) {
+func TestBuildLegacyConfig(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
 		cmd      string
 		args     []string
-		contains []string
+		wantCmd  string
+		wantArgs []string
 	}{
 		"with -p flag": {
 			cmd:      "claude",
 			args:     []string{"-p", "--verbose"},
-			contains: []string{"claude", "-p", "{{PROMPT}}", "--verbose"},
+			wantCmd:  "claude",
+			wantArgs: []string{"-p", "{{PROMPT}}", "--verbose"},
 		},
 		"without -p flag": {
 			cmd:      "my-tool",
 			args:     []string{"--verbose"},
-			contains: []string{"my-tool", "--verbose", "-p", "{{PROMPT}}"},
+			wantCmd:  "my-tool",
+			wantArgs: []string{"--verbose", "-p", "{{PROMPT}}"},
 		},
 		"empty args": {
 			cmd:      "simple",
 			args:     nil,
-			contains: []string{"simple", "-p", "{{PROMPT}}"},
+			wantCmd:  "simple",
+			wantArgs: []string{"-p", "{{PROMPT}}"},
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			result := buildLegacyTemplate(tt.cmd, tt.args)
-			for _, s := range tt.contains {
-				assert.Contains(t, result, s)
-			}
+			result := buildLegacyConfig(tt.cmd, tt.args)
+			assert.Equal(t, tt.wantCmd, result.Command)
+			assert.Equal(t, tt.wantArgs, result.Args)
 		})
 	}
 }
@@ -972,12 +976,22 @@ func TestEmitLegacyWarnings(t *testing.T) {
 			},
 			expectWarning: false,
 		},
-		"no warning when custom_agent_cmd set": {
+		"no warning when custom_agent set": {
 			cfg: Configuration{
-				CustomAgentCmd:  "new-tool {{PROMPT}}",
+				CustomAgent: &cliagent.CustomAgentConfig{
+					Command: "new-tool",
+					Args:    []string{"{{PROMPT}}"},
+				},
 				CustomClaudeCmd: "old-tool {{PROMPT}}",
 			},
 			expectWarning: false,
+		},
+		"warning for custom_agent_cmd": {
+			cfg: Configuration{
+				CustomAgentCmd: "old-tool {{PROMPT}}",
+			},
+			expectWarning: true,
+			contains:      "custom_agent_cmd",
 		},
 		"warning for custom_claude_cmd": {
 			cfg: Configuration{
