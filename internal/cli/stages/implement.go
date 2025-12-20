@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ariel-frischer/autospec/internal/cli/shared"
+	"github.com/ariel-frischer/autospec/internal/cli/util"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -109,35 +110,39 @@ The --tasks mode provides maximum context isolation:
 		// Get single-session flag
 		singleSession, _ := cmd.Flags().GetBool("single-session")
 
-		// Get parallel execution flags
-		parallelMode, _ := cmd.Flags().GetBool("parallel")
-		maxParallel, _ := cmd.Flags().GetInt("max-parallel")
-		useWorktrees, _ := cmd.Flags().GetBool("worktrees")
-		dryRun, _ := cmd.Flags().GetBool("dry-run")
-		skipConfirmation, _ := cmd.Flags().GetBool("yes")
+		// Get parallel execution flags (dev builds only)
+		var parallelMode, useWorktrees, dryRun, skipConfirmation bool
+		var maxParallel int
+		if util.IsDevBuild() {
+			parallelMode, _ = cmd.Flags().GetBool("parallel")
+			maxParallel, _ = cmd.Flags().GetInt("max-parallel")
+			useWorktrees, _ = cmd.Flags().GetBool("worktrees")
+			dryRun, _ = cmd.Flags().GetBool("dry-run")
+			skipConfirmation, _ = cmd.Flags().GetBool("yes")
 
-		// Validate parallel flag values
-		if maxParallel <= 0 {
-			cliErr := clierrors.NewArgumentError("--max-parallel must be a positive integer")
-			clierrors.PrintError(cliErr)
-			return cliErr
-		}
-		if maxParallel > 8 {
-			fmt.Fprintf(os.Stderr, "Warning: --max-parallel=%d may cause resource contention; recommended max is 8\n", maxParallel)
-		}
+			// Validate parallel flag values
+			if maxParallel <= 0 {
+				cliErr := clierrors.NewArgumentError("--max-parallel must be a positive integer")
+				clierrors.PrintError(cliErr)
+				return cliErr
+			}
+			if maxParallel > 8 {
+				fmt.Fprintf(os.Stderr, "Warning: --max-parallel=%d may cause resource contention; recommended max is 8\n", maxParallel)
+			}
 
-		// Validate --dry-run requires --parallel
-		if dryRun && !parallelMode {
-			cliErr := clierrors.NewArgumentError("--dry-run requires --parallel flag")
-			clierrors.PrintError(cliErr)
-			return cliErr
-		}
+			// Validate --dry-run requires --parallel
+			if dryRun && !parallelMode {
+				cliErr := clierrors.NewArgumentError("--dry-run requires --parallel flag")
+				clierrors.PrintError(cliErr)
+				return cliErr
+			}
 
-		// Validate --worktrees requires --parallel
-		if useWorktrees && !parallelMode {
-			cliErr := clierrors.NewArgumentError("--worktrees requires --parallel flag")
-			clierrors.PrintError(cliErr)
-			return cliErr
+			// Validate --worktrees requires --parallel
+			if useWorktrees && !parallelMode {
+				cliErr := clierrors.NewArgumentError("--worktrees requires --parallel flag")
+				clierrors.PrintError(cliErr)
+				return cliErr
+			}
 		}
 
 		// Validate phase flag values
@@ -182,7 +187,7 @@ The --tasks mode provides maximum context isolation:
 			cmd.Flags().Changed("from-phase") ||
 			cmd.Flags().Changed("from-task") ||
 			cmd.Flags().Changed("single-session") ||
-			cmd.Flags().Changed("parallel")
+			(util.IsDevBuild() && cmd.Flags().Changed("parallel"))
 
 		execMode := ResolveExecutionMode(
 			ExecutionModeFlags{
@@ -403,19 +408,21 @@ func init() {
 	implementCmd.MarkFlagsMutuallyExclusive("single-session", "from-phase")
 	implementCmd.MarkFlagsMutuallyExclusive("single-session", "tasks")
 
-	// Parallel execution flags
-	implementCmd.Flags().Bool("parallel", false, "Execute independent tasks concurrently using DAG-based wave scheduling")
-	implementCmd.Flags().Int("max-parallel", 4, "Maximum concurrent Claude sessions when using --parallel")
-	implementCmd.Flags().Bool("worktrees", false, "Use git worktrees for isolation when running in parallel")
-	implementCmd.Flags().Bool("dry-run", false, "Preview execution plan without running (requires --parallel)")
-	implementCmd.Flags().Bool("yes", false, "Bypass confirmation prompts (e.g., worktree isolation warning)")
+	// Experimental: Parallel execution flags (dev builds only)
+	if util.IsDevBuild() {
+		implementCmd.Flags().Bool("parallel", false, "Execute independent tasks concurrently using DAG-based wave scheduling")
+		implementCmd.Flags().Int("max-parallel", 4, "Maximum concurrent Claude sessions when using --parallel")
+		implementCmd.Flags().Bool("worktrees", false, "Use git worktrees for isolation when running in parallel")
+		implementCmd.Flags().Bool("dry-run", false, "Preview execution plan without running (requires --parallel)")
+		implementCmd.Flags().Bool("yes", false, "Bypass confirmation prompts (e.g., worktree isolation warning)")
 
-	// Mark parallel as mutually exclusive with other execution modes
-	implementCmd.MarkFlagsMutuallyExclusive("parallel", "tasks")
-	implementCmd.MarkFlagsMutuallyExclusive("parallel", "phases")
-	implementCmd.MarkFlagsMutuallyExclusive("parallel", "phase")
-	implementCmd.MarkFlagsMutuallyExclusive("parallel", "from-phase")
-	implementCmd.MarkFlagsMutuallyExclusive("parallel", "single-session")
+		// Mark parallel as mutually exclusive with other execution modes
+		implementCmd.MarkFlagsMutuallyExclusive("parallel", "tasks")
+		implementCmd.MarkFlagsMutuallyExclusive("parallel", "phases")
+		implementCmd.MarkFlagsMutuallyExclusive("parallel", "phase")
+		implementCmd.MarkFlagsMutuallyExclusive("parallel", "from-phase")
+		implementCmd.MarkFlagsMutuallyExclusive("parallel", "single-session")
+	}
 
 	// Agent override flag
 	shared.AddAgentFlag(implementCmd)

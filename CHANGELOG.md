@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **[Dev builds only]** DAG-based parallel task execution with `implement --parallel` flag for concurrent task processing
+- **[Dev builds only]** `--max-parallel` flag to limit concurrent task execution (default: number of CPU cores)
+- **[Dev builds only]** `--worktrees` flag for git worktree-based task isolation during parallel execution
+- **[Dev builds only]** `--dry-run` flag to preview execution plan without running tasks
+- **[Dev builds only]** `--yes` flag to skip resume confirmation prompts
+- **[Dev builds only]** `dag` command to visualize task dependencies as ASCII graph with wave grouping
+- **[Dev builds only]** Parallel execution state persistence with resume support (R/W/S/A options: resume, resume wave, skip failed, abort)
 - Multi-agent CLI abstraction layer with 6 built-in agents (claude, cline, gemini, codex, opencode, goose) and custom agent support via `agent_preset` config or `--agent` flag
 - Agent discovery and status in `autospec doctor` showing installed agents with versions
 - `view` command to display dashboard overview of all specs with completion status and task progress

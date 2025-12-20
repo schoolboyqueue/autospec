@@ -19,6 +19,12 @@ var (
 	BuildDate = "unknown"
 )
 
+// IsDevBuild returns true if running a development build (not a release).
+// Used to gate experimental features that aren't ready for production.
+func IsDevBuild() bool {
+	return Version == "dev"
+}
+
 // ASCII logo for autospec - minimal block style
 // Both lines are exactly 33 display characters wide
 var logo = []string{
