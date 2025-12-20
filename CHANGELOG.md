@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init` command now prompts to create constitution if none exists (Y/n default yes)
 - `init` command now prompts to generate worktree setup script if not already present (y/N default no)
 - Dark mode support for GitHub Pages documentation site
+- `init` command now prompts to enable Claude sandbox with required write paths for improved security
 
 ### Changed
 - `init` agent selection now uses interactive arrow-key navigation with space to toggle (replaces number input)
