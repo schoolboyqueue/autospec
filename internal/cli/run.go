@@ -185,6 +185,9 @@ Stages are always executed in canonical order:
 		orchestrator.Debug = debug
 		orchestrator.Executor.Debug = debug
 
+		// Apply output style from CLI flag (overrides config)
+		shared.ApplyOutputStyle(cmd, orchestrator)
+
 		if debug {
 			fmt.Println("[DEBUG] Debug mode enabled")
 			fmt.Printf("[DEBUG] Config: %+v\n", cfg)

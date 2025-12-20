@@ -88,6 +88,9 @@ This is useful when you want to review the generated artifacts before implementa
 			orchestrator := workflow.NewWorkflowOrchestrator(cfg)
 			orchestrator.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orchestrator)
+
 			// Run complete workflow (specify → plan → tasks, no implementation)
 			if err := orchestrator.RunCompleteWorkflow(featureDescription); err != nil {
 				return fmt.Errorf("prep workflow failed: %w", err)

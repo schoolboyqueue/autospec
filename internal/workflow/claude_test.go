@@ -704,3 +704,134 @@ func TestFormatCommand_CustomCommand(t *testing.T) {
 	assert.Contains(t, result, "echo")
 	assert.Contains(t, result, "'test'")
 }
+
+// Tests for stream-json detection
+
+func TestHasStreamJsonFormat(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		args []string
+		want bool
+	}{
+		"long form with separate value": {
+			args: []string{"-p", "--output-format", "stream-json"},
+			want: true,
+		},
+		"short form with separate value": {
+			args: []string{"-p", "-o", "stream-json"},
+			want: true,
+		},
+		"combined form": {
+			args: []string{"-p", "--output-format=stream-json"},
+			want: true,
+		},
+		"no stream-json": {
+			args: []string{"-p", "--output-format", "json"},
+			want: false,
+		},
+		"stream-json without flag": {
+			args: []string{"stream-json"},
+			want: false,
+		},
+		"empty args": {
+			args: []string{},
+			want: false,
+		},
+		"nil args": {
+			args: nil,
+			want: false,
+		},
+		"output-format at end without value": {
+			args: []string{"-p", "--output-format"},
+			want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got := hasStreamJsonFormat(tt.args)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestHasHeadlessFlag(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		args []string
+		want bool
+	}{
+		"has -p flag": {
+			args: []string{"-p", "--output-format", "stream-json"},
+			want: true,
+		},
+		"no -p flag": {
+			args: []string{"--output-format", "stream-json"},
+			want: false,
+		},
+		"empty args": {
+			args: []string{},
+			want: false,
+		},
+		"nil args": {
+			args: nil,
+			want: false,
+		},
+		"-p in middle": {
+			args: []string{"--verbose", "-p", "--output-format", "stream-json"},
+			want: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			got := hasHeadlessFlag(tt.args)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestDetectStreamJsonMode(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		args []string
+		want bool
+	}{
+		"stream-json with headless": {
+			args: []string{"-p", "--output-format", "stream-json"},
+			want: true,
+		},
+		"stream-json without headless": {
+			args: []string{"--output-format", "stream-json"},
+			want: false,
+		},
+		"headless without stream-json": {
+			args: []string{"-p", "--output-format", "json"},
+			want: false,
+		},
+		"neither": {
+			args: []string{"--output-format", "json"},
+			want: false,
+		},
+		"short form both": {
+			args: []string{"-p", "-o", "stream-json"},
+			want: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			executor := &ClaudeExecutor{
+				ClaudeArgs: tt.args,
+			}
+			got := executor.detectStreamJsonMode()
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}

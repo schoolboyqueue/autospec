@@ -75,24 +75,71 @@ display.DisplayMessage(&msg, 1, cfg)
 | `ContentBlock` | `parser` | Text, tool_use, or tool_result |
 | `Config` | `display` | Output configuration |
 
-## Use with autospec
+## Native Integration with autospec
 
-Configure as post_processor in `~/.config/autospec/config.yml`:
+As of v0.2.0, autospec has native cclean integration. When your agent uses `--output-format stream-json` with headless mode (`-p`), autospec automatically formats the output using cclean.
+
+### Configuration
+
+Set the output style in `~/.config/autospec/config.yml`:
+
+```yaml
+# Output formatting style for stream-json mode
+output_style: default  # default | compact | minimal | plain | raw
+```
+
+### CLI Flag
+
+Override the config with `--output-style` on any workflow command:
+
+```bash
+# Use compact style for this run
+autospec implement --output-style compact
+
+# Raw output (bypass formatting, show raw JSONL)
+autospec run -a "feature" --output-style raw
+```
+
+### Priority Order
+
+1. **CLI flag** (`--output-style`) - Highest priority
+2. **Config file** (`output_style:`) - Default when flag not set
+3. **Built-in default** - `default` style
+
+### Output Styles
+
+| Style | Description | Use Case |
+|-------|-------------|----------|
+| `default` | Box-drawing characters, colors | Interactive terminal |
+| `compact` | Single-line summaries | Quick overview |
+| `minimal` | Reduced visual output | Less clutter |
+| `plain` | No colors | Piping, file output |
+| `raw` | Bypasses formatting entirely | Debugging, log files |
+
+### Automatic Detection
+
+Formatting is applied only when both conditions are met:
+- Agent uses `--output-format stream-json`
+- Agent uses `-p` (headless/print mode)
+
+If your agent doesn't use stream-json, output passes through unchanged.
+
+### Legacy: External Post-Processor
+
+For older setups or custom pipelines, you can still pipe through cclean externally:
 
 ```yaml
 custom_agent:
   command: "claude"
   args:
     - "-p"
-    - "--dangerously-skip-permissions"
-    - "--verbose"
     - "--output-format"
     - "stream-json"
     - "{{PROMPT}}"
   post_processor: "cclean"
 ```
 
-This pipes Claude's stream-json output through cclean for readable terminal output during autospec workflows.
+This approach is deprecated in favor of native integration.
 
 ## References
 

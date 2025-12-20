@@ -93,6 +93,9 @@ The feature description should be a clear, concise description of what you want 
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
+
 			// Execute specify stage
 			specName, execErr := orch.ExecuteSpecify(featureDescription)
 			if execErr != nil {

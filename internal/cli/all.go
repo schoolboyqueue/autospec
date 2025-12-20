@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -87,6 +88,9 @@ This is equivalent to running 'autospec run -a <feature-description>'.`,
 			orchestrator.Debug = debug
 			orchestrator.Executor.Debug = debug
 			orchestrator.Executor.NotificationHandler = notifHandler
+
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orchestrator)
 
 			if debug {
 				fmt.Println("[DEBUG] Debug mode enabled")

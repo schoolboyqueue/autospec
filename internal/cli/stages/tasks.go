@@ -106,6 +106,9 @@ You can optionally provide a prompt to guide the task generation.`,
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
+
 			// Execute tasks stage
 			if err := orch.ExecuteTasks("", prompt); err != nil {
 				return fmt.Errorf("tasks stage failed: %w", err)

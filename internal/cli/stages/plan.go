@@ -106,6 +106,9 @@ You can optionally provide a prompt to guide the planning process.`,
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
+
 			// Execute plan stage
 			if err := orch.ExecutePlan("", prompt); err != nil {
 				return fmt.Errorf("plan stage failed: %w", err)

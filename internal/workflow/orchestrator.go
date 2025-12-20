@@ -719,12 +719,15 @@ func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string)
 // newClaudeExecutorFromConfig creates a ClaudeExecutor from configuration.
 // Tries to use the new Agent abstraction first, falling back to legacy fields.
 func newClaudeExecutorFromConfig(cfg *config.Configuration) *ClaudeExecutor {
+	outputStyle, _ := config.NormalizeOutputStyle(cfg.OutputStyle)
+
 	// Try new agent abstraction first
 	agent, err := cfg.GetAgent()
 	if err == nil && agent != nil {
 		return &ClaudeExecutor{
-			Agent:   agent,
-			Timeout: cfg.Timeout,
+			Agent:       agent,
+			Timeout:     cfg.Timeout,
+			OutputStyle: outputStyle,
 		}
 	}
 
@@ -734,5 +737,20 @@ func newClaudeExecutorFromConfig(cfg *config.Configuration) *ClaudeExecutor {
 		ClaudeArgs:      cfg.ClaudeArgs,
 		CustomClaudeCmd: cfg.CustomClaudeCmd,
 		Timeout:         cfg.Timeout,
+		OutputStyle:     outputStyle,
+	}
+}
+
+// SetOutputStyle sets the OutputStyle on the underlying ClaudeExecutor.
+// CLI flag value takes precedence over config file when called.
+// Uses type assertion to access ClaudeExecutor through ClaudeRunner interface.
+func (w *WorkflowOrchestrator) SetOutputStyle(style config.OutputStyle) {
+	if w.Executor == nil || w.Executor.Claude == nil {
+		return
+	}
+
+	// Type assert to access ClaudeExecutor fields through the interface
+	if claude, ok := w.Executor.Claude.(*ClaudeExecutor); ok {
+		claude.OutputStyle = style
 	}
 }

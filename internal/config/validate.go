@@ -178,6 +178,17 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 		return err
 	}
 
+	// Validate output_style if specified
+	if cfg.OutputStyle != "" {
+		if err := ValidateOutputStyle(cfg.OutputStyle); err != nil {
+			return &ValidationError{
+				FilePath: filePath,
+				Field:    "output_style",
+				Message:  err.Error(),
+			}
+		}
+	}
+
 	return nil
 }
 

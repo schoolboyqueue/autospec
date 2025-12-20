@@ -96,6 +96,12 @@ type Configuration struct {
 	// Set during 'autospec init' when user selects agents for configuration.
 	// Can be set via AUTOSPEC_DEFAULT_AGENTS env var (comma-separated).
 	DefaultAgents []string `koanf:"default_agents,omitempty"`
+
+	// OutputStyle controls how stream-json output is formatted for display.
+	// Valid values: default, compact, minimal, plain, raw
+	// Default: "default" (box-drawing characters with colors)
+	// Can be set via AUTOSPEC_OUTPUT_STYLE env var or --output-style CLI flag.
+	OutputStyle string `koanf:"output_style"`
 }
 
 // LoadOptions configures how configuration is loaded

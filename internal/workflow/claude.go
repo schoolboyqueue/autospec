@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ariel-frischer/autospec/internal/cliagent"
+	"github.com/ariel-frischer/autospec/internal/config"
 )
 
 // ClaudeExecutor handles CLI agent command execution.
@@ -30,6 +31,11 @@ type ClaudeExecutor struct {
 	CustomClaudeCmd string
 
 	Timeout int // Timeout in seconds (0 = no timeout)
+
+	// OutputStyle controls how stream-json output is formatted for display.
+	// When set and stream-json mode is detected, output is formatted using cclean.
+	// Valid values: default, compact, minimal, plain, raw
+	OutputStyle config.OutputStyle
 }
 
 // Execute runs an agent command with the given prompt.
@@ -55,13 +61,20 @@ func (c *ClaudeExecutor) executeWithAgent(prompt string) error {
 		defer cancel()
 	}
 
+	// Determine stdout writer, potentially wrapping with formatter
+	stdout := c.getFormattedStdout(os.Stdout)
+
 	opts := cliagent.ExecOptions{
-		Stdout:  os.Stdout,
+		Stdout:  stdout,
 		Stderr:  os.Stderr,
 		Timeout: time.Duration(c.Timeout) * time.Second,
 	}
 
 	result, err := c.Agent.Execute(ctx, prompt, opts)
+
+	// Flush formatter if used
+	c.flushFormatter(stdout)
+
 	if err != nil {
 		// Check for timeout specifically
 		if ctx.Err() == context.DeadlineExceeded {
@@ -85,11 +98,19 @@ func (c *ClaudeExecutor) executeLegacy(prompt string) error {
 	}
 
 	cmd := c.buildCommand(ctx, prompt)
-	cmd.Stdout = os.Stdout
+
+	// Determine stdout writer, potentially wrapping with formatter
+	stdout := c.getFormattedStdout(os.Stdout)
+	cmd.Stdout = stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 
-	return c.runCommand(cmd, ctx, prompt)
+	err := c.runCommand(cmd, ctx, prompt)
+
+	// Flush formatter if used
+	c.flushFormatter(stdout)
+
+	return err
 }
 
 // createTimeoutContext creates a context with optional timeout
@@ -215,13 +236,20 @@ func (c *ClaudeExecutor) streamWithAgent(prompt string, stdout, stderr io.Writer
 		defer cancel()
 	}
 
+	// Optionally wrap stdout with formatter
+	formattedStdout := c.getFormattedStdout(stdout)
+
 	opts := cliagent.ExecOptions{
-		Stdout:  stdout,
+		Stdout:  formattedStdout,
 		Stderr:  stderr,
 		Timeout: time.Duration(c.Timeout) * time.Second,
 	}
 
 	result, err := c.Agent.Execute(ctx, prompt, opts)
+
+	// Flush formatter if used
+	c.flushFormatter(formattedStdout)
+
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return NewTimeoutError(time.Duration(c.Timeout)*time.Second, c.FormatCommand(prompt))
@@ -243,11 +271,19 @@ func (c *ClaudeExecutor) streamLegacy(prompt string, stdout, stderr io.Writer) e
 	}
 
 	cmd := c.buildCommand(ctx, prompt)
-	cmd.Stdout = stdout
+
+	// Optionally wrap stdout with formatter
+	formattedStdout := c.getFormattedStdout(stdout)
+	cmd.Stdout = formattedStdout
 	cmd.Stderr = stderr
 	cmd.Stdin = os.Stdin
 
-	return c.runCommandStreaming(cmd, ctx, prompt)
+	err := c.runCommandStreaming(cmd, ctx, prompt)
+
+	// Flush formatter if used
+	c.flushFormatter(formattedStdout)
+
+	return err
 }
 
 // runCommandStreaming executes a streaming command and handles timeout errors
@@ -273,4 +309,90 @@ func ValidateTemplate(template string) error {
 	}
 
 	return nil
+}
+
+// getFormattedStdout returns either a FormatterWriter or the original writer.
+// Returns a FormatterWriter when:
+// - OutputStyle is set (not empty or "raw")
+// - Stream-json mode with headless flag is detected
+// Otherwise, returns the original writer unchanged.
+func (c *ClaudeExecutor) getFormattedStdout(w io.Writer) io.Writer {
+	// Skip formatting if OutputStyle is not set or is raw
+	if c.OutputStyle == "" || c.OutputStyle.IsRaw() {
+		return w
+	}
+
+	// Only format when stream-json + headless mode detected
+	if !c.detectStreamJsonMode() {
+		return w
+	}
+
+	return NewFormatterWriter(c.OutputStyle, w)
+}
+
+// flushFormatter flushes the FormatterWriter if the writer is one.
+// Safe to call on any io.Writer (no-op for non-formatters).
+func (c *ClaudeExecutor) flushFormatter(w io.Writer) {
+	if fw, ok := w.(*FormatterWriter); ok {
+		fw.Flush()
+	}
+}
+
+// detectStreamJsonMode checks if the agent command is configured for stream-json output
+// in headless mode. This is detected by looking for:
+// - "--output-format stream-json" or "-o stream-json" in command args
+// - "-p" flag indicating headless mode
+//
+// Both conditions must be present for stream formatting to be applied.
+func (c *ClaudeExecutor) detectStreamJsonMode() bool {
+	args := c.getCommandArgs()
+	return hasStreamJsonFormat(args) && hasHeadlessFlag(args)
+}
+
+// getCommandArgs returns the args that will be used for command execution.
+func (c *ClaudeExecutor) getCommandArgs() []string {
+	if c.Agent != nil {
+		cmd, err := c.Agent.BuildCommand("", cliagent.ExecOptions{})
+		if err != nil {
+			return nil
+		}
+		return cmd.Args
+	}
+
+	if c.CustomClaudeCmd != "" {
+		// For custom commands, we can't easily extract args
+		// Check the template string directly
+		return strings.Fields(c.CustomClaudeCmd)
+	}
+
+	return c.ClaudeArgs
+}
+
+// hasStreamJsonFormat checks if args contain --output-format stream-json or -o stream-json.
+func hasStreamJsonFormat(args []string) bool {
+	for i, arg := range args {
+		// Check for long form: --output-format stream-json
+		if arg == "--output-format" && i+1 < len(args) && args[i+1] == "stream-json" {
+			return true
+		}
+		// Check for short form: -o stream-json
+		if arg == "-o" && i+1 < len(args) && args[i+1] == "stream-json" {
+			return true
+		}
+		// Check for combined form: --output-format=stream-json
+		if strings.HasPrefix(arg, "--output-format=") && strings.HasSuffix(arg, "stream-json") {
+			return true
+		}
+	}
+	return false
+}
+
+// hasHeadlessFlag checks if args contain the -p flag for headless mode.
+func hasHeadlessFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "-p" {
+			return true
+		}
+	}
+	return false
 }

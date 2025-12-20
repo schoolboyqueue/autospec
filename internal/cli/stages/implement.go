@@ -247,6 +247,9 @@ The --tasks mode provides maximum context isolation:
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
+
 			// Build phase execution options
 			phaseOpts := workflow.PhaseExecutionOptions{
 				RunAllPhases:     runAllPhases,
