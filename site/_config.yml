@@ -24,7 +24,7 @@ sass:
   quiet_deps: true
 
 # Just the Docs configuration
-color_scheme: light
+color_scheme: dark
 
 # Enable copy-to-clipboard for code blocks
 enable_copy_code_button: true
