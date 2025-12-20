@@ -32,6 +32,17 @@ max_history_entries: 500              # Max command history entries to retain
 # View dashboard settings
 view_limit: 5                         # Number of recent specs to display
 
+# Worktree management settings
+worktree:
+  base_dir: ""                        # Parent dir for worktrees (default: parent of repo)
+  prefix: ""                          # Directory name prefix
+  setup_script: ""                    # Path to setup script relative to repo
+  auto_setup: true                    # Run setup automatically on create
+  track_status: true                  # Persist worktree state
+  copy_dirs:                          # Non-tracked dirs to copy
+    - .autospec
+    - .claude
+
 # Notifications (all platforms)
 notifications:
   enabled: false                      # Enable notifications (opt-in)
@@ -84,5 +95,15 @@ func GetDefaults() map[string]interface{} {
 		// view_limit: Number of recent specs to display in the view command.
 		// Default: 5. Can be overridden with --limit flag.
 		"view_limit": 5,
+		// worktree: Configuration for git worktree management.
+		// Used by 'autospec worktree' command for creating and managing worktrees.
+		"worktree": map[string]interface{}{
+			"base_dir":     "",                            // Parent directory for new worktrees
+			"prefix":       "",                            // Directory name prefix
+			"setup_script": "",                            // Path to setup script relative to repo
+			"auto_setup":   true,                          // Run setup automatically on create
+			"track_status": true,                          // Persist worktree state
+			"copy_dirs":    []string{".autospec", ".claude"}, // Non-tracked dirs to copy
+		},
 	}
 }
