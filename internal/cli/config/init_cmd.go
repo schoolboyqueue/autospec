@@ -17,8 +17,20 @@ import (
 	"github.com/ariel-frischer/autospec/internal/lifecycle"
 	"github.com/ariel-frischer/autospec/internal/notify"
 	"github.com/ariel-frischer/autospec/internal/workflow"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
+)
+
+// Color helper functions for init command output
+var (
+	cGreen   = color.New(color.FgGreen).SprintFunc()
+	cYellow  = color.New(color.FgYellow).SprintFunc()
+	cCyan    = color.New(color.FgCyan).SprintFunc()
+	cRed     = color.New(color.FgRed).SprintFunc()
+	cDim     = color.New(color.Faint).SprintFunc()
+	cBold    = color.New(color.Bold).SprintFunc()
+	cMagenta = color.New(color.FgMagenta).SprintFunc()
 )
 
 var initCmd = &cobra.Command{
@@ -73,6 +85,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 		noAgents, _ = cmd.Flags().GetBool("no-agents")
 	}
 	out := cmd.OutOrStdout()
+
+	// Print the banner
+	shared.PrintBannerCompact(out)
 
 	// ═══════════════════════════════════════════════════════════════════════
 	// Phase 1: Fast setup (immediate file operations)
@@ -487,9 +502,10 @@ func installCommandTemplates(out io.Writer) error {
 
 	cmdInstalled, cmdUpdated := countResults(cmdResults)
 	if cmdInstalled+cmdUpdated > 0 {
-		fmt.Fprintf(out, "✓ Commands: %d installed, %d updated → %s/\n", cmdInstalled, cmdUpdated, cmdDir)
+		fmt.Fprintf(out, "%s %s: %d installed, %d updated → %s/\n",
+			cGreen("✓"), cBold("Commands"), cmdInstalled, cmdUpdated, cDim(cmdDir))
 	} else {
-		fmt.Fprintf(out, "✓ Commands: up to date\n")
+		fmt.Fprintf(out, "%s %s: up to date\n", cGreen("✓"), cBold("Commands"))
 	}
 	return nil
 }
@@ -505,7 +521,7 @@ func initializeConfig(out io.Writer, project, force bool) (bool, error) {
 	configExists := fileExistsCheck(configPath)
 
 	if configExists && !force {
-		fmt.Fprintf(out, "✓ Config: exists at %s\n", configPath)
+		fmt.Fprintf(out, "%s %s: exists at %s\n", cGreen("✓"), cBold("Config"), cDim(configPath))
 		return false, nil
 	}
 
@@ -514,9 +530,9 @@ func initializeConfig(out io.Writer, project, force bool) (bool, error) {
 	}
 
 	if configExists {
-		fmt.Fprintf(out, "✓ Config: overwritten at %s\n", configPath)
+		fmt.Fprintf(out, "%s %s: overwritten at %s\n", cGreen("✓"), cBold("Config"), cDim(configPath))
 	} else {
-		fmt.Fprintf(out, "✓ Config: created at %s\n", configPath)
+		fmt.Fprintf(out, "%s %s: created at %s\n", cGreen("✓"), cBold("Config"), cDim(configPath))
 	}
 
 	// Show first-time automation setup notice for new user-level configs
@@ -531,22 +547,22 @@ func initializeConfig(out io.Writer, project, force bool) (bool, error) {
 // This is only shown when creating a NEW user-level config (not project, not if exists).
 func showAutomationSetupNotice(out io.Writer, configPath string) {
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "╔══════════════════════════════════════════════════════════════════════╗\n")
-	fmt.Fprintf(out, "║                    AUTOMATION SECURITY INFO                          ║\n")
-	fmt.Fprintf(out, "╚══════════════════════════════════════════════════════════════════════╝\n")
+	fmt.Fprintf(out, "%s\n", cYellow("╔══════════════════════════════════════════════════════════════════════╗"))
+	fmt.Fprintf(out, "%s\n", cYellow("║                    AUTOMATION SECURITY INFO                          ║"))
+	fmt.Fprintf(out, "%s\n", cYellow("╚══════════════════════════════════════════════════════════════════════╝"))
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "autospec runs Claude Code with --dangerously-skip-permissions by default.\n")
+	fmt.Fprintf(out, "autospec runs Claude Code with %s by default.\n", cYellow("--dangerously-skip-permissions"))
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "WHY THIS IS RECOMMENDED:\n")
+	fmt.Fprintf(out, "%s\n", cBold("WHY THIS IS RECOMMENDED:"))
 	fmt.Fprintf(out, "  Without this flag, Claude requires manual approval for every file edit,\n")
 	fmt.Fprintf(out, "  shell command, and tool call - making automation impractical. Managing\n")
 	fmt.Fprintf(out, "  allow/deny rules for all necessary operations is complex and error-prone.\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "SECURITY MITIGATION:\n")
+	fmt.Fprintf(out, "%s\n", cBold("SECURITY MITIGATION:"))
 	fmt.Fprintf(out, "  Enable Claude's sandbox (configured next) for OS-level protection.\n")
 	fmt.Fprintf(out, "  With sandbox enabled, Claude cannot access files outside your project.\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "See docs/claude-settings.md for detailed security information.\n")
+	fmt.Fprintf(out, "See %s for detailed security information.\n", cDim("docs/claude-settings.md"))
 	fmt.Fprintf(out, "\n")
 }
 
@@ -719,7 +735,7 @@ func handleConstitution(out io.Writer) bool {
 	// Check if any autospec constitution already exists
 	for _, path := range autospecPaths {
 		if _, err := os.Stat(path); err == nil {
-			fmt.Fprintf(out, "✓ Constitution: found at %s\n", path)
+			fmt.Fprintf(out, "%s %s: found at %s\n", cGreen("✓"), cBold("Constitution"), cDim(path))
 			return true
 		}
 	}
@@ -730,16 +746,16 @@ func handleConstitution(out io.Writer) bool {
 			// Copy legacy constitution to autospec location (prefer .yaml)
 			destPath := autospecPaths[0]
 			if err := copyConstitution(legacyPath, destPath); err != nil {
-				fmt.Fprintf(out, "⚠ Constitution: failed to copy from %s: %v\n", legacyPath, err)
+				fmt.Fprintf(out, "%s %s: failed to copy from %s: %v\n", cYellow("⚠"), cBold("Constitution"), legacyPath, err)
 				return false
 			}
-			fmt.Fprintf(out, "✓ Constitution: copied from %s → %s\n", legacyPath, destPath)
+			fmt.Fprintf(out, "%s %s: copied from %s → %s\n", cGreen("✓"), cBold("Constitution"), cDim(legacyPath), cDim(destPath))
 			return true
 		}
 	}
 
 	// No constitution found
-	fmt.Fprintf(out, "⚠ Constitution: not found\n")
+	fmt.Fprintf(out, "%s %s: not found\n", cYellow("⚠"), cBold("Constitution"))
 	return false
 }
 
@@ -840,35 +856,35 @@ func collectPendingActions(cmd *cobra.Command, out io.Writer, constitutionExists
 	var pending pendingActions
 
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
-	fmt.Fprintf(out, "                         OPTIONAL SETUP\n")
-	fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+	fmt.Fprintf(out, "%s\n", cCyan("═══════════════════════════════════════════════════════════════════════"))
+	fmt.Fprintf(out, "%s\n", cCyan("                         OPTIONAL SETUP"))
+	fmt.Fprintf(out, "%s\n", cCyan("═══════════════════════════════════════════════════════════════════════"))
 
 	// Question 1: Gitignore
 	if gitignoreNeedsUpdate() {
-		fmt.Fprintf(out, "\n💡 Add .autospec/ to .gitignore?\n")
-		fmt.Fprintf(out, "   → Recommended for shared/public/company repos (prevents config conflicts)\n")
-		fmt.Fprintf(out, "   → Personal projects can keep .autospec/ tracked for backup\n")
+		fmt.Fprintf(out, "\n%s Add %s to .gitignore?\n", cYellow("💡"), cBold(".autospec/"))
+		fmt.Fprintf(out, "   %s Recommended for shared/public/company repos (prevents config conflicts)\n", cDim("→"))
+		fmt.Fprintf(out, "   %s Personal projects can keep .autospec/ tracked for backup\n", cDim("→"))
 		pending.addGitignore = promptYesNo(cmd, "Add .autospec/ to .gitignore?")
 	} else {
-		fmt.Fprintf(out, "✓ Gitignore: .autospec/ already present\n")
+		fmt.Fprintf(out, "%s %s: .autospec/ already present\n", cGreen("✓"), cBold("Gitignore"))
 	}
 
 	// Question 2: Constitution (only if not exists)
 	if !constitutionExists {
-		fmt.Fprintf(out, "\n📜 Constitution (one-time setup per project)\n")
-		fmt.Fprintf(out, "   → Defines your project's coding standards and principles\n")
-		fmt.Fprintf(out, "   → Required before running any autospec workflows\n")
-		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
+		fmt.Fprintf(out, "\n%s %s (one-time setup per project)\n", cMagenta("📜"), cBold("Constitution"))
+		fmt.Fprintf(out, "   %s Defines your project's coding standards and principles\n", cDim("→"))
+		fmt.Fprintf(out, "   %s Required before running any autospec workflows\n", cDim("→"))
+		fmt.Fprintf(out, "   %s Runs a Claude session to analyze your project\n", cDim("→"))
 		pending.createConstitution = promptYesNoDefaultYes(cmd, "Create constitution?")
 	}
 
 	// Question 3: Worktree script (only if not exists)
 	if !worktreeScriptExists {
-		fmt.Fprintf(out, "\n🌳 Worktree setup script (optional)\n")
-		fmt.Fprintf(out, "   → Creates .autospec/scripts/setup-worktree.sh\n")
-		fmt.Fprintf(out, "   → Bootstraps isolated workspaces for parallel autospec sessions\n")
-		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
+		fmt.Fprintf(out, "\n%s %s (optional)\n", cGreen("🌳"), cBold("Worktree setup script"))
+		fmt.Fprintf(out, "   %s Creates .autospec/scripts/setup-worktree.sh\n", cDim("→"))
+		fmt.Fprintf(out, "   %s Bootstraps isolated workspaces for parallel autospec sessions\n", cDim("→"))
+		fmt.Fprintf(out, "   %s Runs a Claude session to analyze your project\n", cDim("→"))
 		pending.createWorktree = promptYesNo(cmd, "Generate worktree setup script?")
 	}
 
@@ -881,18 +897,18 @@ func applyPendingActions(cmd *cobra.Command, out io.Writer, pending pendingActio
 	// Apply gitignore change (fast, no Claude)
 	if pending.addGitignore {
 		if err := addAutospecToGitignore(".gitignore"); err != nil {
-			fmt.Fprintf(out, "⚠ Failed to update .gitignore: %v\n", err)
+			fmt.Fprintf(out, "%s Failed to update .gitignore: %v\n", cYellow("⚠"), err)
 		} else {
-			fmt.Fprintf(out, "✓ Gitignore: added .autospec/\n")
+			fmt.Fprintf(out, "%s %s: added .autospec/\n", cGreen("✓"), cBold("Gitignore"))
 		}
 	}
 
 	// Run constitution workflow (Claude session)
 	if pending.createConstitution {
 		fmt.Fprintf(out, "\n")
-		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
-		fmt.Fprintf(out, "                    RUNNING: CONSTITUTION\n")
-		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		fmt.Fprintf(out, "%s\n", cMagenta("═══════════════════════════════════════════════════════════════════════"))
+		fmt.Fprintf(out, "%s\n", cMagenta("                    RUNNING: CONSTITUTION"))
+		fmt.Fprintf(out, "%s\n", cMagenta("═══════════════════════════════════════════════════════════════════════"))
 		if runConstitutionFromInit(cmd, configPath) {
 			constitutionExists = true
 		}
@@ -901,9 +917,9 @@ func applyPendingActions(cmd *cobra.Command, out io.Writer, pending pendingActio
 	// Run worktree script workflow (Claude session)
 	if pending.createWorktree {
 		fmt.Fprintf(out, "\n")
-		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
-		fmt.Fprintf(out, "                    RUNNING: WORKTREE SCRIPT\n")
-		fmt.Fprintf(out, "═══════════════════════════════════════════════════════════════════════\n")
+		fmt.Fprintf(out, "%s\n", cGreen("═══════════════════════════════════════════════════════════════════════"))
+		fmt.Fprintf(out, "%s\n", cGreen("                    RUNNING: WORKTREE SCRIPT"))
+		fmt.Fprintf(out, "%s\n", cGreen("═══════════════════════════════════════════════════════════════════════"))
 		runWorktreeGenScriptFromInit(cmd, configPath)
 	}
 
@@ -914,21 +930,21 @@ func printSummary(out io.Writer, constitutionExists bool, specsDir string) {
 	fmt.Fprintf(out, "\n")
 
 	if !constitutionExists {
-		fmt.Fprintf(out, "⚠ IMPORTANT: You MUST create a constitution before using autospec.\n")
+		fmt.Fprintf(out, "%s %s: You MUST create a constitution before using autospec.\n", cYellow("⚠"), cBold("IMPORTANT"))
 		fmt.Fprintf(out, "Run the following command to get started:\n\n")
-		fmt.Fprintf(out, "  autospec constitution\n\n")
+		fmt.Fprintf(out, "  %s\n\n", cCyan("autospec constitution"))
 		fmt.Fprintf(out, "The constitution defines your project's principles and guidelines.\n")
 		fmt.Fprintf(out, "Without it, workflow commands (specify, plan, tasks, implement) will fail.\n\n")
 	}
 
-	fmt.Fprintf(out, "Quick start:\n")
-	fmt.Fprintf(out, "  1. autospec specify \"Add user authentication\"\n")
-	fmt.Fprintf(out, "  2. Review the generated spec in %s/\n", specsDir)
-	fmt.Fprintf(out, "  3. autospec run -pti  # -pti is short for --plan --tasks --implement\n")
+	fmt.Fprintf(out, "%s\n", cBold("Quick start:"))
+	fmt.Fprintf(out, "  %s %s\n", cDim("1."), cCyan("autospec specify \"Add user authentication\""))
+	fmt.Fprintf(out, "  %s Review the generated spec in %s/\n", cDim("2."), cDim(specsDir))
+	fmt.Fprintf(out, "  %s %s  %s\n", cDim("3."), cCyan("autospec run -pti"), cDim("# -pti is short for --plan --tasks --implement"))
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "Or run all steps at once (specify → plan → tasks → implement):\n")
-	fmt.Fprintf(out, "  autospec all \"Add user authentication\"\n")
+	fmt.Fprintf(out, "Or run all steps at once %s:\n", cDim("(specify → plan → tasks → implement)"))
+	fmt.Fprintf(out, "  %s\n", cCyan("autospec all \"Add user authentication\""))
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "Run 'autospec doctor' to verify dependencies.\n")
-	fmt.Fprintf(out, "Run 'autospec --help' for all commands.\n")
+	fmt.Fprintf(out, "Run %s to verify dependencies.\n", cDim("'autospec doctor'"))
+	fmt.Fprintf(out, "Run %s for all commands.\n", cDim("'autospec --help'"))
 }
