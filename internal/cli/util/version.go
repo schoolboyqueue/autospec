@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"strings"
 
@@ -72,27 +71,9 @@ var sauceCmd = &cobra.Command{
 	},
 }
 
-// getTerminalWidth returns the terminal width, defaulting to 80 if unavailable
-func getTerminalWidth() int {
-	if width, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && width > 0 {
-		return width
-	}
-	return 80
-}
-
-// centerText centers text within a given width
-func centerText(text string, width int) string {
-	textLen := len([]rune(text))
-	if textLen >= width {
-		return text
-	}
-	padding := (width - textLen) / 2
-	return strings.Repeat(" ", padding) + text
-}
-
 // printPrettyVersion prints a styled version output with logo and box
 func printPrettyVersion() {
-	termWidth := getTerminalWidth()
+	termWidth := shared.GetTerminalWidth()
 
 	// Color setup
 	cyan := color.New(color.FgCyan, color.Bold).SprintFunc()
@@ -102,15 +83,14 @@ func printPrettyVersion() {
 
 	// Print logo centered (use fixed display width for unicode block chars)
 	fmt.Println()
-	logoPadding := (termWidth - logoDisplayWidth) / 2
-	for _, line := range logo {
+	logoPadding := (termWidth - shared.LogoDisplayWidth) / 2
+	for _, line := range shared.Logo {
 		fmt.Println(cyan(strings.Repeat(" ", logoPadding) + line))
 	}
 	fmt.Println()
 
 	// Tagline
-	tagline := "Spec-Driven Development Automation"
-	fmt.Println(dim(centerText(tagline, termWidth)))
+	fmt.Println(dim(shared.CenterText(shared.Tagline, termWidth)))
 	fmt.Println()
 
 	// Build version info content
@@ -137,10 +117,10 @@ func printPrettyVersion() {
 	pad := strings.Repeat(" ", boxPadding)
 
 	// Top border
-	fmt.Println(pad + boxTopLeft + strings.Repeat(boxHorizontal, boxWidth-2) + boxTopRight)
+	fmt.Println(pad + shared.BoxTopLeft + strings.Repeat(shared.BoxHorizontal, boxWidth-2) + shared.BoxTopRight)
 
 	// Empty line
-	fmt.Println(pad + boxVertical + strings.Repeat(" ", boxWidth-2) + boxVertical)
+	fmt.Println(pad + shared.BoxVertical + strings.Repeat(" ", boxWidth-2) + shared.BoxVertical)
 
 	// Content lines
 	for _, item := range info {
@@ -152,14 +132,14 @@ func printPrettyVersion() {
 		if lineLen < contentWidth {
 			line += strings.Repeat(" ", contentWidth-lineLen)
 		}
-		fmt.Println(pad + boxVertical + " " + line + " " + boxVertical)
+		fmt.Println(pad + shared.BoxVertical + " " + line + " " + shared.BoxVertical)
 	}
 
 	// Empty line
-	fmt.Println(pad + boxVertical + strings.Repeat(" ", boxWidth-2) + boxVertical)
+	fmt.Println(pad + shared.BoxVertical + strings.Repeat(" ", boxWidth-2) + shared.BoxVertical)
 
 	// Bottom border
-	fmt.Println(pad + boxBottomLeft + strings.Repeat(boxHorizontal, boxWidth-2) + boxBottomRight)
+	fmt.Println(pad + shared.BoxBottomLeft + strings.Repeat(shared.BoxHorizontal, boxWidth-2) + shared.BoxBottomRight)
 	fmt.Println()
 }
 
