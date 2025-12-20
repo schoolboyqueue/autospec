@@ -700,19 +700,6 @@ implement_method: tasks  # Each task in separate Claude session
 
 **Note**: CLI flags (`--phases`, `--tasks`, `--single-session`) override this config setting.
 
-### custom_claude_cmd (deprecated)
-
-**Type**: string
-**Default**: `""` (not set)
-**Description**: Custom command template with `{{PROMPT}}` placeholder. **Deprecated**: Use `custom_agent_cmd` instead.
-
-**Example**:
-```yaml
-custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
-```
-
-**Environment**: `AUTOSPEC_CUSTOM_CLAUDE_CMD`
-
 ### max_history_entries
 
 **Type**: integer
@@ -1068,10 +1055,14 @@ autospec implement 003-feature "Document all public APIs"
 
 ### Custom Command Templates
 
-Use `custom_claude_cmd` for complex pipelines:
+Use `custom_agent` for complex pipelines:
 
 ```yaml
-custom_claude_cmd: "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
 ```
 
 **Placeholders**:

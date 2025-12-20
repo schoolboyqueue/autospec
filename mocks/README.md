@@ -50,7 +50,7 @@ export MOCK_CALL_LOG="/tmp/claude-calls.log"
 export MOCK_EXIT_CODE=0
 
 # Run tests with mock claude
-AUTOSPEC_CLAUDE_CMD="./mocks/scripts/mock-claude.sh" go test ./internal/workflow/...
+AUTOSPEC_CUSTOM_AGENT_CMD="./mocks/scripts/mock-claude.sh {{PROMPT}}" go test ./internal/workflow/...
 
 # Verify calls made
 cat /tmp/claude-calls.log

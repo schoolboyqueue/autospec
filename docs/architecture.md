@@ -477,13 +477,20 @@ func DetectCurrentSpec() (*SpecMetadata, error) {
 ### Claude Integration
 
 **Methods**:
-1. **CLI Mode** (default): Execute `claude` command via shell
+1. **Preset Mode** (default): Use a registered agent preset
 2. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
 
 **Configuration**:
 ```yaml
-claude_cmd: claude
-custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
+# Using a preset
+agent_preset: claude
+
+# Or custom configuration
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "claude -p {{PROMPT}} | process-output"
 ```
 
 **Prompt Injection**:

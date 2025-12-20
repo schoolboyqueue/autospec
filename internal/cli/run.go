@@ -118,6 +118,9 @@ Stages are always executed in canonical order:
 			return cliErr
 		}
 
+		// Show security notice (once per user)
+		shared.ShowSecurityNotice(cmd.OutOrStdout(), cfg)
+
 		// Override settings from flags
 		if cmd.Flags().Changed("skip-preflight") {
 			cfg.SkipPreflight = skipPreflight

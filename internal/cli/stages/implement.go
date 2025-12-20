@@ -240,6 +240,9 @@ The --tasks mode provides maximum context isolation:
 		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 		historySpecName := fmt.Sprintf("%s-%s", metadata.Number, metadata.Name)
 
+		// Show security notice (once per user)
+		shared.ShowSecurityNotice(cmd.OutOrStdout(), cfg)
+
 		// Wrap command execution with lifecycle for timing, notification, and history
 		// Use RunWithHistoryContext to support context cancellation (e.g., Ctrl+C)
 		return lifecycle.RunWithHistoryContext(cmd.Context(), notifHandler, historyLogger, "implement", historySpecName, func(_ context.Context) error {

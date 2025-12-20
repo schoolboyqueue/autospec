@@ -149,22 +149,29 @@ autospec doctor
 
 ```yaml
 # ~/.config/autospec/config.yml
-claude_args:
-  - -p
-  - --dangerously-skip-permissions
-  - --verbose
-  - --output-format
-  - stream-json
+custom_agent:
+  command: claude
+  args:
+    - -p
+    - --dangerously-skip-permissions
+    - --verbose
+    - --output-format
+    - stream-json
+    - "{{PROMPT}}"
 ```
 
 The sandbox provides OS-level isolation even when permission prompts are bypassed.
 
-### Custom Claude Command
+### Custom Claude Command with cclean
 
 For piping through [cclean](https://github.com/ariel-frischer/claude-clean):
 
 ```yaml
-custom_claude_cmd: "ANTHROPIC_API_KEY='' claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | cclean"
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "ANTHROPIC_API_KEY='' claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | cclean"
 ```
 
 ## Manual bubblewrap Wrapper

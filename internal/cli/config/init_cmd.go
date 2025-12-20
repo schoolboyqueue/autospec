@@ -514,27 +514,26 @@ func initializeConfig(out io.Writer, project, force bool) (bool, error) {
 	return !configExists, nil
 }
 
-// showAutomationSetupNotice displays the recommended full automation setup with disclaimers.
+// showAutomationSetupNotice displays information about the automation setup.
 // This is only shown when creating a NEW user-level config (not project, not if exists).
 func showAutomationSetupNotice(out io.Writer, configPath string) {
 	fmt.Fprintf(out, "\n")
 	fmt.Fprintf(out, "╔══════════════════════════════════════════════════════════════════════╗\n")
-	fmt.Fprintf(out, "║           RECOMMENDED SETUP FOR FULL AUTOMATION                      ║\n")
+	fmt.Fprintf(out, "║                    AUTOMATION SECURITY INFO                          ║\n")
 	fmt.Fprintf(out, "╚══════════════════════════════════════════════════════════════════════╝\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "For unattended autospec execution, uncomment the custom_agent section\n")
-	fmt.Fprintf(out, "in your config file. This enables Claude Code to run without prompts.\n")
+	fmt.Fprintf(out, "autospec runs Claude Code with --dangerously-skip-permissions by default.\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "⚠️  SECURITY WARNING: This setup uses --dangerously-skip-permissions\n")
-	fmt.Fprintf(out, "   which bypasses ALL Claude Code permission prompts. Only enable this\n")
-	fmt.Fprintf(out, "   if you trust the prompts being executed and understand the risks:\n")
-	fmt.Fprintf(out, "   - Claude can execute arbitrary shell commands without confirmation\n")
-	fmt.Fprintf(out, "   - Claude can read/write files without permission checks\n")
-	fmt.Fprintf(out, "   - Claude can access network resources without prompts\n")
+	fmt.Fprintf(out, "WHY THIS IS RECOMMENDED:\n")
+	fmt.Fprintf(out, "  Without this flag, Claude requires manual approval for every file edit,\n")
+	fmt.Fprintf(out, "  shell command, and tool call - making automation impractical. Managing\n")
+	fmt.Fprintf(out, "  allow/deny rules for all necessary operations is complex and error-prone.\n")
 	fmt.Fprintf(out, "\n")
-	fmt.Fprintf(out, "To enable, edit your config:\n")
-	fmt.Fprintf(out, "  %s\n", configPath)
-	fmt.Fprintf(out, "  Uncomment the custom_agent section at the top of the file.\n")
+	fmt.Fprintf(out, "SECURITY MITIGATION:\n")
+	fmt.Fprintf(out, "  Enable Claude's sandbox (configured next) for OS-level protection.\n")
+	fmt.Fprintf(out, "  With sandbox enabled, Claude cannot access files outside your project.\n")
+	fmt.Fprintf(out, "\n")
+	fmt.Fprintf(out, "See docs/claude-settings.md for detailed security information.\n")
 	fmt.Fprintf(out, "\n")
 }
 
