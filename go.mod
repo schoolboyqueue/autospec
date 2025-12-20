@@ -70,7 +70,10 @@ require (
 
 require github.com/knadh/koanf/parsers/yaml v0.1.0
 
-require github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+require (
+	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+)
 
 require (
 	// Terminal colors with auto-detection (used in errors package)

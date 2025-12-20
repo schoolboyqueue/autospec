@@ -84,7 +84,7 @@ phases:
             - "Tests for: root identification, dependent computation"
         - id: "T006"
           title: "Write unit tests for wave computation in internal/dag/waves_test.go"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -103,7 +103,7 @@ phases:
       tasks:
         - id: "T007"
           title: "Implement ParallelExecutor type in internal/workflow/parallel_executor.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -117,7 +117,7 @@ phases:
             - "Errors wrapped with context"
         - id: "T008"
           title: "Implement wave-by-wave execution with errgroup in parallel_executor.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -131,7 +131,7 @@ phases:
             - "Collects TaskResult for each task"
         - id: "T009"
           title: "Implement task execution wrapper calling Claude session"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -144,7 +144,7 @@ phases:
             - "Handles context cancellation gracefully"
         - id: "T010"
           title: "Write unit tests for ParallelExecutor in parallel_executor_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -163,7 +163,7 @@ phases:
       tasks:
         - id: "T011"
           title: "Implement ASCII visualization in internal/dag/visualize.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-002"
@@ -191,7 +191,7 @@ phases:
             - "Registered in root command"
         - id: "T013"
           title: "Write tests for ASCII visualization in internal/dag/visualize_test.go"
-          status: "Pending"
+          status: "InProgress"
           type: "test"
           parallel: true
           story_id: "US-002"
