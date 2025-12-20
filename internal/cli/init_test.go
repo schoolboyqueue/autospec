@@ -10,11 +10,29 @@ import (
 	"testing"
 
 	claudepkg "github.com/ariel-frischer/autospec/internal/claude"
+	"github.com/ariel-frischer/autospec/internal/cli/config"
 	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockClaudeRunners sets up mocks to prevent real Claude execution in tests.
+// Returns a cleanup function that must be called with defer.
+func mockClaudeRunners() func() {
+	originalConstitutionRunner := config.ConstitutionRunner
+	originalWorktreeRunner := config.WorktreeScriptRunner
+	config.ConstitutionRunner = func(cmd *cobra.Command, configPath string) bool {
+		return true // Simulate successful constitution creation
+	}
+	config.WorktreeScriptRunner = func(cmd *cobra.Command, configPath string) {
+		// No-op mock
+	}
+	return func() {
+		config.ConstitutionRunner = originalConstitutionRunner
+		config.WorktreeScriptRunner = originalWorktreeRunner
+	}
+}
 
 // getInitCmd finds the init command from rootCmd
 func getInitCmd() *cobra.Command {
@@ -189,6 +207,10 @@ func TestInitCmdLongDescription(t *testing.T) {
 
 // TestRunInit_CreateUserConfig tests user config creation.
 func TestRunInit_CreateUserConfig(t *testing.T) {
+	// CRITICAL: Mock Claude runners to prevent real API calls
+	cleanup := mockClaudeRunners()
+	defer cleanup()
+
 	// Setup temp directories
 	tmpDir := t.TempDir()
 
@@ -205,9 +227,8 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
 
-	// Skip agent and constitution prompts to avoid running real Claude
+	// Skip agent prompts
 	cmd.Flags().Set("no-agents", "true")
-	cmd.Flags().Set("skip-constitution", "true")
 
 	// Provide "n" to decline any remaining prompts (e.g., worktree)
 	cmd.SetIn(bytes.NewBufferString("n\n"))

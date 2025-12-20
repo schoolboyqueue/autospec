@@ -500,9 +500,19 @@ func promptYesNoDefaultYes(cmd *cobra.Command, question string) bool {
 	return answer == "" || answer == "y" || answer == "yes"
 }
 
+// ConstitutionRunner is the function that runs the constitution workflow.
+// It can be replaced in tests to avoid running real Claude.
+// Exported for testing from other packages.
+var ConstitutionRunner = runConstitutionFromInitImpl
+
 // runConstitutionFromInit executes the constitution workflow.
 // Returns true if constitution was created successfully.
 func runConstitutionFromInit(cmd *cobra.Command, configPath string) bool {
+	return ConstitutionRunner(cmd, configPath)
+}
+
+// runConstitutionFromInitImpl is the real implementation of constitution running.
+func runConstitutionFromInitImpl(cmd *cobra.Command, configPath string) bool {
 	out := cmd.OutOrStdout()
 
 	// Load configuration
@@ -534,9 +544,19 @@ func runConstitutionFromInit(cmd *cobra.Command, configPath string) bool {
 	return true
 }
 
+// WorktreeScriptRunner is the function that runs the worktree gen-script workflow.
+// It can be replaced in tests to avoid running real Claude.
+// Exported for testing from other packages.
+var WorktreeScriptRunner = runWorktreeGenScriptFromInitImpl
+
 // runWorktreeGenScriptFromInit executes the worktree gen-script workflow.
 // This generates a project-specific setup script for git worktrees.
 func runWorktreeGenScriptFromInit(cmd *cobra.Command, configPath string) {
+	WorktreeScriptRunner(cmd, configPath)
+}
+
+// runWorktreeGenScriptFromInitImpl is the real implementation.
+func runWorktreeGenScriptFromInitImpl(cmd *cobra.Command, configPath string) {
 	out := cmd.OutOrStdout()
 
 	cfg, err := config.Load(configPath)

@@ -19,7 +19,22 @@ import (
 )
 
 func TestRunInit_InstallsCommands(t *testing.T) {
-	// Cannot run in parallel due to working directory change
+	// Cannot run in parallel due to working directory change and global mocks
+
+	// CRITICAL: Mock the runners to prevent real Claude execution
+	originalConstitutionRunner := ConstitutionRunner
+	originalWorktreeRunner := WorktreeScriptRunner
+	ConstitutionRunner = func(cmd *cobra.Command, configPath string) bool {
+		return true // Simulate successful constitution creation
+	}
+	WorktreeScriptRunner = func(cmd *cobra.Command, configPath string) {
+		// No-op mock
+	}
+	defer func() {
+		ConstitutionRunner = originalConstitutionRunner
+		WorktreeScriptRunner = originalWorktreeRunner
+	}()
+
 	// Create temp directory for test
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -46,12 +61,13 @@ func TestRunInit_InstallsCommands(t *testing.T) {
 	cmd.Flags().BoolP("project", "p", false, "")
 	cmd.Flags().BoolP("force", "f", false, "")
 	cmd.Flags().Bool("no-agents", false, "")
+	cmd.Flags().Bool("skip-constitution", false, "")
 	rootCmd.AddCommand(cmd)
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
 	cmd.SetErr(&buf)
-	// Provide "n" responses to all prompts to avoid running real Claude
+	// Provide "n" responses to all prompts (not strictly needed now with mocks, but kept for safety)
 	cmd.SetIn(bytes.NewBufferString("n\nn\nn\n"))
 	cmd.SetArgs([]string{"--no-agents"})
 
