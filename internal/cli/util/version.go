@@ -23,7 +23,6 @@ func IsDevBuild() bool {
 	return Version == "dev"
 }
 
-
 var versionPlain bool
 
 var versionCmd = &cobra.Command{
