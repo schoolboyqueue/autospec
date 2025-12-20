@@ -38,12 +38,11 @@ const (
 // Configuration represents the autospec CLI tool configuration
 type Configuration struct {
 	// AgentPreset selects a built-in agent by name (e.g., "claude", "gemini", "cline").
-	// Takes precedence over legacy claude_cmd/claude_args fields.
 	// Can be set via AUTOSPEC_AGENT_PRESET env var.
 	AgentPreset string `koanf:"agent_preset"`
 
 	// CustomAgent provides structured configuration for custom agents.
-	// Takes precedence over agent_preset and all other agent configuration.
+	// Takes precedence over agent_preset.
 	// Example:
 	//   custom_agent:
 	//     command: "claude"
@@ -52,16 +51,6 @@ type Configuration struct {
 	//       ANTHROPIC_API_KEY: ""
 	//     post_processor: "cclean"
 	CustomAgent *cliagent.CustomAgentConfig `koanf:"custom_agent"`
-
-	// DEPRECATED: Use custom_agent instead. CustomAgentCmd defines a custom agent command string.
-	CustomAgentCmd string `koanf:"custom_agent_cmd"`
-
-	// DEPRECATED: Use agent_preset instead. ClaudeCmd specifies the CLI command to invoke.
-	ClaudeCmd string `koanf:"claude_cmd"`
-	// DEPRECATED: Use agent_preset instead. ClaudeArgs specifies additional CLI arguments.
-	ClaudeArgs []string `koanf:"claude_args"`
-	// DEPRECATED: Use custom_agent_cmd instead. CustomClaudeCmd specifies a custom command template.
-	CustomClaudeCmd string `koanf:"custom_claude_cmd"`
 
 	MaxRetries        int    `koanf:"max_retries"`
 	SpecsDir          string `koanf:"specs_dir"`
@@ -291,65 +280,7 @@ func finalizeConfigWithWarnings(k *koanf.Koanf, warningWriter io.Writer, skipWar
 		cfg.SkipConfirmations = true
 	}
 
-	// Emit deprecation warnings for legacy config fields
-	if !skipWarnings {
-		emitLegacyWarnings(&cfg, warningWriter)
-	}
-
 	return &cfg, nil
-}
-
-// emitLegacyWarnings writes deprecation warnings for legacy agent configuration fields
-func emitLegacyWarnings(cfg *Configuration, w io.Writer) {
-	// Only warn if legacy fields are in use and new fields are not set
-	if cfg.AgentPreset != "" || cfg.CustomAgent.IsValid() {
-		// New fields are in use, no need to warn
-		return
-	}
-
-	if cfg.CustomAgentCmd != "" {
-		fmt.Fprintf(w, "Warning: 'custom_agent_cmd' is deprecated. Use structured 'custom_agent' instead.\n")
-		fmt.Fprintf(w, "  Replace:\n")
-		fmt.Fprintf(w, "    custom_agent_cmd: %q\n", cfg.CustomAgentCmd)
-		fmt.Fprintf(w, "  With:\n")
-		fmt.Fprintf(w, "    custom_agent:\n")
-		fmt.Fprintf(w, "      command: \"your-command\"\n")
-		fmt.Fprintf(w, "      args: [\"-p\", \"{{PROMPT}}\"]\n")
-		fmt.Fprintf(w, "      env:  # optional\n")
-		fmt.Fprintf(w, "        VAR: \"value\"\n")
-		fmt.Fprintf(w, "      post_processor: \"cclean\"  # optional\n\n")
-	}
-
-	if cfg.CustomClaudeCmd != "" {
-		fmt.Fprintf(w, "Warning: 'custom_claude_cmd' is deprecated. Use structured 'custom_agent' instead.\n\n")
-	}
-
-	// Warn about claude_cmd/claude_args only if they differ from defaults
-	defaults := GetDefaults()
-	defaultCmd := defaults["claude_cmd"].(string)
-	defaultArgs := defaults["claude_args"].([]string)
-
-	cmdDiffers := cfg.ClaudeCmd != "" && cfg.ClaudeCmd != defaultCmd
-	argsDiffer := len(cfg.ClaudeArgs) > 0 && !stringSliceEqual(cfg.ClaudeArgs, defaultArgs)
-
-	if cmdDiffers || argsDiffer {
-		fmt.Fprintf(w, "Warning: 'claude_cmd' and 'claude_args' are deprecated. Use 'agent_preset' or 'custom_agent'.\n")
-		fmt.Fprintf(w, "  For Claude CLI: agent_preset: claude\n")
-		fmt.Fprintf(w, "  For custom tool: Use structured 'custom_agent' config.\n\n")
-	}
-}
-
-// stringSliceEqual compares two string slices for equality
-func stringSliceEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
 
 // fileExists returns true if the file exists and is readable
@@ -379,7 +310,7 @@ func expandHomePath(path string) string {
 }
 
 // GetAgent returns a CLI agent based on configuration priority.
-// Priority: custom_agent > custom_agent_cmd > agent_preset > legacy fields > default (claude).
+// Priority: custom_agent > agent_preset > default (claude).
 // Returns error if the selected agent is invalid or not found in registry.
 func (c *Configuration) GetAgent() (cliagent.Agent, error) {
 	// Highest priority: structured custom_agent config
@@ -387,17 +318,7 @@ func (c *Configuration) GetAgent() (cliagent.Agent, error) {
 		return cliagent.NewCustomAgentFromConfig(*c.CustomAgent)
 	}
 
-	// Second priority: legacy custom_agent_cmd string (deprecated)
-	if c.CustomAgentCmd != "" {
-		// Convert legacy string to structured config
-		cfg, err := parseLegacyCustomAgentCmd(c.CustomAgentCmd)
-		if err != nil {
-			return nil, fmt.Errorf("parsing custom_agent_cmd: %w", err)
-		}
-		return cliagent.NewCustomAgentFromConfig(cfg)
-	}
-
-	// Third priority: agent_preset (built-in agent by name)
+	// Second priority: agent_preset (built-in agent by name)
 	if c.AgentPreset != "" {
 		agent := cliagent.Get(c.AgentPreset)
 		if agent == nil {
@@ -406,88 +327,10 @@ func (c *Configuration) GetAgent() (cliagent.Agent, error) {
 		return agent, nil
 	}
 
-	// Fourth priority: legacy custom_claude_cmd (deprecated)
-	if c.CustomClaudeCmd != "" {
-		cfg, err := parseLegacyCustomAgentCmd(c.CustomClaudeCmd)
-		if err != nil {
-			return nil, fmt.Errorf("parsing custom_claude_cmd: %w", err)
-		}
-		return cliagent.NewCustomAgentFromConfig(cfg)
-	}
-
-	// Fifth priority: legacy claude_cmd + claude_args (deprecated)
-	// If claude_cmd is explicitly set to something other than default "claude",
-	// build a custom agent config from it
-	if c.ClaudeCmd != "" && c.ClaudeCmd != "claude" {
-		cfg := buildLegacyConfig(c.ClaudeCmd, c.ClaudeArgs)
-		return cliagent.NewCustomAgentFromConfig(cfg)
-	}
-
 	// Default: use claude agent from registry
 	agent := cliagent.Get("claude")
 	if agent == nil {
 		return nil, fmt.Errorf("default agent 'claude' not registered")
 	}
 	return agent, nil
-}
-
-// parseLegacyCustomAgentCmd attempts to parse a legacy command string into structured config.
-// This is best-effort and may not handle all shell syntax.
-func parseLegacyCustomAgentCmd(cmdStr string) (cliagent.CustomAgentConfig, error) {
-	// Simple parsing: split by whitespace, first token is command, rest are args
-	// This won't handle pipes or env vars, but gives a helpful error message
-	parts := strings.Fields(cmdStr)
-	if len(parts) == 0 {
-		return cliagent.CustomAgentConfig{}, fmt.Errorf("empty command")
-	}
-
-	// Check for shell features that aren't supported
-	if strings.Contains(cmdStr, "|") {
-		return cliagent.CustomAgentConfig{}, fmt.Errorf(
-			"pipes not supported in custom_agent_cmd string; use structured custom_agent config instead:\n" +
-				"  custom_agent:\n" +
-				"    command: \"your-command\"\n" +
-				"    args: [...]\n" +
-				"    post_processor: \"cclean\"")
-	}
-
-	// Check for env var prefix (VAR=value at start)
-	first := parts[0]
-	if idx := strings.Index(first, "="); idx > 0 {
-		return cliagent.CustomAgentConfig{}, fmt.Errorf(
-			"environment variables not supported in custom_agent_cmd string; use structured custom_agent config instead:\n" +
-				"  custom_agent:\n" +
-				"    command: \"your-command\"\n" +
-				"    args: [...]\n" +
-				"    env:\n" +
-				"      VAR_NAME: \"value\"")
-	}
-
-	return cliagent.CustomAgentConfig{
-		Command: parts[0],
-		Args:    parts[1:],
-	}, nil
-}
-
-// buildLegacyConfig constructs a CustomAgentConfig from legacy claude_cmd + claude_args.
-// The -p flag is expected in claude_args and gets the prompt placeholder as its value.
-func buildLegacyConfig(cmd string, args []string) cliagent.CustomAgentConfig {
-	// Build args list, inserting {{PROMPT}} after -p flag
-	var newArgs []string
-	hasPromptFlag := false
-	for _, arg := range args {
-		newArgs = append(newArgs, arg)
-		if arg == "-p" {
-			newArgs = append(newArgs, "{{PROMPT}}")
-			hasPromptFlag = true
-		}
-	}
-	// If no -p flag was found, append prompt at end
-	if !hasPromptFlag {
-		newArgs = append(newArgs, "-p", "{{PROMPT}}")
-	}
-	return cliagent.CustomAgentConfig{
-		Command: cmd,
-		Args:    newArgs,
-	}
 }
