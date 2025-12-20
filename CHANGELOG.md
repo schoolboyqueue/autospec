@@ -9,7 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `view` command to display dashboard overview of all specs with completion status and task progress
+- `worktree` command for git worktree management (create, list, remove, setup, prune) with automatic project setup
+- `worktree gen-script` command to generate project-specific setup scripts for worktrees
 - `init` command now prompts to create constitution if none exists (Y/n default yes)
+- `init` command now prompts to generate worktree setup script if not already present (y/N default no)
 
 ## [0.5.0] - 2025-12-18
 

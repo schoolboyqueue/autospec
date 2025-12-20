@@ -87,6 +87,17 @@ func runInit(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Prompt for worktree setup script generation if not already present
+	worktreeScriptPath := filepath.Join(".autospec", "scripts", "setup-worktree.sh")
+	if !fileExistsCheck(worktreeScriptPath) {
+		if promptYesNo(cmd, "\nDo you intend to use git worktrees for parallelization?") {
+			configPath, _ := cmd.Flags().GetString("config")
+			runWorktreeGenScriptFromInit(cmd, configPath)
+		}
+	} else {
+		fmt.Fprintf(out, "✓ Worktree setup script: already exists at %s\n", worktreeScriptPath)
+	}
+
 	printSummary(out, constitutionExists)
 	return nil
 }
@@ -276,6 +287,42 @@ func runConstitutionFromInit(cmd *cobra.Command, configPath string) bool {
 
 	fmt.Fprintf(out, "\n✓ Constitution created successfully\n")
 	return true
+}
+
+// runWorktreeGenScriptFromInit executes the worktree gen-script workflow.
+// This generates a project-specific setup script for git worktrees.
+func runWorktreeGenScriptFromInit(cmd *cobra.Command, configPath string) {
+	out := cmd.OutOrStdout()
+
+	cfg, err := config.Load(configPath)
+	if err != nil {
+		fmt.Fprintf(out, "⚠ Failed to load config: %v\n", err)
+		return
+	}
+
+	notifHandler := notify.NewHandler(cfg.Notifications)
+	historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
+
+	fmt.Fprintf(out, "\n")
+
+	err = lifecycle.RunWithHistory(notifHandler, historyLogger, "worktree-gen-script", "", func() error {
+		orch := workflow.NewWorkflowOrchestrator(cfg)
+		orch.Executor.NotificationHandler = notifHandler
+
+		fmt.Fprintf(out, "Generating worktree setup script...\n\n")
+		if err := orch.Executor.Claude.Execute("/autospec.worktree-setup"); err != nil {
+			return fmt.Errorf("generating worktree setup script: %w", err)
+		}
+		return nil
+	})
+
+	if err != nil {
+		fmt.Fprintf(out, "\n⚠ Worktree script generation failed: %v\n", err)
+		return
+	}
+
+	fmt.Fprintf(out, "\n✓ Worktree setup script generated at .autospec/scripts/setup-worktree.sh\n")
+	fmt.Fprintf(out, "  Use 'autospec worktree create <branch>' to create worktrees with auto-setup.\n")
 }
 
 // handleConstitution checks for existing constitution and copies it if needed.

@@ -489,3 +489,81 @@ func TestInitCmd_RunE(t *testing.T) {
 	// Verify initCmd has a RunE function set
 	assert.NotNil(t, initCmd.RunE)
 }
+
+func TestRunInit_WorktreePromptDisplaysCorrectly(t *testing.T) {
+	// This test verifies that the worktree prompt uses the correct format (y/N)
+	// by checking the promptYesNo function behavior
+
+	tests := map[string]struct {
+		input    string
+		expected bool
+	}{
+		"yes answers y": {
+			input:    "y\n",
+			expected: true,
+		},
+		"empty defaults to no": {
+			input:    "\n",
+			expected: false,
+		},
+		"no answers n": {
+			input:    "n\n",
+			expected: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			cmd := &cobra.Command{Use: "test"}
+			var outBuf bytes.Buffer
+			cmd.SetOut(&outBuf)
+			cmd.SetIn(bytes.NewBufferString(tt.input))
+
+			// Use the same prompt format as in runInit for worktree
+			result := promptYesNo(cmd, "\nDo you intend to use git worktrees for parallelization?")
+			assert.Equal(t, tt.expected, result)
+
+			// Verify prompt format shows [y/N]
+			assert.Contains(t, outBuf.String(), "[y/N]")
+		})
+	}
+}
+
+func TestWorktreeScriptDetection(t *testing.T) {
+	// Test that worktree script detection works correctly
+	tmpDir := t.TempDir()
+
+	tests := map[string]struct {
+		createScript bool
+		expected     bool
+	}{
+		"script exists": {
+			createScript: true,
+			expected:     true,
+		},
+		"script does not exist": {
+			createScript: false,
+			expected:     false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			testDir := filepath.Join(tmpDir, name)
+			err := os.MkdirAll(testDir, 0755)
+			require.NoError(t, err)
+
+			scriptPath := filepath.Join(testDir, ".autospec", "scripts", "setup-worktree.sh")
+
+			if tt.createScript {
+				err := os.MkdirAll(filepath.Dir(scriptPath), 0755)
+				require.NoError(t, err)
+				err = os.WriteFile(scriptPath, []byte("#!/bin/bash\n"), 0755)
+				require.NoError(t, err)
+			}
+
+			result := fileExistsCheck(scriptPath)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
