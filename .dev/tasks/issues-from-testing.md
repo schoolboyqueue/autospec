@@ -57,7 +57,7 @@ The `autospec worktree gen-script` command requires Claude to execute, which nee
 
 | # | Issue | Status | Action |
 |---|-------|--------|--------|
-| 1 | Deprecation warnings | 🔧 Fixing | Update user config |
+| 1 | Deprecation warnings | ✅ Fixed | Updated user config |
 | 2 | State dir read-only | ⏭️ Skip | Sandbox limitation |
 | 3 | Default worktree path | ℹ️ Doc | By design |
 | 4 | gen-script interactive | ℹ️ Doc | Expected |
