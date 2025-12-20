@@ -67,7 +67,13 @@
       "Bash(~/.local/bin/spec-compare:*)",
       "Bash(rsvg-convert:*)",
       "Bash(gem environment:*)",
-      "Bash(/home/ari/.local/share/gem/ruby/3.4.0/bin/bundle config set --local path 'vendor/bundle')"
+      "Bash(/home/ari/.local/share/gem/ruby/3.4.0/bin/bundle config set --local path 'vendor/bundle')",
+      "Write(.autospec/**)",
+      "Edit(.autospec/**)",
+      "Write(./specs/**)",
+      "Edit(./specs/**)",
+      "mcp__serena__onboarding",
+      "WebFetch(domain:sum.golang.org)"
     ],
     "ask": [
       "Bash(git reset:*)",
@@ -80,7 +86,11 @@
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
     "additionalAllowWritePaths": [
-      "~/.cache/go-build"
+      "~/.cache/go-build",
+      "~/.autospec/state",
+      "~/.config/autospec",
+      ".autospec",
+      "./specs"
     ]
   }
 }
