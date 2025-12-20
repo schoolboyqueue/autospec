@@ -208,6 +208,9 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	// Skip agent selection prompt in non-interactive environment
 	cmd.Flags().Set("no-agents", "true")
 
+	// Provide "n" to decline constitution creation (avoid running real Claude)
+	cmd.SetIn(bytes.NewBufferString("n\n"))
+
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
@@ -239,6 +242,9 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 	// Set flags directly
 	cmd.Flags().Set("project", "true")
 	cmd.Flags().Set("no-agents", "true") // Skip agent selection in non-interactive environment
+
+	// Provide "n" to decline constitution creation (avoid running real Claude)
+	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
@@ -278,6 +284,9 @@ func TestRunInit_ForceOverwrite(t *testing.T) {
 	cmd.Flags().Set("project", "true")
 	cmd.Flags().Set("force", "true")
 	cmd.Flags().Set("no-agents", "true") // Skip agent selection in non-interactive environment
+
+	// Provide "n" to decline constitution creation (avoid running real Claude)
+	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
