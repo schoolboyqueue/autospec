@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Multi-agent support (in development) now gated to dev builds only; production builds default to Claude Code
+- DAG-based parallel execution (in development) gated to dev builds only
 
 ### Added
 - **[Dev builds only]** DAG-based parallel task execution with `implement --parallel` flag for concurrent task processing

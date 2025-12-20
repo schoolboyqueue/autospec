@@ -14,7 +14,6 @@ func GetDefaultConfigTemplate() string {
 # The custom_agent config below enables fully automated Claude Code execution.
 # - Uses --dangerously-skip-permissions for unattended operation
 # - Pipes output through cclean for readable terminal output
-# - Install cclean: go install github.com/ariel-frischer/claude-clean@latest
 #
 # Uncomment the custom_agent section to enable:
 #

@@ -334,6 +334,53 @@ notifications:
 
 ---
 
+## Full Automation Setup
+
+For unattended autospec execution with Claude Code, use the `custom_agent` configuration:
+
+```yaml
+# ~/.config/autospec/config.yml
+custom_agent:
+  command: "claude"
+  args:
+    - "-p"
+    - "--dangerously-skip-permissions"
+    - "--verbose"
+    - "--output-format"
+    - "stream-json"
+    - "{{PROMPT}}"
+  post_processor: "cclean"
+```
+
+### Sandbox + Skip-Permissions (Recommended)
+
+These are **two separate security layers**:
+
+| Layer | What it does |
+|:------|:-------------|
+| **Sandbox** | OS-level isolation - restricts filesystem to CWD |
+| **Permission prompts** | User approval for actions (skipped with flag) |
+
+**Key insight**: `--dangerously-skip-permissions` skips prompts but does **not** bypass sandbox. When sandbox is enabled, Claude cannot edit files outside your project directory.
+
+Enable sandbox in `.claude/settings.local.json`:
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  }
+}
+```
+
+This provides safe automation: unattended execution with OS-level filesystem protection.
+
+{: .warning }
+> Without sandbox enabled, `--dangerously-skip-permissions` gives Claude full system access. Only use this flag with sandbox enabled, or in isolated environments.
+
+---
+
 ## Full Configuration Example
 
 ```yaml
