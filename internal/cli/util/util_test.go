@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/history"
 	"github.com/ariel-frischer/autospec/internal/validation"
 	"github.com/spf13/cobra"
@@ -726,7 +727,7 @@ func TestCenterText(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			result := centerText(tt.text, tt.width)
+			result := shared.CenterText(tt.text, tt.width)
 			assert.Equal(t, tt.want, result)
 		})
 	}
@@ -771,7 +772,7 @@ func TestGetTerminalWidth(t *testing.T) {
 	t.Parallel()
 
 	// Test that getTerminalWidth returns a reasonable value
-	width := getTerminalWidth()
+	width := shared.GetTerminalWidth()
 	assert.Greater(t, width, 0)
 	assert.LessOrEqual(t, width, 500) // Reasonable max
 }
@@ -1129,7 +1130,7 @@ func TestCenterText_UnicodeRunes(t *testing.T) {
 	t.Parallel()
 
 	// Test with unicode characters (counted as runes, not bytes)
-	result := centerText("Hi", 10)
+	result := shared.CenterText("Hi", 10)
 	assert.Equal(t, "    Hi", result)
 }
 
@@ -1194,20 +1195,20 @@ func TestLogoDisplayWidth(t *testing.T) {
 	t.Parallel()
 
 	// Verify logo display width constant matches actual width
-	assert.Equal(t, 33, logoDisplayWidth)
-	assert.Len(t, logo, 2, "Logo should have 2 lines")
+	assert.Equal(t, 33, shared.LogoDisplayWidth)
+	assert.Len(t, shared.Logo, 2, "Logo should have 2 lines")
 }
 
 func TestBoxDrawingCharacters(t *testing.T) {
 	t.Parallel()
 
 	// Verify box drawing characters are set
-	assert.NotEmpty(t, boxTopLeft)
-	assert.NotEmpty(t, boxTopRight)
-	assert.NotEmpty(t, boxBottomLeft)
-	assert.NotEmpty(t, boxBottomRight)
-	assert.NotEmpty(t, boxHorizontal)
-	assert.NotEmpty(t, boxVertical)
+	assert.NotEmpty(t, shared.BoxTopLeft)
+	assert.NotEmpty(t, shared.BoxTopRight)
+	assert.NotEmpty(t, shared.BoxBottomLeft)
+	assert.NotEmpty(t, shared.BoxBottomRight)
+	assert.NotEmpty(t, shared.BoxHorizontal)
+	assert.NotEmpty(t, shared.BoxVertical)
 }
 
 // Test displayBlockedTasks (requires task file)
@@ -1525,7 +1526,7 @@ func TestCenterText_EdgeCases(t *testing.T) {
 
 			// Should not panic
 			assert.NotPanics(t, func() {
-				centerText(tt.text, tt.width)
+				shared.CenterText(tt.text, tt.width)
 			})
 		})
 	}
@@ -1535,7 +1536,7 @@ func TestGetTerminalWidth_Fallback(t *testing.T) {
 	t.Parallel()
 
 	// When terminal info is not available, should return 80
-	width := getTerminalWidth()
+	width := shared.GetTerminalWidth()
 	assert.True(t, width == 80 || width > 0, "Should return valid width")
 }
 

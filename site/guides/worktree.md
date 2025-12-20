@@ -1,3 +1,9 @@
+---
+title: Worktree Management
+parent: Guides
+nav_order: 4
+---
+
 # Worktree Management
 
 The `autospec worktree` command enables **parallel agent execution** by creating isolated filesystem directories for each feature. This allows multiple Claude agents to work simultaneously on different features without branch conflicts or file contention.
@@ -15,6 +21,8 @@ Git worktrees solve this by giving each agent its own complete working directory
 
 **The solution:** `autospec worktree create` handles everything automatically.
 
+---
+
 ## Quick Start
 
 ```bash
@@ -27,6 +35,8 @@ autospec worktree list
 # Remove a worktree
 autospec worktree remove feature-auth
 ```
+
+---
 
 ## Commands
 
@@ -73,10 +83,13 @@ autospec worktree list
 - **CREATED**: When the worktree was created
 
 **Status meanings:**
-- `active`: Worktree is in active use
-- `merged`: Branch has been merged
-- `abandoned`: Work was abandoned
-- `stale`: Worktree path no longer exists
+
+| Status | Meaning |
+|--------|---------|
+| `active` | Worktree is in active use |
+| `merged` | Branch has been merged |
+| `abandoned` | Work was abandoned |
+| `stale` | Worktree path no longer exists |
 
 ### remove
 
@@ -89,12 +102,8 @@ autospec worktree remove <name> [--force]
 **Flags:**
 - `--force, -f`: Bypass safety checks
 
-**Safety checks:**
-By default, removal is blocked if the worktree has:
-- Uncommitted changes
-- Unpushed commits
-
-Use `--force` to bypass these checks when intentionally discarding work.
+{: .warning }
+By default, removal is blocked if the worktree has uncommitted changes or unpushed commits. Use `--force` only when intentionally discarding work.
 
 **Examples:**
 ```bash
@@ -152,17 +161,8 @@ autospec worktree gen-script [--include-env]
   - `pip install -r requirements.txt` or `poetry install` for Python projects
   - `cargo build` for Rust projects
 
-**Examples:**
-```bash
-# Generate a setup script
-autospec worktree gen-script
-
-# Include environment files (use with caution)
-autospec worktree gen-script --include-env
-```
-
-**Security note:**
-By default, the generated script excludes all environment and secret files. Use `--include-env` only if you understand the security implications and need environment files copied to worktrees.
+{: .note }
+By default, the generated script excludes all environment and secret files. Use `--include-env` only if you understand the security implications.
 
 ### prune
 
@@ -174,7 +174,10 @@ autospec worktree prune
 
 This command removes tracking entries for worktrees whose paths no longer exist on disk. It's useful after manually deleting worktree directories.
 
-**Note:** This only removes tracking entries - it does not delete any files.
+{: .note }
+This only removes tracking entries - it does not delete any files.
+
+---
 
 ## Configuration
 
@@ -213,6 +216,8 @@ export AUTOSPEC_WORKTREE_PREFIX="wt-"
 export AUTOSPEC_WORKTREE_SETUP_SCRIPT="scripts/setup.sh"
 ```
 
+---
+
 ## Setup Script
 
 The setup script receives the following information:
@@ -247,6 +252,8 @@ cp "$SOURCE_REPO/.env.local" .env.local 2>/dev/null || true
 echo "Setup complete!"
 ```
 
+---
+
 ## State File
 
 Worktree state is persisted to `.autospec/state/worktrees.yaml`:
@@ -262,6 +269,8 @@ worktrees:
     setup_completed: true
     last_accessed: 2024-01-15T14:20:00Z
 ```
+
+---
 
 ## Troubleshooting
 
@@ -289,3 +298,11 @@ autospec worktree setup /path/to/worktree
 ### Worktree shows as "stale"
 
 The worktree directory was deleted outside of autospec. Run `autospec worktree prune` to remove the tracking entry.
+
+---
+
+## See Also
+
+- [Sequential & Parallel Execution](parallel-execution) - Running multiple workflows with git worktrees
+- [CLI Reference](../reference/cli) - Complete command documentation
+- [Configuration](../reference/configuration) - Project and user configuration

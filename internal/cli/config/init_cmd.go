@@ -971,5 +971,5 @@ func printSummary(out io.Writer, result initResult, specsDir string) {
 	fmt.Fprintf(out, "  %s\n", cCyan("autospec all \"Add user authentication\""))
 	fmt.Fprintf(out, "\n")
 	fmt.Fprintf(out, "Run %s to verify dependencies.\n", cDim("'autospec doctor'"))
-	fmt.Fprintf(out, "Run %s for all commands.\n", cDim("'autospec --help'"))
+	fmt.Fprintf(out, "Run %s for all commands.\n", cDim("'autospec -h'"))
 }
