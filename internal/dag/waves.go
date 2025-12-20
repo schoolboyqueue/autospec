@@ -37,11 +37,11 @@ func (s WaveStatus) String() string {
 
 // TaskResult represents the outcome of a single task execution.
 type TaskResult struct {
-	TaskID       string  // Task identifier
-	Success      bool    // Whether task completed successfully
-	Error        error   // Error message if failed
-	Duration     int64   // Execution time in milliseconds
-	WorktreePath string  // Path to worktree if used (empty otherwise)
+	TaskID       string // Task identifier
+	Success      bool   // Whether task completed successfully
+	Error        error  // Error message if failed
+	Duration     int64  // Execution time in milliseconds
+	WorktreePath string // Path to worktree if used (empty otherwise)
 }
 
 // ExecutionWave represents a group of tasks that can execute concurrently.

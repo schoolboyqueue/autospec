@@ -10,10 +10,12 @@
 package workflow
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 
 	"github.com/ariel-frischer/autospec/internal/config"
+	"github.com/ariel-frischer/autospec/internal/dag"
 	"github.com/ariel-frischer/autospec/internal/spec"
 	"github.com/ariel-frischer/autospec/internal/validation"
 )
@@ -414,6 +416,8 @@ func (w *WorkflowOrchestrator) ExecuteImplement(specNameArg string, prompt strin
 
 	// Dispatch to appropriate execution mode based on phase options
 	switch phaseOpts.Mode() {
+	case ModeParallel:
+		return w.ExecuteImplementParallel(specName, metadata, prompt, phaseOpts)
 	case ModeAllTasks:
 		return w.ExecuteImplementWithTasks(specName, metadata, prompt, phaseOpts.FromTask)
 	case ModeAllPhases:
@@ -506,6 +510,111 @@ func (w *WorkflowOrchestrator) ExecuteImplementWithTasks(specName string, metada
 	}
 
 	return w.taskExecutor.ExecuteTaskLoop(specName, tasksPath, orderedTasks, startIdx, totalTasks, prompt)
+}
+
+// ExecuteImplementParallel runs tasks concurrently using DAG-based wave scheduling.
+// Independent tasks within each wave run in parallel, respecting the max-parallel limit.
+func (w *WorkflowOrchestrator) ExecuteImplementParallel(specName string, metadata *spec.Metadata, prompt string, phaseOpts PhaseExecutionOptions) error {
+	specDir := filepath.Join(w.SpecsDir, specName)
+	tasksPath := validation.GetTasksFilePath(specDir)
+
+	// Load tasks
+	tasks, err := validation.GetAllTasks(tasksPath)
+	if err != nil {
+		return fmt.Errorf("loading tasks: %w", err)
+	}
+
+	// Build dependency graph
+	graph, err := dag.BuildFromTasks(tasks)
+	if err != nil {
+		return fmt.Errorf("building dependency graph: %w", err)
+	}
+
+	// Compute waves
+	_, err = graph.ComputeWaves()
+	if err != nil {
+		return fmt.Errorf("computing execution waves: %w", err)
+	}
+
+	// Handle dry-run mode
+	if phaseOpts.DryRun {
+		return w.printDryRunPlan(graph)
+	}
+
+	// Create parallel executor
+	opts := []ParallelExecutorOption{
+		WithMaxParallel(phaseOpts.MaxParallel),
+		WithParallelDebug(w.Debug),
+	}
+
+	// TODO: Add worktree support when --worktrees is set
+	// if phaseOpts.UseWorktrees { ... }
+
+	executor := NewParallelExecutor(graph, opts...)
+
+	// Execute waves
+	fmt.Printf("Executing %d tasks in parallel (max %d concurrent)\n", graph.Size(), phaseOpts.MaxParallel)
+	fmt.Printf("Wave structure: %s\n\n", graph.RenderCompact())
+
+	results, err := executor.ExecuteWaves(context.Background(), specName, tasksPath)
+	if err != nil {
+		return fmt.Errorf("parallel execution failed: %w", err)
+	}
+
+	// Print summary
+	return w.printParallelSummary(results, executor)
+}
+
+// printDryRunPlan outputs the execution plan without running any tasks.
+func (w *WorkflowOrchestrator) printDryRunPlan(graph *dag.DependencyGraph) error {
+	fmt.Println("Execution Plan (dry-run):")
+	fmt.Println("==========================")
+	fmt.Println(graph.RenderASCII())
+
+	stats := graph.GetWaveStats()
+	fmt.Printf("Total waves: %d\n", stats.TotalWaves)
+	fmt.Printf("Total tasks: %d\n", stats.TotalTasks)
+	fmt.Printf("Max wave size: %d\n", stats.MaxWaveSize)
+
+	return nil
+}
+
+// printParallelSummary outputs execution results summary.
+func (w *WorkflowOrchestrator) printParallelSummary(results []WaveResult, executor *ParallelExecutor) error {
+	fmt.Println("\nExecution Summary:")
+	fmt.Println("==================")
+
+	totalTasks := 0
+	successCount := 0
+	failedCount := 0
+	skippedCount := 0
+
+	for _, wave := range results {
+		fmt.Printf("Wave %d: %s\n", wave.WaveNumber, wave.Status)
+		for taskID, result := range wave.Results {
+			totalTasks++
+			switch {
+			case result.Skipped:
+				skippedCount++
+				fmt.Printf("  [SKIP] %s - %s\n", taskID, result.SkipReason)
+			case result.Success:
+				successCount++
+				fmt.Printf("  [OK]   %s (%v)\n", taskID, result.Duration.Round(100))
+			default:
+				failedCount++
+				fmt.Printf("  [FAIL] %s - %v\n", taskID, result.Error)
+			}
+		}
+	}
+
+	fmt.Printf("\nTotal: %d tasks, %d succeeded, %d failed, %d skipped\n",
+		totalTasks, successCount, failedCount, skippedCount)
+
+	if failedCount > 0 {
+		return fmt.Errorf("%d tasks failed", failedCount)
+	}
+
+	return nil
 }
 
 // markSpecCompletedAndPrint marks the spec as completed and prints the result.

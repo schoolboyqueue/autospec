@@ -44,11 +44,11 @@ func (s TaskStatus) String() string {
 
 // TaskNode represents a node in the dependency graph.
 type TaskNode struct {
-	ID           string       // Task identifier (T001, T002, etc.)
-	Dependencies []string     // IDs of tasks this depends on
-	Dependents   []string     // IDs of tasks that depend on this
-	Depth        int          // Maximum distance from any root node (determines wave)
-	Status       TaskStatus   // Current execution status
+	ID           string               // Task identifier (T001, T002, etc.)
+	Dependencies []string             // IDs of tasks this depends on
+	Dependents   []string             // IDs of tasks that depend on this
+	Depth        int                  // Maximum distance from any root node (determines wave)
+	Status       TaskStatus           // Current execution status
 	Task         *validation.TaskItem // Original task reference
 }
 

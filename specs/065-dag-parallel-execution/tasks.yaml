@@ -223,7 +223,7 @@ phases:
       tasks:
         - id: "T015"
           title: "Add --parallel and --max-parallel flags to implement command"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -237,7 +237,7 @@ phases:
             - "Warning if --max-parallel > 8"
         - id: "T016"
           title: "Add mutual exclusivity check for --parallel with --tasks and --phases"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-003"
@@ -249,7 +249,7 @@ phases:
             - "Error format: 'cannot use --parallel with --tasks or --phases'"
         - id: "T017"
           title: "Integrate ParallelExecutor dispatch in orchestrator"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -262,7 +262,7 @@ phases:
             - "Returns aggregated results from all waves"
         - id: "T018"
           title: "Write tests for CLI flag validation"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-003"
@@ -281,7 +281,7 @@ phases:
       tasks:
         - id: "T019"
           title: "Implement graceful failure handling in ParallelExecutor"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -294,7 +294,7 @@ phases:
             - "Other tasks in wave continue to completion"
         - id: "T020"
           title: "Implement dependency skip logic for failed upstream tasks"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-005"
@@ -307,7 +307,7 @@ phases:
             - "Skipped tasks marked with Skipped status"
         - id: "T021"
           title: "Write tests for failure handling scenarios"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-005"
@@ -326,7 +326,7 @@ phases:
       tasks:
         - id: "T022"
           title: "Add --worktrees flag to implement command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -338,7 +338,7 @@ phases:
             - "Error if --worktrees used without --parallel"
         - id: "T023"
           title: "Implement worktree creation per task in ParallelExecutor"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -396,7 +396,7 @@ phases:
       tasks:
         - id: "T027"
           title: "Add --dry-run flag to implement command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-006"
@@ -409,7 +409,7 @@ phases:
             - "Shows batch sizes respecting --max-parallel"
         - id: "T028"
           title: "Implement dry-run output formatter"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-006"
@@ -422,7 +422,7 @@ phases:
             - "No Claude sessions spawned"
         - id: "T029"
           title: "Write tests for dry-run output"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-006"

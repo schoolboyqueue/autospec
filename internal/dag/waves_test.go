@@ -38,9 +38,9 @@ func TestExecutionWave_Size(t *testing.T) {
 		taskIDs []string
 		want    int
 	}{
-		"empty":     {taskIDs: []string{}, want: 0},
-		"one":       {taskIDs: []string{"T001"}, want: 1},
-		"multiple":  {taskIDs: []string{"T001", "T002", "T003"}, want: 3},
+		"empty":    {taskIDs: []string{}, want: 0},
+		"one":      {taskIDs: []string{"T001"}, want: 1},
+		"multiple": {taskIDs: []string{"T001", "T002", "T003"}, want: 3},
 	}
 
 	for name, tt := range tests {
@@ -79,13 +79,13 @@ func TestDependencyGraph_ComputeWaves(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		tasks      []validation.TaskItem
-		wantWaves  int
-		wantWave1  []string
-		wantWave2  []string
-		wantWave3  []string
-		wantErr    bool
-		errMsg     string
+		tasks     []validation.TaskItem
+		wantWaves int
+		wantWave1 []string
+		wantWave2 []string
+		wantWave3 []string
+		wantErr   bool
+		errMsg    string
 	}{
 		"empty graph": {
 			tasks:     []validation.TaskItem{},
@@ -200,11 +200,11 @@ func TestDependencyGraph_GetWaveForTask(t *testing.T) {
 		taskID string
 		want   int
 	}{
-		"wave 1 task":     {taskID: "T001", want: 1},
+		"wave 1 task":      {taskID: "T001", want: 1},
 		"wave 2 task T002": {taskID: "T002", want: 2},
 		"wave 2 task T003": {taskID: "T003", want: 2},
-		"wave 3 task":     {taskID: "T004", want: 3},
-		"non-existent":    {taskID: "T999", want: 0},
+		"wave 3 task":      {taskID: "T004", want: 3},
+		"non-existent":     {taskID: "T999", want: 0},
 	}
 
 	for name, tt := range tests {
@@ -233,10 +233,10 @@ func TestDependencyGraph_GetWavesFromTask(t *testing.T) {
 		taskID    string
 		wantCount int
 	}{
-		"from wave 1":      {taskID: "T001", wantCount: 3},
-		"from wave 2":      {taskID: "T002", wantCount: 2},
-		"from wave 3":      {taskID: "T003", wantCount: 1},
-		"non-existent":     {taskID: "T999", wantCount: 0},
+		"from wave 1":  {taskID: "T001", wantCount: 3},
+		"from wave 2":  {taskID: "T002", wantCount: 2},
+		"from wave 3":  {taskID: "T003", wantCount: 1},
+		"non-existent": {taskID: "T999", wantCount: 0},
 	}
 
 	for name, tt := range tests {
@@ -256,11 +256,11 @@ func TestDependencyGraph_GetWaveStats(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		tasks       []validation.TaskItem
-		wantTotal   int
-		wantMax     int
-		wantMin     int
-		wantWaves   int
+		tasks     []validation.TaskItem
+		wantTotal int
+		wantMax   int
+		wantMin   int
+		wantWaves int
 	}{
 		"empty": {
 			tasks:     []validation.TaskItem{},
@@ -333,10 +333,10 @@ func TestWaveDepthCalculation(t *testing.T) {
 		taskID    string
 		wantDepth int
 	}{
-		"root":   {taskID: "T001", wantDepth: 0},
-		"level1": {taskID: "T002", wantDepth: 1},
+		"root":    {taskID: "T001", wantDepth: 0},
+		"level1":  {taskID: "T002", wantDepth: 1},
 		"level1b": {taskID: "T003", wantDepth: 1},
-		"level2": {taskID: "T004", wantDepth: 2},
+		"level2":  {taskID: "T004", wantDepth: 2},
 	}
 
 	for name, tt := range tests {

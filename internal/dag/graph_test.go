@@ -318,10 +318,10 @@ func TestDependencyGraph_SetNodeStatus(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		taskID   string
-		status   TaskStatus
-		wantErr  bool
-		errMsg   string
+		taskID  string
+		status  TaskStatus
+		wantErr bool
+		errMsg  string
 	}{
 		"set pending to running": {
 			taskID:  "T001",
