@@ -46,8 +46,7 @@ func TestGenScriptCmd_Flags(t *testing.T) {
 }
 
 func TestGenScriptCmd_RegisteredUnderWorktree(t *testing.T) {
-	t.Parallel()
-
+	// Not parallel: WorktreeCmd.Commands() has lazy init that races with other tests
 	subcommands := WorktreeCmd.Commands()
 	names := make([]string, len(subcommands))
 	for i, cmd := range subcommands {

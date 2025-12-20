@@ -15,8 +15,7 @@ func TestWorktreeCmd_Structure(t *testing.T) {
 }
 
 func TestWorktreeCmd_Subcommands(t *testing.T) {
-	t.Parallel()
-
+	// Not parallel: WorktreeCmd.Commands() has lazy init that races with other tests
 	subcommands := WorktreeCmd.Commands()
 	names := make([]string, len(subcommands))
 	for i, cmd := range subcommands {
