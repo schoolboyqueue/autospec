@@ -608,6 +608,64 @@ func TestIsSandboxEnabled(t *testing.T) {
 	}
 }
 
+func TestEnableSandbox(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup         func(s *Settings)
+		wantEnabled   bool
+		wantPreserved map[string]interface{}
+	}{
+		"enables sandbox when not configured": {
+			setup:       func(s *Settings) {},
+			wantEnabled: true,
+		},
+		"enables sandbox when disabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": false}
+			},
+			wantEnabled: true,
+		},
+		"no-op when already enabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": true}
+			},
+			wantEnabled: true,
+		},
+		"preserves existing sandbox config": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"enabled":                   false,
+					"additionalAllowWritePaths": []interface{}{"path1", "path2"},
+				}
+			},
+			wantEnabled: true,
+			wantPreserved: map[string]interface{}{
+				"additionalAllowWritePaths": []interface{}{"path1", "path2"},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			tt.setup(s)
+
+			s.EnableSandbox()
+
+			assert.Equal(t, tt.wantEnabled, s.IsSandboxEnabled())
+
+			if tt.wantPreserved != nil {
+				sandbox := s.data["sandbox"].(map[string]interface{})
+				for k, v := range tt.wantPreserved {
+					assert.Equal(t, v, sandbox[k], "preserved field %s", k)
+				}
+			}
+		})
+	}
+}
+
 func TestGetAdditionalWritePaths(t *testing.T) {
 	t.Parallel()
 
