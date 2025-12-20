@@ -614,6 +614,7 @@ func runConstitutionFromInitImpl(cmd *cobra.Command, configPath string) bool {
 	err = lifecycle.RunWithHistory(notifHandler, historyLogger, "constitution", "", func() error {
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 		orch.Executor.NotificationHandler = notifHandler
+		shared.ApplyOutputStyle(cmd, orch)
 		return orch.ExecuteConstitution("")
 	})
 
@@ -655,6 +656,7 @@ func runWorktreeGenScriptFromInitImpl(cmd *cobra.Command, configPath string) {
 	err = lifecycle.RunWithHistory(notifHandler, historyLogger, "worktree-gen-script", "", func() error {
 		orch := workflow.NewWorkflowOrchestrator(cfg)
 		orch.Executor.NotificationHandler = notifHandler
+		shared.ApplyOutputStyle(cmd, orch)
 
 		fmt.Fprintf(out, "Generating worktree setup script...\n\n")
 		if err := orch.Executor.Claude.Execute("/autospec.worktree-setup"); err != nil {
