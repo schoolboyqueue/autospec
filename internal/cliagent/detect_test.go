@@ -5,48 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 )
-
-func TestIsTokenValid(t *testing.T) {
-	t.Parallel()
-
-	tests := map[string]struct {
-		expiresAtMs int64
-		want        bool
-	}{
-		"zero value": {
-			expiresAtMs: 0,
-			want:        false,
-		},
-		"expired yesterday": {
-			expiresAtMs: time.Now().Add(-24 * time.Hour).UnixMilli(),
-			want:        false,
-		},
-		"expires in 1 minute (within buffer)": {
-			expiresAtMs: time.Now().Add(1 * time.Minute).UnixMilli(),
-			want:        false,
-		},
-		"expires in 10 minutes (outside buffer)": {
-			expiresAtMs: time.Now().Add(10 * time.Minute).UnixMilli(),
-			want:        true,
-		},
-		"expires in 1 year": {
-			expiresAtMs: time.Now().Add(365 * 24 * time.Hour).UnixMilli(),
-			want:        true,
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			got := isTokenValid(tt.expiresAtMs)
-			if got != tt.want {
-				t.Errorf("isTokenValid(%d) = %v, want %v", tt.expiresAtMs, got, tt.want)
-			}
-		})
-	}
-}
 
 func TestClaudeAuthStatus_IsAuthenticated(t *testing.T) {
 	t.Parallel()
@@ -59,16 +18,12 @@ func TestClaudeAuthStatus_IsAuthenticated(t *testing.T) {
 			status: ClaudeAuthStatus{AuthType: AuthTypeNone},
 			want:   false,
 		},
-		"oauth valid": {
-			status: ClaudeAuthStatus{AuthType: AuthTypeOAuth, Valid: true},
+		"oauth": {
+			status: ClaudeAuthStatus{AuthType: AuthTypeOAuth},
 			want:   true,
 		},
-		"oauth invalid": {
-			status: ClaudeAuthStatus{AuthType: AuthTypeOAuth, Valid: false},
-			want:   false,
-		},
-		"api valid": {
-			status: ClaudeAuthStatus{AuthType: AuthTypeAPI, Valid: true},
+		"api": {
+			status: ClaudeAuthStatus{AuthType: AuthTypeAPI},
 			want:   true,
 		},
 	}
@@ -94,22 +49,21 @@ func TestClaudeAuthStatus_RecommendedSetup(t *testing.T) {
 			status:      ClaudeAuthStatus{Installed: false},
 			wantContain: "not installed",
 		},
-		"oauth max valid": {
+		"oauth max": {
 			status: ClaudeAuthStatus{
 				Installed:        true,
 				AuthType:         AuthTypeOAuth,
 				SubscriptionType: "max",
-				Valid:            true,
 			},
 			wantContain: "max subscription",
 		},
-		"oauth expired": {
+		"oauth pro": {
 			status: ClaudeAuthStatus{
-				Installed: true,
-				AuthType:  AuthTypeOAuth,
-				Valid:     false,
+				Installed:        true,
+				AuthType:         AuthTypeOAuth,
+				SubscriptionType: "pro",
 			},
-			wantContain: "expired",
+			wantContain: "pro subscription",
 		},
 		"api key": {
 			status: ClaudeAuthStatus{
@@ -132,131 +86,230 @@ func TestClaudeAuthStatus_RecommendedSetup(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			got := tt.status.RecommendedSetup()
-			if !contains(got, tt.wantContain) {
+			if !stringContains(got, tt.wantContain) {
 				t.Errorf("RecommendedSetup() = %q, want to contain %q", got, tt.wantContain)
 			}
 		})
 	}
 }
 
-func TestClaudeAuthStatus_ExpiresIn(t *testing.T) {
+func TestCredentialsJSONParsing(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		status   ClaudeAuthStatus
-		wantZero bool
+		json             string
+		wantNil          bool
+		wantSubscription string
 	}{
-		"not oauth": {
-			status:   ClaudeAuthStatus{AuthType: AuthTypeAPI},
-			wantZero: true,
+		"valid oauth credentials": {
+			json: `{
+				"claudeAiOauth": {
+					"accessToken": "sk-ant-oat01-xxx",
+					"subscriptionType": "max"
+				}
+			}`,
+			wantNil:          false,
+			wantSubscription: "max",
 		},
-		"oauth no expiry": {
-			status:   ClaudeAuthStatus{AuthType: AuthTypeOAuth},
-			wantZero: true,
+		"pro subscription": {
+			json: `{
+				"claudeAiOauth": {
+					"accessToken": "sk-ant-oat01-yyy",
+					"subscriptionType": "pro"
+				}
+			}`,
+			wantNil:          false,
+			wantSubscription: "pro",
 		},
-		"oauth expired": {
-			status: ClaudeAuthStatus{
-				AuthType:  AuthTypeOAuth,
-				ExpiresAt: time.Now().Add(-1 * time.Hour),
-			},
-			wantZero: true,
+		"empty oauth object": {
+			json:    `{"claudeAiOauth": {}}`,
+			wantNil: true,
 		},
-		"oauth future": {
-			status: ClaudeAuthStatus{
-				AuthType:  AuthTypeOAuth,
-				ExpiresAt: time.Now().Add(24 * time.Hour),
-			},
-			wantZero: false,
+		"missing access token": {
+			json:    `{"claudeAiOauth": {"subscriptionType": "max"}}`,
+			wantNil: true,
+		},
+		"empty json": {
+			json:    `{}`,
+			wantNil: true,
+		},
+		"null claudeAiOauth": {
+			json:    `{"claudeAiOauth": null}`,
+			wantNil: true,
+		},
+		"extra fields ignored": {
+			json: `{
+				"claudeAiOauth": {
+					"accessToken": "token",
+					"refreshToken": "refresh",
+					"expiresAt": 9999999999999,
+					"subscriptionType": "max",
+					"rateLimitTier": "default_claude_max_20x"
+				},
+				"someOtherField": "ignored"
+			}`,
+			wantNil:          false,
+			wantSubscription: "max",
 		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			got := tt.status.ExpiresIn()
-			if tt.wantZero && got != 0 {
-				t.Errorf("ExpiresIn() = %v, want 0", got)
+
+			var creds claudeCredentials
+			if err := json.Unmarshal([]byte(tt.json), &creds); err != nil {
+				t.Fatalf("Failed to parse JSON: %v", err)
 			}
-			if !tt.wantZero && got == 0 {
-				t.Errorf("ExpiresIn() = 0, want non-zero")
+
+			// Simulate the check in readOAuthCredentials
+			var result *claudeOAuthData
+			if creds.ClaudeAIOAuth != nil && creds.ClaudeAIOAuth.AccessToken != "" {
+				result = creds.ClaudeAIOAuth
+			}
+
+			if tt.wantNil && result != nil {
+				t.Error("Expected nil result, got non-nil")
+			}
+			if !tt.wantNil && result == nil {
+				t.Error("Expected non-nil result, got nil")
+			}
+			if !tt.wantNil && result != nil && result.SubscriptionType != tt.wantSubscription {
+				t.Errorf("SubscriptionType = %q, want %q", result.SubscriptionType, tt.wantSubscription)
 			}
 		})
 	}
 }
 
-func TestReadOAuthCredentials(t *testing.T) {
+func TestInvalidJSON(t *testing.T) {
 	t.Parallel()
 
-	t.Run("valid credentials file", func(t *testing.T) {
-		t.Parallel()
+	invalidJSONs := []string{
+		`{invalid}`,
+		`not json at all`,
+		`{"unclosed": `,
+		``,
+	}
 
-		// Create temp dir to simulate ~/.claude/
-		tmpDir := t.TempDir()
-		credDir := filepath.Join(tmpDir, ".claude")
-		if err := os.MkdirAll(credDir, 0700); err != nil {
-			t.Fatal(err)
+	for _, input := range invalidJSONs {
+		var creds claudeCredentials
+		err := json.Unmarshal([]byte(input), &creds)
+		if err == nil && input != "" {
+			t.Errorf("Expected error for invalid JSON: %q", input)
 		}
-
-		creds := claudeCredentials{
-			ClaudeAIOAuth: &claudeOAuthData{
-				AccessToken:      "test-token",
-				ExpiresAt:        time.Now().Add(24 * time.Hour).UnixMilli(),
-				SubscriptionType: "max",
-			},
-		}
-
-		data, _ := json.Marshal(creds)
-		credPath := filepath.Join(credDir, ".credentials.json")
-		if err := os.WriteFile(credPath, data, 0600); err != nil {
-			t.Fatal(err)
-		}
-
-		// Can't easily test readOAuthCredentials directly since it uses os.UserHomeDir,
-		// but we can test the JSON parsing logic
-		var parsed claudeCredentials
-		if err := json.Unmarshal(data, &parsed); err != nil {
-			t.Fatalf("Failed to parse credentials: %v", err)
-		}
-
-		if parsed.ClaudeAIOAuth == nil {
-			t.Fatal("Expected ClaudeAIOAuth to be non-nil")
-		}
-		if parsed.ClaudeAIOAuth.SubscriptionType != "max" {
-			t.Errorf("SubscriptionType = %q, want %q", parsed.ClaudeAIOAuth.SubscriptionType, "max")
-		}
-	})
-
-	t.Run("missing oauth data", func(t *testing.T) {
-		t.Parallel()
-
-		// Empty credentials
-		data := []byte(`{}`)
-		var parsed claudeCredentials
-		if err := json.Unmarshal(data, &parsed); err != nil {
-			t.Fatalf("Failed to parse: %v", err)
-		}
-
-		if parsed.ClaudeAIOAuth != nil {
-			t.Error("Expected ClaudeAIOAuth to be nil for empty credentials")
-		}
-	})
-
-	t.Run("invalid json degrades gracefully", func(t *testing.T) {
-		t.Parallel()
-
-		data := []byte(`{invalid json}`)
-		var parsed claudeCredentials
-		err := json.Unmarshal(data, &parsed)
-		if err == nil {
-			t.Error("Expected error for invalid JSON")
-		}
-		// This is the expected behavior - caller should check for nil
-	})
+	}
 }
 
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && stringContains(s, substr)))
+func TestReadOAuthCredentials_WithMockFile(t *testing.T) {
+	// Create temp credentials file
+	tmpDir := t.TempDir()
+	credPath := filepath.Join(tmpDir, "credentials.json")
+
+	tests := map[string]struct {
+		content          string
+		wantNil          bool
+		wantSubscription string
+	}{
+		"valid max subscription": {
+			content: `{
+				"claudeAiOauth": {
+					"accessToken": "test-token-12345",
+					"subscriptionType": "max"
+				}
+			}`,
+			wantNil:          false,
+			wantSubscription: "max",
+		},
+		"valid pro subscription": {
+			content: `{
+				"claudeAiOauth": {
+					"accessToken": "test-token-67890",
+					"subscriptionType": "pro"
+				}
+			}`,
+			wantNil:          false,
+			wantSubscription: "pro",
+		},
+		"no access token": {
+			content: `{"claudeAiOauth": {"subscriptionType": "max"}}`,
+			wantNil: true,
+		},
+		"empty file": {
+			content: `{}`,
+			wantNil: true,
+		},
+		"invalid json": {
+			content: `{not valid json`,
+			wantNil: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Write mock credentials file
+			if err := os.WriteFile(credPath, []byte(tt.content), 0600); err != nil {
+				t.Fatalf("Failed to write mock credentials: %v", err)
+			}
+
+			// Override the credentials path
+			oldPath := credentialsPathOverride
+			credentialsPathOverride = credPath
+			defer func() { credentialsPathOverride = oldPath }()
+
+			result := readOAuthCredentials()
+
+			if tt.wantNil && result != nil {
+				t.Errorf("Expected nil, got %+v", result)
+			}
+			if !tt.wantNil && result == nil {
+				t.Error("Expected non-nil result, got nil")
+			}
+			if !tt.wantNil && result != nil && result.SubscriptionType != tt.wantSubscription {
+				t.Errorf("SubscriptionType = %q, want %q", result.SubscriptionType, tt.wantSubscription)
+			}
+		})
+	}
+}
+
+func TestReadOAuthCredentials_FileNotExists(t *testing.T) {
+	// Override to non-existent path
+	oldPath := credentialsPathOverride
+	credentialsPathOverride = "/nonexistent/path/credentials.json"
+	defer func() { credentialsPathOverride = oldPath }()
+
+	result := readOAuthCredentials()
+	if result != nil {
+		t.Errorf("Expected nil for non-existent file, got %+v", result)
+	}
+}
+
+func TestGetCredentialsPath_Override(t *testing.T) {
+	// Test that override works
+	oldPath := credentialsPathOverride
+	credentialsPathOverride = "/custom/path/creds.json"
+	defer func() { credentialsPathOverride = oldPath }()
+
+	got := getCredentialsPath()
+	if got != "/custom/path/creds.json" {
+		t.Errorf("getCredentialsPath() = %q, want %q", got, "/custom/path/creds.json")
+	}
+}
+
+func TestGetCredentialsPath_Default(t *testing.T) {
+	// Ensure override is empty
+	oldPath := credentialsPathOverride
+	credentialsPathOverride = ""
+	defer func() { credentialsPathOverride = oldPath }()
+
+	path := getCredentialsPath()
+	if path == "" {
+		t.Skip("Could not determine home directory")
+	}
+
+	// Should contain the expected path components
+	if !stringContains(path, ".claude") || !stringContains(path, ".credentials.json") {
+		t.Errorf("getCredentialsPath() = %q, expected to contain .claude/.credentials.json", path)
+	}
 }
 
 func stringContains(s, substr string) bool {

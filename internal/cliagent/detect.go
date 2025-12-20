@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // AuthType represents the type of Claude authentication.
@@ -32,10 +31,6 @@ type ClaudeAuthStatus struct {
 	AuthType AuthType
 	// SubscriptionType is the plan type for OAuth auth (e.g., "max", "pro").
 	SubscriptionType string
-	// ExpiresAt is the token expiration time for OAuth auth.
-	ExpiresAt time.Time
-	// Valid indicates if the detected auth is currently valid.
-	Valid bool
 	// APIKeySet indicates if ANTHROPIC_API_KEY env var is set.
 	APIKeySet bool
 }
@@ -48,16 +43,19 @@ type claudeCredentials struct {
 
 type claudeOAuthData struct {
 	AccessToken      string `json:"accessToken,omitempty"`
-	ExpiresAt        int64  `json:"expiresAt,omitempty"` // Unix timestamp in milliseconds
 	SubscriptionType string `json:"subscriptionType,omitempty"`
 }
 
-// expiryBuffer is the time before actual expiry when we consider token expired.
-const expiryBuffer = 5 * time.Minute
+// credentialsPathOverride allows tests to override the credentials file location.
+// When empty (default), uses ~/.claude/.credentials.json.
+var credentialsPathOverride string
 
 // DetectClaudeAuth detects Claude Code installation and authentication status.
 // This reads ~/.claude/.credentials.json (internal Claude Code file) and checks
 // environment variables. The detection is read-only with no side effects.
+//
+// For OAuth auth, presence of credentials file with access token is sufficient -
+// Claude Code auto-refreshes tokens, so we don't check expiry.
 //
 // Note: This reads an undocumented internal file that may change in future
 // Claude Code versions. The function degrades gracefully if the file format changes.
@@ -72,16 +70,13 @@ func DetectClaudeAuth() ClaudeAuthStatus {
 	// Check for API key in environment
 	status.APIKeySet = isAPIKeySet()
 
-	// Try to read OAuth credentials
+	// Try to read OAuth credentials - presence of file with token = authenticated
 	if oauthData := readOAuthCredentials(); oauthData != nil {
 		status.AuthType = AuthTypeOAuth
 		status.SubscriptionType = oauthData.SubscriptionType
-		status.ExpiresAt = time.UnixMilli(oauthData.ExpiresAt)
-		status.Valid = isTokenValid(oauthData.ExpiresAt)
 	} else if status.APIKeySet {
 		// Fall back to API key if no OAuth
 		status.AuthType = AuthTypeAPI
-		status.Valid = true // Can't verify API key without making a request
 	}
 
 	return status
@@ -138,7 +133,11 @@ func readOAuthCredentials() *claudeOAuthData {
 
 // getCredentialsPath returns the path to Claude credentials file.
 // Returns empty string if home directory cannot be determined.
+// Uses credentialsPathOverride if set (for testing).
 func getCredentialsPath() string {
+	if credentialsPathOverride != "" {
+		return credentialsPathOverride
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return ""
@@ -146,18 +145,9 @@ func getCredentialsPath() string {
 	return filepath.Join(home, ".claude", ".credentials.json")
 }
 
-// isTokenValid checks if the OAuth token is still valid with a buffer.
-func isTokenValid(expiresAtMs int64) bool {
-	if expiresAtMs == 0 {
-		return false
-	}
-	expiresAt := time.UnixMilli(expiresAtMs)
-	return time.Now().Add(expiryBuffer).Before(expiresAt)
-}
-
-// IsAuthenticated returns true if any form of valid authentication is detected.
+// IsAuthenticated returns true if any form of authentication is detected.
 func (s ClaudeAuthStatus) IsAuthenticated() bool {
-	return s.AuthType != AuthTypeNone && s.Valid
+	return s.AuthType != AuthTypeNone
 }
 
 // RecommendedSetup returns a human-readable recommendation based on auth status.
@@ -166,29 +156,13 @@ func (s ClaudeAuthStatus) RecommendedSetup() string {
 		return "Claude Code not installed. Install from: https://claude.ai/download"
 	}
 
-	if s.AuthType == AuthTypeOAuth && s.Valid {
+	if s.AuthType == AuthTypeOAuth {
 		return "claude-code preset (using " + s.SubscriptionType + " subscription)"
 	}
 
-	if s.AuthType == AuthTypeOAuth && !s.Valid {
-		return "OAuth token expired. Run 'claude' to refresh login."
-	}
-
-	if s.AuthType == AuthTypeAPI && s.APIKeySet {
+	if s.AuthType == AuthTypeAPI {
 		return "claude-code preset (using API key). Consider OAuth for better rate limits."
 	}
 
 	return "Run 'claude' to authenticate, or set ANTHROPIC_API_KEY."
-}
-
-// ExpiresIn returns the duration until token expiry, or 0 if not applicable.
-func (s ClaudeAuthStatus) ExpiresIn() time.Duration {
-	if s.AuthType != AuthTypeOAuth || s.ExpiresAt.IsZero() {
-		return 0
-	}
-	d := time.Until(s.ExpiresAt)
-	if d < 0 {
-		return 0
-	}
-	return d
 }
