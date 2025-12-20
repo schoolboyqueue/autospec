@@ -141,20 +141,37 @@ func handleAgentConfiguration(cmd *cobra.Command, out io.Writer, project, noAgen
 	selected := promptAgentSelection(cmd.InOrStdin(), out, agents)
 
 	// Configure selected agents and save preferences
-	return configureSelectedAgents(out, selected, cfg, configPath)
+	sandboxPrompts, err := configureSelectedAgents(out, selected, cfg, configPath)
+	if err != nil {
+		return err
+	}
+
+	// Handle sandbox configuration prompts
+	return handleSandboxConfiguration(cmd, out, sandboxPrompts, cfg.SpecsDir)
+}
+
+// sandboxPromptInfo holds information needed to prompt for sandbox configuration.
+type sandboxPromptInfo struct {
+	agentName   string
+	displayName string
+	pathsToAdd  []string
+	existing    []string
 }
 
 // configureSelectedAgents configures each selected agent and persists preferences.
-func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Configuration, configPath string) error {
+// Returns a list of agents that have sandbox enabled and need configuration.
+func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Configuration, configPath string) ([]sandboxPromptInfo, error) {
 	if len(selected) == 0 {
 		fmt.Fprintln(out, "⚠ Warning: No agents selected. You may need to configure agent permissions manually.")
-		return nil
+		return nil, nil
 	}
 
 	specsDir := cfg.SpecsDir
 	if specsDir == "" {
 		specsDir = "specs"
 	}
+
+	var sandboxPrompts []sandboxPromptInfo
 
 	// Configure each selected agent
 	for _, agentName := range selected {
@@ -170,10 +187,51 @@ func configureSelectedAgents(out io.Writer, selected []string, cfg *config.Confi
 		}
 
 		displayAgentConfigResult(out, agentName, result)
+
+		// Check if agent supports sandbox configuration
+		if info := checkSandboxConfiguration(agentName, agent, specsDir); info != nil {
+			sandboxPrompts = append(sandboxPrompts, *info)
+		}
 	}
 
 	// Persist selected agents to config
-	return persistAgentPreferences(out, selected, cfg, configPath)
+	if err := persistAgentPreferences(out, selected, cfg, configPath); err != nil {
+		return nil, err
+	}
+
+	return sandboxPrompts, nil
+}
+
+// checkSandboxConfiguration checks if an agent needs sandbox configuration.
+// Returns nil if sandbox is not enabled or no paths need to be added.
+func checkSandboxConfiguration(agentName string, agent cliagent.Agent, specsDir string) *sandboxPromptInfo {
+	// Only Claude currently supports sandbox configuration
+	claudeAgent, ok := agent.(*cliagent.Claude)
+	if !ok {
+		return nil
+	}
+
+	diff, err := claudeAgent.GetSandboxDiff(".", specsDir)
+	if err != nil || diff == nil {
+		return nil
+	}
+
+	// Only prompt if sandbox is enabled and paths need to be added
+	if !diff.Enabled || len(diff.PathsToAdd) == 0 {
+		return nil
+	}
+
+	displayName := agentDisplayNames[agentName]
+	if displayName == "" {
+		displayName = agentName
+	}
+
+	return &sandboxPromptInfo{
+		agentName:   agentName,
+		displayName: displayName,
+		pathsToAdd:  diff.PathsToAdd,
+		existing:    diff.ExistingPaths,
+	}
 }
 
 // displayAgentConfigResult displays the configuration result for an agent.

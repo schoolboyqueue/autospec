@@ -284,6 +284,106 @@ func (s *Settings) Save() error {
 	return atomicWrite(s.filePath, data)
 }
 
+// SandboxConfig represents the sandbox configuration additions for autospec.
+type SandboxConfig struct {
+	// PathsToAdd contains paths that need to be added to additionalAllowWritePaths.
+	PathsToAdd []string
+	// ExistingPaths contains paths already configured.
+	ExistingPaths []string
+	// Enabled indicates if sandbox is enabled in settings.
+	Enabled bool
+}
+
+// IsSandboxEnabled checks if sandbox is enabled in the settings.
+func (s *Settings) IsSandboxEnabled() bool {
+	sandbox, ok := s.data["sandbox"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	enabled, ok := sandbox["enabled"].(bool)
+	return ok && enabled
+}
+
+// getSandboxConfig returns the sandbox configuration object, creating it if necessary.
+func (s *Settings) getSandboxConfig() map[string]interface{} {
+	sandbox, ok := s.data["sandbox"].(map[string]interface{})
+	if !ok {
+		sandbox = make(map[string]interface{})
+		s.data["sandbox"] = sandbox
+	}
+	return sandbox
+}
+
+// GetAdditionalWritePaths returns the current additionalAllowWritePaths.
+func (s *Settings) GetAdditionalWritePaths() []string {
+	sandbox := s.getSandboxConfig()
+	pathsRaw, ok := sandbox["additionalAllowWritePaths"]
+	if !ok {
+		return nil
+	}
+	return interfaceSliceToStrings(pathsRaw)
+}
+
+// HasWritePath checks if a path exists in additionalAllowWritePaths.
+func (s *Settings) HasWritePath(path string) bool {
+	for _, p := range s.GetAdditionalWritePaths() {
+		if p == path {
+			return true
+		}
+	}
+	return false
+}
+
+// AddWritePaths adds paths to additionalAllowWritePaths, skipping duplicates.
+// Returns the list of paths that were actually added.
+func (s *Settings) AddWritePaths(paths []string) []string {
+	var added []string
+
+	sandbox := s.getSandboxConfig()
+	existing := s.GetAdditionalWritePaths()
+
+	for _, path := range paths {
+		if !s.HasWritePath(path) {
+			existing = append(existing, path)
+			added = append(added, path)
+		}
+	}
+
+	if len(added) > 0 {
+		// Convert to []interface{} for JSON compatibility
+		newPaths := make([]interface{}, len(existing))
+		for i, p := range existing {
+			newPaths[i] = p
+		}
+		sandbox["additionalAllowWritePaths"] = newPaths
+	}
+
+	return added
+}
+
+// GetSandboxConfigDiff calculates what sandbox paths need to be added.
+// Returns a SandboxConfig with PathsToAdd containing paths not yet configured.
+func (s *Settings) GetSandboxConfigDiff(requiredPaths []string) SandboxConfig {
+	existing := s.GetAdditionalWritePaths()
+	existingSet := make(map[string]bool)
+	for _, p := range existing {
+		existingSet[p] = true
+	}
+
+	var toAdd []string
+	for _, path := range requiredPaths {
+		if !existingSet[path] {
+			toAdd = append(toAdd, path)
+		}
+	}
+
+	return SandboxConfig{
+		PathsToAdd:    toAdd,
+		ExistingPaths: existing,
+		Enabled:       s.IsSandboxEnabled(),
+	}
+}
+
 // atomicWrite writes data to a file atomically using temp file + rename.
 func atomicWrite(filePath string, data []byte) error {
 	dir := filepath.Dir(filePath)

@@ -35,6 +35,28 @@ type ConfigResult struct {
 	Warning string
 }
 
+// SandboxResult describes the outcome of sandbox configuration.
+type SandboxResult struct {
+	// PathsAdded lists paths that were added to additionalAllowWritePaths.
+	PathsAdded []string
+	// ExistingPaths lists paths that were already configured.
+	ExistingPaths []string
+	// AlreadyConfigured is true if all required paths were already present.
+	AlreadyConfigured bool
+	// SandboxEnabled indicates if sandbox is enabled in settings.
+	SandboxEnabled bool
+}
+
+// SandboxConfigurator is an optional interface that agents can implement to
+// configure sandbox write paths for secure execution.
+type SandboxConfigurator interface {
+	// GetSandboxPaths returns the paths required for sandbox write access.
+	GetSandboxPaths(specsDir string) []string
+	// ConfigureSandbox adds the required paths to the sandbox configuration.
+	// Returns SandboxResult describing what was configured.
+	ConfigureSandbox(projectDir, specsDir string) (SandboxResult, error)
+}
+
 // Configure checks if the given agent implements Configurator and calls
 // ConfigureProject if it does. Returns nil, nil if the agent does not
 // implement Configurator.
@@ -56,4 +78,37 @@ func Configure(agent Agent, projectDir, specsDir string) (*ConfigResult, error) 
 func IsConfigurator(agent Agent) bool {
 	_, ok := agent.(Configurator)
 	return ok
+}
+
+// IsSandboxConfigurator returns true if the given agent implements the
+// SandboxConfigurator interface.
+func IsSandboxConfigurator(agent Agent) bool {
+	_, ok := agent.(SandboxConfigurator)
+	return ok
+}
+
+// ConfigureSandbox checks if the given agent implements SandboxConfigurator and
+// calls ConfigureSandbox if it does. Returns nil, nil if the agent does not
+// implement SandboxConfigurator.
+func ConfigureSandbox(agent Agent, projectDir, specsDir string) (*SandboxResult, error) {
+	configurator, ok := agent.(SandboxConfigurator)
+	if !ok {
+		return nil, nil
+	}
+
+	result, err := configurator.ConfigureSandbox(projectDir, specsDir)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetSandboxPaths returns the sandbox paths for an agent if it implements
+// SandboxConfigurator, nil otherwise.
+func GetSandboxPaths(agent Agent, specsDir string) []string {
+	configurator, ok := agent.(SandboxConfigurator)
+	if !ok {
+		return nil
+	}
+	return configurator.GetSandboxPaths(specsDir)
 }

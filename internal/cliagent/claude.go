@@ -102,3 +102,59 @@ func checkDenyConflicts(settings *claude.Settings, permissions []string) string 
 	}
 	return fmt.Sprintf("permissions %v are explicitly denied in settings", denied)
 }
+
+// GetSandboxPaths returns the paths required for autospec sandbox write access.
+// These paths are needed when Claude's sandbox is enabled to allow autospec
+// to write state and configuration files.
+func (c *Claude) GetSandboxPaths(specsDir string) []string {
+	return []string{
+		"~/.autospec/state",
+		"~/.config/autospec",
+		".autospec",
+		specsDir,
+	}
+}
+
+// GetSandboxDiff returns the sandbox configuration difference without applying it.
+// Use this to show the user what would be changed before prompting for confirmation.
+func (c *Claude) GetSandboxDiff(projectDir, specsDir string) (*claude.SandboxConfig, error) {
+	settings, err := claude.Load(projectDir)
+	if err != nil {
+		return nil, fmt.Errorf("loading claude settings: %w", err)
+	}
+
+	requiredPaths := c.GetSandboxPaths(specsDir)
+	diff := settings.GetSandboxConfigDiff(requiredPaths)
+	return &diff, nil
+}
+
+// ConfigureSandbox implements the SandboxConfigurator interface for Claude.
+// It adds required write paths to the sandbox configuration.
+func (c *Claude) ConfigureSandbox(projectDir, specsDir string) (SandboxResult, error) {
+	settings, err := claude.Load(projectDir)
+	if err != nil {
+		return SandboxResult{}, fmt.Errorf("loading claude settings: %w", err)
+	}
+
+	requiredPaths := c.GetSandboxPaths(specsDir)
+	diff := settings.GetSandboxConfigDiff(requiredPaths)
+
+	if len(diff.PathsToAdd) == 0 {
+		return SandboxResult{
+			AlreadyConfigured: true,
+			ExistingPaths:     diff.ExistingPaths,
+			SandboxEnabled:    diff.Enabled,
+		}, nil
+	}
+
+	added := settings.AddWritePaths(diff.PathsToAdd)
+	if err := settings.Save(); err != nil {
+		return SandboxResult{}, fmt.Errorf("saving claude settings: %w", err)
+	}
+
+	return SandboxResult{
+		PathsAdded:     added,
+		ExistingPaths:  diff.ExistingPaths,
+		SandboxEnabled: diff.Enabled,
+	}, nil
+}
