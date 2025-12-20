@@ -205,10 +205,11 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
 
-	// Skip agent selection prompt in non-interactive environment
+	// Skip agent and constitution prompts to avoid running real Claude
 	cmd.Flags().Set("no-agents", "true")
+	cmd.Flags().Set("skip-constitution", "true")
 
-	// Provide "n" to decline constitution creation (avoid running real Claude)
+	// Provide "n" to decline any remaining prompts (e.g., worktree)
 	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	// Capture output
@@ -239,11 +240,12 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
 
-	// Set flags directly
+	// Set flags directly - skip agents and constitution to avoid running real Claude
 	cmd.Flags().Set("project", "true")
-	cmd.Flags().Set("no-agents", "true") // Skip agent selection in non-interactive environment
+	cmd.Flags().Set("no-agents", "true")
+	cmd.Flags().Set("skip-constitution", "true")
 
-	// Provide "n" to decline constitution creation (avoid running real Claude)
+	// Provide "n" to decline any remaining prompts (e.g., worktree)
 	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	var buf bytes.Buffer
