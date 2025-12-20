@@ -105,7 +105,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Prompt for worktree setup script generation if not already present
 	worktreeScriptPath := filepath.Join(".autospec", "scripts", "setup-worktree.sh")
 	if !fileExistsCheck(worktreeScriptPath) {
-		if promptYesNo(cmd, "\nDo you intend to use git worktrees for parallelization?") {
+		if promptYesNo(cmd, "\nGenerate a worktree setup script for running parallel autospec sessions?\n  → Runs a Claude session to create .autospec/scripts/setup-worktree.sh\n  → Script bootstraps isolated workspaces tailored to your project") {
 			configPath, _ := cmd.Flags().GetString("config")
 			runWorktreeGenScriptFromInit(cmd, configPath)
 		}

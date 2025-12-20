@@ -540,7 +540,7 @@ func TestRunInit_WorktreePromptDisplaysCorrectly(t *testing.T) {
 			cmd.SetIn(bytes.NewBufferString(tt.input))
 
 			// Use the same prompt format as in runInit for worktree
-			result := promptYesNo(cmd, "\nDo you intend to use git worktrees for parallelization?")
+			result := promptYesNo(cmd, "\nGenerate a worktree setup script for running parallel autospec sessions?\n  → Runs a Claude session to create .autospec/scripts/setup-worktree.sh\n  → Script bootstraps isolated workspaces tailored to your project")
 			assert.Equal(t, tt.expected, result)
 
 			// Verify prompt format shows [y/N]
