@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ariel-frischer/autospec/internal/cliagent"
 	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/ariel-frischer/autospec/internal/workflow"
 )
@@ -464,8 +465,10 @@ func NewTestOrchestratorWithSpecName(t *testing.T, specsDir, specName string) *w
 	}
 
 	cfg := &config.Configuration{
-		ClaudeCmd:     mockClaudePath,
-		ClaudeArgs:    []string{},
+		CustomAgent: &cliagent.CustomAgentConfig{
+			Command: mockClaudePath,
+			Args:    []string{"{{PROMPT}}"},
+		},
 		SpecsDir:      specsDir,
 		StateDir:      stateDir,
 		MaxRetries:    1, // Minimal retries for faster tests

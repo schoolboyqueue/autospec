@@ -70,8 +70,8 @@ func ApplyAgentOverride(cmd *cobra.Command, cfg *config.Configuration) (bool, er
 
 	// Override config to use this agent
 	cfg.AgentPreset = agentName
-	// Clear custom_agent_cmd to ensure preset takes effect
-	cfg.CustomAgentCmd = ""
+	// Clear custom_agent to ensure preset takes effect
+	cfg.CustomAgent = nil
 
 	return true, nil
 }

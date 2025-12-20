@@ -69,8 +69,8 @@ func (w *WorkflowOrchestrator) debugLog(format string, args ...interface{}) {
 // - NotifyDispatcher wraps nil handler (CLI commands set handler via deprecated field)
 //
 // Agent resolution priority:
-// 1. cfg.GetAgent() - uses new agent abstraction (agent_preset or custom_agent_cmd)
-// 2. Legacy fields (ClaudeCmd, ClaudeArgs, CustomClaudeCmd) if GetAgent() returns nil
+// 1. cfg.GetAgent() - uses agent abstraction (agent_preset or custom_agent)
+// 2. Falls back to default "claude" agent from registry
 //
 // Note: CLI commands typically set Executor.NotificationHandler after construction.
 // The Executor methods support both new controllers and deprecated fields via fallback.
@@ -717,27 +717,23 @@ func (w *WorkflowOrchestrator) ExecuteAnalyze(specNameArg string, prompt string)
 }
 
 // newClaudeExecutorFromConfig creates a ClaudeExecutor from configuration.
-// Tries to use the new Agent abstraction first, falling back to legacy fields.
+// Uses the agent abstraction from cfg.GetAgent().
 func newClaudeExecutorFromConfig(cfg *config.Configuration) *ClaudeExecutor {
 	outputStyle, _ := config.NormalizeOutputStyle(cfg.OutputStyle)
 
-	// Try new agent abstraction first
 	agent, err := cfg.GetAgent()
-	if err == nil && agent != nil {
+	if err != nil {
+		// This should not happen as GetAgent() has defaults, but handle gracefully
 		return &ClaudeExecutor{
-			Agent:       agent,
 			Timeout:     cfg.Timeout,
 			OutputStyle: outputStyle,
 		}
 	}
 
-	// Fall back to legacy configuration
 	return &ClaudeExecutor{
-		ClaudeCmd:       cfg.ClaudeCmd,
-		ClaudeArgs:      cfg.ClaudeArgs,
-		CustomClaudeCmd: cfg.CustomClaudeCmd,
-		Timeout:         cfg.Timeout,
-		OutputStyle:     outputStyle,
+		Agent:       agent,
+		Timeout:     cfg.Timeout,
+		OutputStyle: outputStyle,
 	}
 }
 

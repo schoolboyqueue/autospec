@@ -71,13 +71,9 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 
 	// Convert to map for output - include all configuration fields
 	configMap := map[string]interface{}{
-		// Agent configuration (new)
+		// Agent configuration
 		"agent_preset": cfg.AgentPreset,
 		"custom_agent": cfg.CustomAgent,
-		// Legacy agent fields (deprecated)
-		"claude_cmd":        cfg.ClaudeCmd,
-		"claude_args":       cfg.ClaudeArgs,
-		"custom_claude_cmd": cfg.CustomClaudeCmd,
 		// Core settings
 		"max_retries":        cfg.MaxRetries,
 		"specs_dir":          cfg.SpecsDir,

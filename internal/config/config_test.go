@@ -38,7 +38,7 @@ func TestLoad_Defaults(t *testing.T) {
 	// Load with empty config path (defaults only)
 	cfg, err := Load("")
 	require.NoError(t, err)
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
+	assert.Equal(t, "", cfg.AgentPreset) // Default: use default claude agent
 	assert.Equal(t, 0, cfg.MaxRetries)
 	assert.Equal(t, "./specs", cfg.SpecsDir)
 }
@@ -52,25 +52,25 @@ func TestLoad_LocalOverride(t *testing.T) {
 	// Write local config
 	configContent := `{
 		"max_retries": 5,
-		"claude_cmd": "custom-claude"
+		"agent_preset": "claude"
 	}`
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	require.NoError(t, err)
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
-	assert.Equal(t, "custom-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "claude", cfg.AgentPreset)
 	assert.Equal(t, 5, cfg.MaxRetries)
 }
 
 func TestLoad_EnvOverride(t *testing.T) {
 	// Set environment variable
 	t.Setenv("AUTOSPEC_MAX_RETRIES", "7")
-	t.Setenv("AUTOSPEC_CLAUDE_CMD", "env-claude")
+	t.Setenv("AUTOSPEC_AGENT_PRESET", "gemini")
 
 	cfg, err := Load("")
 	require.NoError(t, err)
-	assert.Equal(t, "env-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 7, cfg.MaxRetries)
 }
 
@@ -88,22 +88,6 @@ func TestLoad_ValidationError_MaxRetriesOutOfRange(t *testing.T) {
 	_, err = Load(configPath)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "validation failed")
-}
-
-func TestLoad_ValidationError_CustomClaudeCmd(t *testing.T) {
-	t.Parallel()
-
-	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "config.json")
-
-	// Write invalid custom_claude_cmd (missing {{PROMPT}})
-	configContent := `{"custom_claude_cmd": "claude --no-prompt"}`
-	err := os.WriteFile(configPath, []byte(configContent), 0644)
-	require.NoError(t, err)
-
-	_, err = Load(configPath)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "{{PROMPT}}")
 }
 
 func TestExpandHomePath(t *testing.T) {
@@ -147,7 +131,7 @@ func TestLoad_OverridePrecedence(t *testing.T) {
 
 	// Write user config (lower priority)
 	userPath := filepath.Join(userConfigDir, "config.yml")
-	userContent := `claude_cmd: user-claude
+	userContent := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -177,8 +161,8 @@ state_dir: "~/.autospec/state"
 
 	// Environment should win for max_retries
 	assert.Equal(t, 8, cfg.MaxRetries)
-	// User config value for claude_cmd (project config doesn't override it)
-	assert.Equal(t, "user-claude", cfg.ClaudeCmd)
+	// User config value for agent_preset (project config doesn't override it)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 }
 
 // Timeout Configuration Tests
@@ -327,7 +311,7 @@ func TestLoad_YAMLConfig(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yml")
 
 	// Write YAML config
-	configContent := `claude_cmd: custom-claude
+	configContent := `agent_preset: claude
 max_retries: 5
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -340,7 +324,7 @@ state_dir: "~/.autospec/state"
 		SkipWarnings:      true,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "custom-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "claude", cfg.AgentPreset)
 	assert.Equal(t, 5, cfg.MaxRetries)
 }
 
@@ -351,10 +335,7 @@ func TestLoad_YAMLConfigWithNestedValues(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yml")
 
 	// Write YAML config with all values
-	configContent := `claude_cmd: claude
-claude_args:
-  - "-p"
-  - "--verbose"
+	configContent := `agent_preset: gemini
 max_retries: 3
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -370,8 +351,7 @@ skip_confirmations: false
 		SkipWarnings:      true,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
-	assert.Equal(t, []string{"-p", "--verbose"}, cfg.ClaudeArgs)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.True(t, cfg.SkipPreflight)
 	assert.Equal(t, 300, cfg.Timeout)
 }
