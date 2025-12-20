@@ -67,6 +67,11 @@ Git worktrees allow multiple working directories sharing the same repository, en
 
 ### Setting Up Worktrees
 
+{: .note }
+For automated worktree management with project setup, see [Worktree Management](worktree). The `autospec worktree create` command handles directory copying and dependency installation automatically.
+
+**Manual setup with git:**
+
 ```bash
 # From your main repository directory
 cd ~/projects/myapp
@@ -284,6 +289,7 @@ echo "All features complete!"
 
 ## See Also
 
+- [Worktree Management](worktree) - Automated worktree creation with project setup
 - [CLI Reference](../reference/cli) - Complete command documentation
 - [Configuration](../reference/configuration) - Project and user configuration
 - [Troubleshooting](troubleshooting) - Common issues and solutions

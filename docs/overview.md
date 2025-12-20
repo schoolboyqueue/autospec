@@ -45,7 +45,7 @@ autospec prep "Add user authentication with OAuth support"
 ### 2. Full Implementation
 Execute the entire workflow from specification to completed implementation:
 ```bash
-autospec full "Add dark mode toggle to settings"
+autospec all "Add dark mode toggle to settings"
 ```
 
 ### 3. Iterative Development

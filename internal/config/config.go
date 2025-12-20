@@ -15,7 +15,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ariel-frischer/autospec/internal/cliagent"
 	"github.com/ariel-frischer/autospec/internal/notify"
+	"github.com/ariel-frischer/autospec/internal/worktree"
 	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -35,15 +37,27 @@ const (
 
 // Configuration represents the autospec CLI tool configuration
 type Configuration struct {
-	ClaudeCmd         string   `koanf:"claude_cmd"`
-	ClaudeArgs        []string `koanf:"claude_args"`
-	CustomClaudeCmd   string   `koanf:"custom_claude_cmd"`
-	MaxRetries        int      `koanf:"max_retries"`
-	SpecsDir          string   `koanf:"specs_dir"`
-	StateDir          string   `koanf:"state_dir"`
-	SkipPreflight     bool     `koanf:"skip_preflight"`
-	Timeout           int      `koanf:"timeout"`
-	SkipConfirmations bool     `koanf:"skip_confirmations"` // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
+	// AgentPreset selects a built-in agent by name (e.g., "claude", "gemini", "cline").
+	// Can be set via AUTOSPEC_AGENT_PRESET env var.
+	AgentPreset string `koanf:"agent_preset"`
+
+	// CustomAgent provides structured configuration for custom agents.
+	// Takes precedence over agent_preset.
+	// Example:
+	//   custom_agent:
+	//     command: "claude"
+	//     args: ["-p", "--verbose", "{{PROMPT}}"]
+	//     env:
+	//       ANTHROPIC_API_KEY: ""
+	//     post_processor: "cclean"
+	CustomAgent *cliagent.CustomAgentConfig `koanf:"custom_agent"`
+
+	MaxRetries        int    `koanf:"max_retries"`
+	SpecsDir          string `koanf:"specs_dir"`
+	StateDir          string `koanf:"state_dir"`
+	SkipPreflight     bool   `koanf:"skip_preflight"`
+	Timeout           int    `koanf:"timeout"`
+	SkipConfirmations bool   `koanf:"skip_confirmations"` // Skip confirmation prompts (can also be set via AUTOSPEC_YES env var)
 	// ImplementMethod sets the default execution mode for the implement command.
 	// Valid values: "single-session" (legacy), "phases" (default), "tasks"
 	// Can be overridden by CLI flags (--phases, --tasks) or env var AUTOSPEC_IMPLEMENT_METHOD
@@ -58,12 +72,40 @@ type Configuration struct {
 	// Oldest entries are pruned when this limit is exceeded.
 	// Default: 500. Can be set via AUTOSPEC_MAX_HISTORY_ENTRIES env var.
 	MaxHistoryEntries int `koanf:"max_history_entries"`
+
+	// ViewLimit sets the number of recent specs displayed by the view command.
+	// Default: 5. Can be set via AUTOSPEC_VIEW_LIMIT env var.
+	ViewLimit int `koanf:"view_limit"`
+
+	// Worktree configures worktree management settings.
+	// Used by the 'autospec worktree' command for creating and managing git worktrees.
+	Worktree *worktree.WorktreeConfig `koanf:"worktree"`
+
+	// DefaultAgents stores the list of agent names to pre-select in future init prompts.
+	// Set during 'autospec init' when user selects agents for configuration.
+	// Can be set via AUTOSPEC_DEFAULT_AGENTS env var (comma-separated).
+	DefaultAgents []string `koanf:"default_agents,omitempty"`
+
+	// OutputStyle controls how stream-json output is formatted for display.
+	// Valid values: default, compact, minimal, plain, raw
+	// Default: "default" (box-drawing characters with colors)
+	// Can be set via AUTOSPEC_OUTPUT_STYLE env var or --output-style CLI flag.
+	OutputStyle string `koanf:"output_style"`
+
+	// SkipPermissionsNoticeShown tracks whether the user has seen the security notice
+	// about --dangerously-skip-permissions. Set to true after first workflow run.
+	// This is a user-level config field only (not shown in project config).
+	// Can be set via AUTOSPEC_SKIP_PERMISSIONS_NOTICE_SHOWN env var.
+	SkipPermissionsNoticeShown bool `koanf:"skip_permissions_notice_shown"`
 }
 
 // LoadOptions configures how configuration is loaded
 type LoadOptions struct {
 	// ProjectConfigPath overrides the project config path (default: .autospec/config.yml)
 	ProjectConfigPath string
+	// UserConfigPath overrides the user config path (default: ~/.config/autospec/config.yml)
+	// Useful for testing to provide a mock user config
+	UserConfigPath string
 	// WarningWriter receives deprecation warnings (default: os.Stderr)
 	WarningWriter io.Writer
 	// SkipWarnings suppresses deprecation warnings
@@ -91,7 +133,7 @@ func LoadWithOptions(opts LoadOptions) (*Configuration, error) {
 
 	loadDefaults(k)
 
-	if err := loadUserConfig(k, warningWriter, opts.SkipWarnings); err != nil {
+	if err := loadUserConfig(k, opts.UserConfigPath, warningWriter, opts.SkipWarnings); err != nil {
 		return nil, err
 	}
 
@@ -123,9 +165,20 @@ func loadDefaults(k *koanf.Koanf) {
 }
 
 // loadUserConfig loads user-level config (YAML preferred, legacy JSON supported).
-// Priority: YAML (~/.config/autospec/config.yml) > JSON (~/.autospec/config.json).
+// If customPath is provided, it uses that path exclusively (for testing).
+// Otherwise: Priority: YAML (~/.config/autospec/config.yml) > JSON (~/.autospec/config.json).
 // Warns if both exist (YAML used, JSON ignored) or if only legacy JSON exists.
-func loadUserConfig(k *koanf.Koanf, warningWriter io.Writer, skipWarnings bool) error {
+func loadUserConfig(k *koanf.Koanf, customPath string, warningWriter io.Writer, skipWarnings bool) error {
+	// If custom path provided, use it exclusively (for testing)
+	if customPath != "" {
+		if fileExists(customPath) {
+			if err := loadYAMLConfig(k, customPath, "user"); err != nil {
+				return fmt.Errorf("loading user YAML config: %w", err)
+			}
+		}
+		return nil
+	}
+
 	userYAMLPath, _ := UserConfigPath()
 	legacyUserPath, _ := LegacyUserConfigPath()
 
@@ -212,6 +265,11 @@ func loadEnvironmentConfig(k *koanf.Koanf) error {
 
 // finalizeConfig unmarshals, validates, and applies final transformations
 func finalizeConfig(k *koanf.Koanf) (*Configuration, error) {
+	return finalizeConfigWithWarnings(k, os.Stderr, false)
+}
+
+// finalizeConfigWithWarnings unmarshals and optionally warns about deprecations
+func finalizeConfigWithWarnings(k *koanf.Koanf, warningWriter io.Writer, skipWarnings bool) (*Configuration, error) {
 	var cfg Configuration
 	if err := k.Unmarshal("", &cfg); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
@@ -255,4 +313,30 @@ func expandHomePath(path string) string {
 		}
 	}
 	return path
+}
+
+// GetAgent returns a CLI agent based on configuration priority.
+// Priority: custom_agent > agent_preset > default (claude).
+// Returns error if the selected agent is invalid or not found in registry.
+func (c *Configuration) GetAgent() (cliagent.Agent, error) {
+	// Highest priority: structured custom_agent config
+	if c.CustomAgent.IsValid() {
+		return cliagent.NewCustomAgentFromConfig(*c.CustomAgent)
+	}
+
+	// Second priority: agent_preset (built-in agent by name)
+	if c.AgentPreset != "" {
+		agent := cliagent.Get(c.AgentPreset)
+		if agent == nil {
+			return nil, fmt.Errorf("unknown agent preset %q; available: %v", c.AgentPreset, cliagent.List())
+		}
+		return agent, nil
+	}
+
+	// Default: use claude agent from registry
+	agent := cliagent.Get("claude")
+	if agent == nil {
+		return nil, fmt.Errorf("default agent 'claude' not registered")
+	}
+	return agent, nil
 }

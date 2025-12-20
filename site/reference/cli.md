@@ -39,7 +39,7 @@ All commands support these global flags:
 
 ### autospec run
 
-Execute workflow stages (alias: `autospec full`).
+Execute workflow stages (alias: `autospec all`).
 
 ```bash
 autospec run [flags] ["description"] ["guidance"]

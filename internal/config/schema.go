@@ -139,6 +139,19 @@ var KnownKeys = map[string]ConfigKeySchema{
 		Description: "Threshold for long-running notifications (e.g., 2m, 1h30m)",
 		Default:     "2m",
 	},
+	"output_style": {
+		Path:          "output_style",
+		Type:          TypeEnum,
+		AllowedValues: []string{"default", "compact", "minimal", "plain", "raw"},
+		Description:   "Output formatting style for Claude stream-json display",
+		Default:       "default",
+	},
+	"skip_permissions_notice_shown": {
+		Path:        "skip_permissions_notice_shown",
+		Type:        TypeBool,
+		Description: "Whether the --dangerously-skip-permissions security notice has been shown",
+		Default:     false,
+	},
 }
 
 // ErrUnknownKey is returned when trying to access an unknown configuration key.

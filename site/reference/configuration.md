@@ -37,18 +37,18 @@ Higher priority sources override lower priority sources.
 
 ## Core Options
 
-### claude_cmd
+### agent_preset
 
-Command to invoke Claude CLI.
+Preset agent to use for execution.
 
 | Property | Value |
 |:---------|:------|
 | Type | string |
-| Default | `"claude"` |
-| Environment | `AUTOSPEC_CLAUDE_CMD` |
+| Default | `""` |
+| Environment | `AUTOSPEC_AGENT_PRESET` |
 
 ```yaml
-claude_cmd: /usr/local/bin/claude
+agent_preset: claude
 ```
 
 ---
@@ -167,18 +167,21 @@ CLI flags (`--phases`, `--tasks`, `--single-session`) override this setting.
 
 ---
 
-### custom_claude_cmd
+### custom_agent
 
-Custom command template with placeholder.
+Custom agent configuration with command and args.
 
 | Property | Value |
 |:---------|:------|
-| Type | string |
-| Default | `""` (not set) |
-| Environment | `AUTOSPEC_CUSTOM_CLAUDE_CMD` |
+| Type | object |
+| Default | `null` |
 
 ```yaml
-custom_claude_cmd: "claude -p {{PROMPT}} | tee logs/$(date +%s).log"
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "claude -p {{PROMPT}} | tee logs/$(date +%s).log"
 ```
 
 The `{{PROMPT}}` placeholder is replaced with the actual prompt.
@@ -334,6 +337,85 @@ notifications:
 
 ---
 
+## Security: Sandbox & Permissions
+{: #security-sandbox--permissions }
+
+autospec runs Claude Code with `--dangerously-skip-permissions` by default. This section explains why and how to stay secure.
+
+### Why This Flag is Used
+
+Without `--dangerously-skip-permissions`, Claude requires manual approval for:
+- Every file edit
+- Every shell command
+- Every tool invocation
+
+This makes automated workflows impractical. Managing allow/deny rules for all necessary operations is complex and error-prone.
+
+### Two Separate Security Layers
+
+| Layer | What it does |
+|:------|:-------------|
+| **Sandbox** | OS-level isolation - restricts filesystem to project directory |
+| **Permission prompts** | User approval for actions (skipped with `--dangerously-skip-permissions`) |
+
+**Key insight**: `--dangerously-skip-permissions` only skips the permission prompts—it does **not** bypass sandbox restrictions. When sandbox is enabled, Claude cannot access files outside your project directory.
+
+### Recommended Setup: Sandbox Enabled
+
+During `autospec init`, you're prompted to enable sandbox. This configures `.claude/settings.local.json`:
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "additionalAllowWritePaths": [
+      ".autospec",
+      "specs"
+    ]
+  }
+}
+```
+
+This provides **sandboxed automation**: unattended execution with OS-level filesystem isolation to your project directory. Note that Claude still has full access to modify any file within the project.
+
+{: .warning }
+> Without sandbox enabled, `--dangerously-skip-permissions` gives Claude full system access. Only use without sandbox in isolated environments (containers, VMs).
+
+### First-Run Security Notice
+
+On your first workflow command, autospec displays a one-time notice explaining the security model and showing your sandbox status. Suppress with:
+
+```bash
+autospec config set skip_permissions_notice_shown true
+```
+
+Or via environment variable:
+
+```bash
+export AUTOSPEC_SKIP_PERMISSIONS_NOTICE=1
+```
+
+### Custom Agent Configuration
+
+To customize the Claude command (e.g., add output formatting), use `custom_agent`:
+
+```yaml
+# ~/.config/autospec/config.yml
+custom_agent:
+  command: "claude"
+  args:
+    - "-p"
+    - "--dangerously-skip-permissions"
+    - "--verbose"
+    - "--output-format"
+    - "stream-json"
+    - "{{PROMPT}}"
+  post_processor: "cclean"
+```
+
+---
+
 ## Full Configuration Example
 
 ```yaml
@@ -398,14 +480,14 @@ All configuration options can be set via environment variables with the `AUTOSPE
 
 | Variable | Config Key |
 |:---------|:-----------|
-| `AUTOSPEC_CLAUDE_CMD` | `claude_cmd` |
+| `AUTOSPEC_AGENT_PRESET` | `agent_preset` |
 | `AUTOSPEC_MAX_RETRIES` | `max_retries` |
 | `AUTOSPEC_SPECS_DIR` | `specs_dir` |
 | `AUTOSPEC_STATE_DIR` | `state_dir` |
 | `AUTOSPEC_TIMEOUT` | `timeout` |
 | `AUTOSPEC_SKIP_PREFLIGHT` | `skip_preflight` |
 | `AUTOSPEC_IMPLEMENT_METHOD` | `implement_method` |
-| `AUTOSPEC_CUSTOM_CLAUDE_CMD` | `custom_claude_cmd` |
+| `AUTOSPEC_CUSTOM_AGENT_CMD` | `custom_agent_cmd` |
 | `AUTOSPEC_MAX_HISTORY_ENTRIES` | `max_history_entries` |
 | `AUTOSPEC_NOTIFICATIONS_ENABLED` | `notifications.enabled` |
 | `AUTOSPEC_NOTIFICATIONS_TYPE` | `notifications.type` |

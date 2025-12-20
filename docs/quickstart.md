@@ -76,11 +76,11 @@ autospec init
 
 This creates `~/.config/autospec/config.yml` with default settings:
 ```yaml
-claude_cmd: claude
-max_retries: 0
-specs_dir: ./specs
-state_dir: ~/.autospec/state
-timeout: 0
+agent_preset: claude              # Built-in agent: claude | gemini | cline | codex | opencode | goose
+max_retries: 0                    # Max retry attempts per stage (0-10)
+specs_dir: ./specs                # Directory for feature specs
+state_dir: ~/.autospec/state      # Directory for state files
+timeout: 2400                     # Timeout in seconds (40 min default, 0 = no timeout)
 ```
 
 You can customize these settings later. See [Configuration Basics](#configuration-basics) for details.
@@ -201,7 +201,7 @@ Quick reference for frequently used commands:
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `autospec full "..."` | Complete workflow: specify → plan → tasks → implement | `autospec full "Add user auth"` |
+| `autospec all "..."` | Complete workflow: specify → plan → tasks → implement | `autospec all "Add user auth"` |
 | `autospec prep "..."` | Prepare for implementation: specify → plan → tasks (no implementation) | `autospec prep "Add export"` |
 | `autospec implement` | Execute implementation stage for current feature | `autospec implement` |
 | `autospec implement <spec>` | Execute implementation for specific spec | `autospec implement 001-dark-mode` |
@@ -258,9 +258,9 @@ For detailed architecture, see [ARCHITECTURE.md](./architecture.md).
 Essential configuration options (stored in `~/.config/autospec/config.yml` or `.autospec/config.yml`):
 
 ```yaml
-# Claude CLI command (default: "claude")
-# Customize if you have Claude CLI in a non-standard location
-claude_cmd: claude
+# Agent settings (recommended)
+agent_preset: claude              # Built-in agent: claude | gemini | cline | codex | opencode | goose
+custom_agent_cmd: ""              # Custom agent template with {{PROMPT}} placeholder
 
 # Maximum retry attempts (default: 0, range: 0-10)
 # Controls how many times to retry on validation failure
@@ -270,14 +270,20 @@ max_retries: 0
 # Where feature specifications are stored
 specs_dir: ./specs
 
-# Command timeout in seconds (default: 0 = no timeout)
+# Command timeout in seconds (default: 2400 = 40 minutes, 0 = no timeout)
 # Set to limit long-running operations (range: 0 or 1-604800)
-timeout: 0
+timeout: 2400
 
 # Skip preflight dependency checks (default: false)
 # Set to true to bypass health checks
 skip_preflight: false
+
+# Implementation method (default: phases)
+# Valid values: phases | tasks | single-session
+implement_method: phases
 ```
+
+> **Note**: Use `agent_preset` to select a built-in agent or `custom_agent` for custom configurations. See [agents.md](./agents.md) for details.
 
 **Configuration Priority** (highest to lowest):
 1. Environment variables (`AUTOSPEC_*`)

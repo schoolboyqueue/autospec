@@ -73,7 +73,7 @@ func TestDocumentationLineCount(t *testing.T) {
 		t.Fatalf("Failed to find repository root: %v", err)
 	}
 
-	maxLines := 950 // Allow for comprehensive documentation including troubleshooting guides and command reference
+	maxLines := 1150 // Allow for comprehensive documentation including troubleshooting guides, command reference, agent configuration, worktree commands, and new features
 
 	for _, file := range docFiles {
 		path := filepath.Join(repoRoot, "docs", file)
@@ -365,7 +365,7 @@ func TestMermaidDiagrams(t *testing.T) {
 // Test that all CLI commands are documented in reference.md
 func TestCommandCompleteness(t *testing.T) {
 	requiredCommands := []string{
-		"autospec full",
+		"autospec all",
 		"autospec prep",
 		"autospec specify",
 		"autospec plan",
@@ -401,13 +401,13 @@ func TestCommandCompleteness(t *testing.T) {
 // Test that all configuration options are documented in reference.md
 func TestConfigCompleteness(t *testing.T) {
 	requiredConfigOptions := []string{
-		"claude_cmd",
+		"agent_preset",
 		"max_retries",
 		"specs_dir",
 		"state_dir",
 		"timeout",
 		"skip_preflight",
-		"custom_claude_cmd",
+		"custom_agent",
 	}
 
 	repoRoot, err := findRepoRoot()

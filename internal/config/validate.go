@@ -105,13 +105,6 @@ func ValidateYAMLSyntaxFromBytes(data []byte, filePath string) error {
 // Returns nil if valid, or a ValidationError with field information if invalid.
 func ValidateConfigValues(cfg *Configuration, filePath string) error {
 	// Required string fields
-	if cfg.ClaudeCmd == "" {
-		return &ValidationError{
-			FilePath: filePath,
-			Field:    "claude_cmd",
-			Message:  "is required",
-		}
-	}
 	if cfg.SpecsDir == "" {
 		return &ValidationError{
 			FilePath: filePath,
@@ -145,15 +138,6 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 		}
 	}
 
-	// CustomClaudeCmd must contain {{PROMPT}} placeholder if specified
-	if cfg.CustomClaudeCmd != "" && !strings.Contains(cfg.CustomClaudeCmd, "{{PROMPT}}") {
-		return &ValidationError{
-			FilePath: filePath,
-			Field:    "custom_claude_cmd",
-			Message:  "must contain {{PROMPT}} placeholder",
-		}
-	}
-
 	// ImplementMethod: must be one of "single-session", "phases", "tasks", or empty (uses default)
 	if cfg.ImplementMethod != "" {
 		validMethods := []string{"single-session", "phases", "tasks"}
@@ -176,6 +160,17 @@ func ValidateConfigValues(cfg *Configuration, filePath string) error {
 	// Validate notification settings
 	if err := validateNotificationConfig(&cfg.Notifications, filePath); err != nil {
 		return err
+	}
+
+	// Validate output_style if specified
+	if cfg.OutputStyle != "" {
+		if err := ValidateOutputStyle(cfg.OutputStyle); err != nil {
+			return &ValidationError{
+				FilePath: filePath,
+				Field:    "output_style",
+				Message:  err.Error(),
+			}
+		}
 	}
 
 	return nil

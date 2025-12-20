@@ -1,4 +1,4 @@
-.PHONY: help build build-all install clean test test-go lint lint-go lint-bash fmt vet run dev dev-setup deps snapshot release patch minor major version worktree worktree-list worktree-remove h w b i c t l f r d s p v
+.PHONY: help build build-all install install-prod clean test test-go lint lint-go lint-bash fmt vet run dev dev-setup deps snapshot release patch minor major version worktree worktree-list worktree-remove h w b i ip c t l f r d s p v
 
 # Variables
 BINARY_NAME=autospec
@@ -10,14 +10,17 @@ COMMIT=$(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE=$(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 MODULE_PATH=github.com/ariel-frischer/autospec
 
-# Build flags
-LDFLAGS=-ldflags="-X ${MODULE_PATH}/internal/cli.Version=${VERSION} \
-                   -X ${MODULE_PATH}/internal/cli.Commit=${COMMIT} \
-                   -X ${MODULE_PATH}/internal/cli.BuildDate=${BUILD_DATE} \
+# Build flags - set version info in both util (for display) and build (for feature flags)
+LDFLAGS=-ldflags="-X ${MODULE_PATH}/internal/cli/util.Version=${VERSION} \
+                   -X ${MODULE_PATH}/internal/cli/util.Commit=${COMMIT} \
+                   -X ${MODULE_PATH}/internal/cli/util.BuildDate=${BUILD_DATE} \
+                   -X ${MODULE_PATH}/internal/build.Version=${VERSION} \
+                   -X ${MODULE_PATH}/internal/build.Commit=${COMMIT} \
+                   -X ${MODULE_PATH}/internal/build.BuildDate=${BUILD_DATE} \
                    -s -w"
 
 # Version management (for autobump)
-CURRENT_VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+CURRENT_VERSION := $(shell git tag --sort=-v:refname 2>/dev/null | head -1 || echo "v0.0.0")
 MAJOR := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f1)
 MINOR := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f2)
 PATCH := $(shell echo $(CURRENT_VERSION) | sed 's/v//' | cut -d. -f3)
@@ -91,6 +94,9 @@ install: build ## Install binary to ~/.local/bin
 		echo "Or start a new terminal session."; \
 	fi
 
+install-prod: ## Install with production version (from git tag)
+	@$(MAKE) install VERSION=$(CURRENT_VERSION)
+
 ##@ Development
 
 run: build ## Build and run the binary
@@ -143,6 +149,19 @@ test-integration: ## Run integration tests
 test-all: test-go test-integration ## Run all tests including integration
 
 test: test-go ## Run all tests
+
+test-summary: ## Show test statistics summary
+	@./scripts/test-summary.sh
+
+test-cover: ## Show detailed coverage by package
+	@go test ./... -cover -coverprofile=coverage.out 2>&1
+	@echo ""
+	@echo "📈 Coverage Summary:"
+	@go tool cover -func=coverage.out | tail -1
+	@echo ""
+	@echo "Top 10 packages by coverage:"
+	@go tool cover -func=coverage.out | grep -v "total:" | sort -t: -k3 -rn | head -10
+	@rm -f coverage.out
 
 ##@ Linting
 
@@ -267,6 +286,7 @@ h: help     ## help
 w: worktree ## worktree
 b: build    ## build
 i: install  ## install
+ip: install-prod ## install-prod
 c: clean    ## clean
 t: test     ## test
 l: lint     ## lint

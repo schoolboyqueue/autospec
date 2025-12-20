@@ -13,7 +13,6 @@ module github.com/ariel-frischer/autospec
 go 1.25.1
 
 require (
-
 	// Koanf configuration management library (224K total for all koanf packages)
 	// Provides flexible config loading from multiple sources with priority ordering
 	github.com/knadh/koanf/parsers/json v1.0.0 // JSON parser for config files
@@ -61,7 +60,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect; indirect - Reflection-based struct walking (36K)
 	github.com/pmezard/go-difflib v1.0.0 // indirect; indirect - Diff library (36K source, 0 KB in binary)
 	github.com/spf13/pflag v1.0.9 // indirect; indirect - POSIX/GNU-style flags (312K)
-	golang.org/x/sys v0.37.0 // indirect; indirect - Low-level OS primitives (9.0M) ⚠️ LARGEST DEPENDENCY
+	golang.org/x/sys v0.39.0 // indirect - Low-level OS primitives (9.0M) ⚠️ LARGEST DEPENDENCY
 )
 
 require (
@@ -69,7 +68,12 @@ require (
 	golang.org/x/term v0.35.0
 )
 
-require github.com/knadh/koanf/parsers/yaml v0.1.0
+require (
+	github.com/knadh/koanf/parsers/yaml v0.1.0
+	golang.org/x/sync v0.19.0
+)
+
+require github.com/ariel-frischer/claude-clean v0.2.0
 
 require (
 	// Terminal colors with auto-detection (used in errors package)

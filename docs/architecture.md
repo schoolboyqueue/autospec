@@ -223,9 +223,13 @@ Internal package organization:
 
 ```
 internal/
-├── cli/          # Cobra CLI commands (root, run, all, prep, specify, plan, tasks,
-│                 # implement, constitution, clarify, checklist, analyze, update_task,
-│                 # update_agent_context, clean, uninstall, doctor, status, config, init, version)
+├── cli/          # Cobra CLI commands
+│   ├── stages/   # Stage commands (specify, plan, tasks, implement)
+│   ├── config/   # Configuration commands (init, config, migrate, doctor)
+│   ├── util/     # Utility commands (status, history, version, clean, view)
+│   ├── admin/    # Admin commands (commands, completion, uninstall)
+│   ├── worktree/ # Worktree management commands (create, list, remove, prune)
+│   └── shared/   # Shared types and constants
 ├── workflow/     # Workflow orchestration and execution
 │   ├── orchestrator.go    # WorkflowOrchestrator - high-level coordination
 │   ├── stage_executor.go  # StageExecutor - specify/plan/tasks/constitution/clarify/etc.
@@ -243,12 +247,21 @@ internal/
 ├── spec/         # Spec detection (git branch, directory scan)
 ├── git/          # Git helpers (branch name, repo status)
 ├── agent/        # Agent context file management (update CLAUDE.md, etc.)
+├── cliagent/     # CLI agent abstraction and Configurator interface
+├── claude/       # Claude-specific integration
 ├── health/       # Dependency verification
 ├── progress/     # Spinner display for operations
 ├── yaml/         # YAML parsing utilities
 ├── clean/        # Project cleanup functions
 ├── uninstall/    # System uninstall functions
-└── errors/       # Custom error types
+├── errors/       # Custom error types
+├── lifecycle/    # Command lifecycle wrapper for notifications and history
+├── notify/       # Notification system (sound, visual)
+├── history/      # Command history persistence
+├── completion/   # Shell completion generation
+├── worktree/     # Git worktree management logic
+├── dag/          # DAG support for parallel task execution
+└── testutil/     # Test utilities and helpers
 ```
 
 ## Execution Flow
@@ -267,7 +280,7 @@ sequenceDiagram
     participant V as Validation
     participant R as Retry State
 
-    U->>CLI: autospec full "feature"
+    U->>CLI: autospec all "feature"
     CLI->>O: RunFullWorkflow()
 
     Note over O: Phase 1: Specify
@@ -464,13 +477,20 @@ func DetectCurrentSpec() (*SpecMetadata, error) {
 ### Claude Integration
 
 **Methods**:
-1. **CLI Mode** (default): Execute `claude` command via shell
+1. **Preset Mode** (default): Use a registered agent preset
 2. **Custom Mode**: User-defined command with `{{PROMPT}}` placeholder
 
 **Configuration**:
 ```yaml
-claude_cmd: claude
-custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
+# Using a preset
+agent_preset: claude
+
+# Or custom configuration
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "claude -p {{PROMPT}} | process-output"
 ```
 
 **Prompt Injection**:

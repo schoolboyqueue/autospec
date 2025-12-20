@@ -80,6 +80,7 @@ func init() {
 	rootCmd.PersistentFlags().Bool("skip-preflight", false, "Skip pre-flight validation checks")
 	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Enable debug logging")
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
+	rootCmd.PersistentFlags().String("output-style", "", "Output formatting style: default, compact, minimal, plain, raw")
 
 	// Register commands from subpackages
 	stages.Register(rootCmd)

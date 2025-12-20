@@ -146,24 +146,24 @@ See [docs/reference.md](docs/reference.md) for complete configuration documentat
 All config options can be set via environment variables with `AUTOSPEC_` prefix:
 
 ```bash
-export AUTOSPEC_CLAUDE_CMD="claude"
+export AUTOSPEC_AGENT_PRESET="claude"
 export AUTOSPEC_MAX_RETRIES=5
 export AUTOSPEC_SPECS_DIR="./features"
 export AUTOSPEC_SKIP_PREFLIGHT=true
 export AUTOSPEC_TIMEOUT=600
 ```
 
-### Custom Claude Command
+### Custom Agent Command
 
-Use `custom_claude_cmd` with a `{{PROMPT}}` placeholder for wrapper scripts:
+Use `custom_agent_cmd` with a `{{PROMPT}}` placeholder for wrapper scripts:
 
 ```yaml
-custom_claude_cmd: "my-wrapper {{PROMPT}}"
+custom_agent_cmd: "my-wrapper {{PROMPT}}"
 ```
 
 Or via environment variable:
 ```bash
-export AUTOSPEC_CUSTOM_CLAUDE_CMD="my-wrapper {{PROMPT}}"
+export AUTOSPEC_CUSTOM_AGENT_CMD="my-wrapper {{PROMPT}}"
 ```
 
 ## Testing

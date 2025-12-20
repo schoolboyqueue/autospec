@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ariel-frischer/autospec/internal/cliagent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +38,7 @@ func TestLoad_Defaults(t *testing.T) {
 	// Load with empty config path (defaults only)
 	cfg, err := Load("")
 	require.NoError(t, err)
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
+	assert.Equal(t, "", cfg.AgentPreset) // Default: use default claude agent
 	assert.Equal(t, 0, cfg.MaxRetries)
 	assert.Equal(t, "./specs", cfg.SpecsDir)
 }
@@ -51,25 +52,25 @@ func TestLoad_LocalOverride(t *testing.T) {
 	// Write local config
 	configContent := `{
 		"max_retries": 5,
-		"claude_cmd": "custom-claude"
+		"agent_preset": "claude"
 	}`
 	err := os.WriteFile(configPath, []byte(configContent), 0644)
 	require.NoError(t, err)
 
 	cfg, err := Load(configPath)
 	require.NoError(t, err)
-	assert.Equal(t, "custom-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "claude", cfg.AgentPreset)
 	assert.Equal(t, 5, cfg.MaxRetries)
 }
 
 func TestLoad_EnvOverride(t *testing.T) {
 	// Set environment variable
 	t.Setenv("AUTOSPEC_MAX_RETRIES", "7")
-	t.Setenv("AUTOSPEC_CLAUDE_CMD", "env-claude")
+	t.Setenv("AUTOSPEC_AGENT_PRESET", "gemini")
 
 	cfg, err := Load("")
 	require.NoError(t, err)
-	assert.Equal(t, "env-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 7, cfg.MaxRetries)
 }
 
@@ -87,22 +88,6 @@ func TestLoad_ValidationError_MaxRetriesOutOfRange(t *testing.T) {
 	_, err = Load(configPath)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "validation failed")
-}
-
-func TestLoad_ValidationError_CustomClaudeCmd(t *testing.T) {
-	t.Parallel()
-
-	tmpDir := t.TempDir()
-	configPath := filepath.Join(tmpDir, "config.json")
-
-	// Write invalid custom_claude_cmd (missing {{PROMPT}})
-	configContent := `{"custom_claude_cmd": "claude --no-prompt"}`
-	err := os.WriteFile(configPath, []byte(configContent), 0644)
-	require.NoError(t, err)
-
-	_, err = Load(configPath)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "{{PROMPT}}")
 }
 
 func TestExpandHomePath(t *testing.T) {
@@ -146,7 +131,7 @@ func TestLoad_OverridePrecedence(t *testing.T) {
 
 	// Write user config (lower priority)
 	userPath := filepath.Join(userConfigDir, "config.yml")
-	userContent := `claude_cmd: user-claude
+	userContent := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -176,8 +161,8 @@ state_dir: "~/.autospec/state"
 
 	// Environment should win for max_retries
 	assert.Equal(t, 8, cfg.MaxRetries)
-	// User config value for claude_cmd (project config doesn't override it)
-	assert.Equal(t, "user-claude", cfg.ClaudeCmd)
+	// User config value for agent_preset (project config doesn't override it)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 }
 
 // Timeout Configuration Tests
@@ -326,7 +311,7 @@ func TestLoad_YAMLConfig(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yml")
 
 	// Write YAML config
-	configContent := `claude_cmd: custom-claude
+	configContent := `agent_preset: claude
 max_retries: 5
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -339,7 +324,7 @@ state_dir: "~/.autospec/state"
 		SkipWarnings:      true,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "custom-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "claude", cfg.AgentPreset)
 	assert.Equal(t, 5, cfg.MaxRetries)
 }
 
@@ -350,10 +335,7 @@ func TestLoad_YAMLConfigWithNestedValues(t *testing.T) {
 	configPath := filepath.Join(tmpDir, "config.yml")
 
 	// Write YAML config with all values
-	configContent := `claude_cmd: claude
-claude_args:
-  - "-p"
-  - "--verbose"
+	configContent := `agent_preset: gemini
 max_retries: 3
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -369,8 +351,7 @@ skip_confirmations: false
 		SkipWarnings:      true,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
-	assert.Equal(t, []string{"-p", "--verbose"}, cfg.ClaudeArgs)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.True(t, cfg.SkipPreflight)
 	assert.Equal(t, 300, cfg.Timeout)
 }
@@ -395,7 +376,7 @@ func TestLoad_YAMLEmptyFile(t *testing.T) {
 	})
 	require.NoError(t, err)
 	// Should use defaults
-	assert.Equal(t, "claude", cfg.ClaudeCmd)
+	assert.Equal(t, "", cfg.AgentPreset) // Empty preset means use default claude agent
 	assert.Equal(t, 0, cfg.MaxRetries)
 }
 
@@ -405,8 +386,8 @@ func TestLoad_YAMLInvalidSyntax(t *testing.T) {
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yml")
 
-	// Write invalid YAML
-	invalidYAML := `claude_cmd: "claude
+	// Write invalid YAML (unclosed quote)
+	invalidYAML := `agent_preset: "claude
 max_retries: 3
 `
 	err := os.WriteFile(configPath, []byte(invalidYAML), 0644)
@@ -460,12 +441,12 @@ func TestLoad_YAMLTakesPrecedenceOverJSON(t *testing.T) {
 	require.NoError(t, os.MkdirAll(filepath.Dir(yamlPath), 0755))
 
 	// Write both YAML and JSON configs
-	yamlContent := `claude_cmd: yaml-claude
+	yamlContent := `agent_preset: gemini
 max_retries: 7
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
 `
-	jsonContent := `{"claude_cmd": "json-claude", "max_retries": 5}`
+	jsonContent := `{"agent_preset": "claude", "max_retries": 5}`
 
 	require.NoError(t, os.WriteFile(yamlPath, []byte(yamlContent), 0644))
 	require.NoError(t, os.WriteFile(jsonPath, []byte(jsonContent), 0644))
@@ -493,7 +474,7 @@ state_dir: "~/.autospec/state"
 	require.NoError(t, err)
 
 	// YAML values should be used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 7, cfg.MaxRetries)
 
 	// Should have warning about ignored JSON
@@ -504,7 +485,7 @@ state_dir: "~/.autospec/state"
 		t.Logf("Warning text: %s", warningText)
 	}
 	// The key assertion is that YAML values are used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd, "YAML should take precedence")
+	assert.Equal(t, "gemini", cfg.AgentPreset, "YAML should take precedence")
 }
 
 func TestLoad_UserAndProjectPrecedence(t *testing.T) {
@@ -520,7 +501,7 @@ func TestLoad_UserAndProjectPrecedence(t *testing.T) {
 	require.NoError(t, os.MkdirAll(projectDir, 0755))
 
 	// Write user config (lower priority)
-	userConfig := `claude_cmd: user-claude
+	userConfig := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -549,8 +530,8 @@ timeout: 300
 	})
 	require.NoError(t, err)
 
-	// User value for claude_cmd
-	assert.Equal(t, "user-claude", cfg.ClaudeCmd)
+	// User value for agent_preset
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	// Project value for max_retries (overrides user)
 	assert.Equal(t, 5, cfg.MaxRetries)
 	// Project value for timeout (overrides user)
@@ -566,7 +547,7 @@ func TestLoad_EnvOverridesAll(t *testing.T) {
 	require.NoError(t, os.MkdirAll(projectDir, 0755))
 
 	// Write project config
-	projectConfig := `claude_cmd: project-claude
+	projectConfig := `agent_preset: claude
 max_retries: 5
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -589,8 +570,8 @@ state_dir: "~/.autospec/state"
 
 	// Environment should override project config
 	assert.Equal(t, 9, cfg.MaxRetries)
-	// Project value for claude_cmd
-	assert.Equal(t, "project-claude", cfg.ClaudeCmd)
+	// Project value for agent_preset
+	assert.Equal(t, "claude", cfg.AgentPreset)
 }
 
 func TestLoad_UserYAMLWithLegacyJSONWarning(t *testing.T) {
@@ -607,7 +588,7 @@ func TestLoad_UserYAMLWithLegacyJSONWarning(t *testing.T) {
 
 	// Write user YAML config
 	userYAMLPath := filepath.Join(userConfigDir, "config.yml")
-	userYAMLContent := `claude_cmd: yaml-claude
+	userYAMLContent := `agent_preset: gemini
 max_retries: 2
 specs_dir: "./specs"
 state_dir: "~/.autospec/state"
@@ -616,7 +597,7 @@ state_dir: "~/.autospec/state"
 
 	// Write legacy JSON config
 	legacyJSONPath := filepath.Join(legacyUserDir, "config.json")
-	legacyJSONContent := `{"claude_cmd": "json-claude", "max_retries": 5}`
+	legacyJSONContent := `{"agent_preset": "claude", "max_retries": 5}`
 	require.NoError(t, os.WriteFile(legacyJSONPath, []byte(legacyJSONContent), 0644))
 
 	// Set environment to use temp directories
@@ -631,7 +612,7 @@ state_dir: "~/.autospec/state"
 	require.NoError(t, err)
 
 	// YAML values should be used
-	assert.Equal(t, "yaml-claude", cfg.ClaudeCmd)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
 	assert.Equal(t, 2, cfg.MaxRetries)
 
 	// Should warn about legacy JSON being ignored
@@ -648,7 +629,7 @@ func TestLoad_InvalidUserYAMLSyntax(t *testing.T) {
 
 	// Write invalid user YAML config
 	userYAMLPath := filepath.Join(userConfigDir, "config.yml")
-	invalidYAMLContent := `claude_cmd: "unclosed quote
+	invalidYAMLContent := `agent_preset: "unclosed quote
 max_retries: 3
 `
 	require.NoError(t, os.WriteFile(userYAMLPath, []byte(invalidYAMLContent), 0644))
@@ -841,4 +822,145 @@ func TestLoad_AUTOSPEC_YESEnvVar(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.True(t, cfg.SkipConfirmations, "AUTOSPEC_YES should set SkipConfirmations to true")
+}
+
+// Agent Configuration Tests
+
+func TestConfiguration_GetAgent_Priority(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		cfg      Configuration
+		wantName string
+		wantErr  bool
+	}{
+		"default returns claude": {
+			cfg:      Configuration{},
+			wantName: "claude",
+		},
+		"agent_preset gemini": {
+			cfg: Configuration{
+				AgentPreset: "gemini",
+			},
+			wantName: "gemini",
+		},
+		"custom_agent takes highest precedence": {
+			cfg: Configuration{
+				CustomAgent: &cliagent.CustomAgentConfig{
+					Command: "echo",
+					Args:    []string{"{{PROMPT}}"},
+				},
+				AgentPreset: "gemini",
+			},
+			wantName: "custom",
+		},
+		"unknown agent_preset returns error": {
+			cfg: Configuration{
+				AgentPreset: "nonexistent-agent",
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			agent, err := tt.cfg.GetAgent()
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.wantName, agent.Name())
+		})
+	}
+}
+
+func TestConfiguration_GetAgent_AllPresets(t *testing.T) {
+	t.Parallel()
+
+	presets := []string{"claude", "cline", "gemini", "codex", "opencode", "goose"}
+	for _, preset := range presets {
+		t.Run(preset, func(t *testing.T) {
+			t.Parallel()
+			cfg := Configuration{AgentPreset: preset}
+			agent, err := cfg.GetAgent()
+			require.NoError(t, err)
+			assert.Equal(t, preset, agent.Name())
+		})
+	}
+}
+
+func TestLoad_AgentPresetFromYAML(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	projectConfigPath := filepath.Join(tmpDir, "project-config.yml")
+	userConfigPath := filepath.Join(tmpDir, "user-config.yml")
+
+	// Create empty mock user config to isolate from real user config
+	err := os.WriteFile(userConfigPath, []byte(""), 0644)
+	require.NoError(t, err)
+
+	configContent := `agent_preset: gemini
+specs_dir: "./specs"
+state_dir: "~/.autospec/state"
+`
+	err = os.WriteFile(projectConfigPath, []byte(configContent), 0644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithOptions(LoadOptions{
+		ProjectConfigPath: projectConfigPath,
+		UserConfigPath:    userConfigPath,
+		SkipWarnings:      true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "gemini", cfg.AgentPreset)
+
+	agent, err := cfg.GetAgent()
+	require.NoError(t, err)
+	assert.Equal(t, "gemini", agent.Name())
+}
+
+func TestLoad_CustomAgentFromYAML(t *testing.T) {
+	t.Parallel()
+
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yml")
+
+	configContent := `custom_agent:
+  command: aider
+  args:
+    - "--model"
+    - "sonnet"
+    - "--message"
+    - "{{PROMPT}}"
+specs_dir: "./specs"
+state_dir: "~/.autospec/state"
+`
+	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithOptions(LoadOptions{
+		ProjectConfigPath: configPath,
+		SkipWarnings:      true,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, cfg.CustomAgent)
+	assert.Equal(t, "aider", cfg.CustomAgent.Command)
+
+	agent, err := cfg.GetAgent()
+	require.NoError(t, err)
+	assert.Equal(t, "custom", agent.Name())
+}
+
+func TestLoad_AgentPresetFromEnv(t *testing.T) {
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
+	t.Setenv("AUTOSPEC_AGENT_PRESET", "cline")
+
+	cfg, err := LoadWithOptions(LoadOptions{SkipWarnings: true})
+	require.NoError(t, err)
+	assert.Equal(t, "cline", cfg.AgentPreset)
 }

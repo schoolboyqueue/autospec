@@ -64,6 +64,9 @@ The feature description should be a clear, concise description of what you want 
 		notifHandler := notify.NewHandler(cfg.Notifications)
 		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 
+		// Show security notice (once per user)
+		shared.ShowSecurityNotice(cmd.OutOrStdout(), cfg)
+
 		// Wrap command execution with lifecycle for timing, notification, and history
 		// Note: spec name is empty for specify since we're creating a new spec
 		return lifecycle.RunWithHistory(notifHandler, historyLogger, "specify", "", func() error {
@@ -77,6 +80,11 @@ The feature description should be a clear, concise description of what you want 
 				cfg.MaxRetries = maxRetries
 			}
 
+			// Apply agent override from --agent flag
+			if _, err := shared.ApplyAgentOverride(cmd, cfg); err != nil {
+				return err
+			}
+
 			// Check if constitution exists (required for specify)
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
@@ -87,6 +95,9 @@ The feature description should be a clear, concise description of what you want 
 			// Create workflow orchestrator
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
+
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
 
 			// Execute specify stage
 			specName, execErr := orch.ExecuteSpecify(featureDescription)
@@ -105,4 +116,7 @@ func init() {
 
 	// Command-specific flags
 	specifyCmd.Flags().IntP("max-retries", "r", 0, "Override max retry attempts (overrides config when set)")
+
+	// Agent override flag
+	shared.AddAgentFlag(specifyCmd)
 }

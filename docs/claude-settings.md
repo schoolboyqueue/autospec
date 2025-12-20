@@ -149,22 +149,29 @@ autospec doctor
 
 ```yaml
 # ~/.config/autospec/config.yml
-claude_args:
-  - -p
-  - --dangerously-skip-permissions
-  - --verbose
-  - --output-format
-  - stream-json
+custom_agent:
+  command: claude
+  args:
+    - -p
+    - --dangerously-skip-permissions
+    - --verbose
+    - --output-format
+    - stream-json
+    - "{{PROMPT}}"
 ```
 
 The sandbox provides OS-level isolation even when permission prompts are bypassed.
 
-### Custom Claude Command
+### Custom Claude Command with cclean
 
 For piping through [cclean](https://github.com/ariel-frischer/claude-clean):
 
 ```yaml
-custom_claude_cmd: "ANTHROPIC_API_KEY='' claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | cclean"
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "ANTHROPIC_API_KEY='' claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | cclean"
 ```
 
 ## Manual bubblewrap Wrapper
@@ -188,6 +195,64 @@ Key flags:
 - `--tmpfs /tmp`: Isolated temp directory
 - `--unshare-pid`: PID namespace isolation
 - `--unshare-net`: Full network isolation (breaks most workflows)
+
+## Sandbox vs --dangerously-skip-permissions
+
+These are **two separate security layers** that work independently:
+
+| Layer | What it does | Enforced by |
+|-------|--------------|-------------|
+| **Sandbox** | Restricts filesystem to CWD, limits network to allowed domains | OS-level (bubblewrap/seatbelt) |
+| **Permission prompts** | Requires user approval for file edits, bash commands, etc. | Claude Code CLI |
+
+### Key Interaction Behavior
+
+| Sandbox | --dangerously-skip-permissions | Result |
+|---------|-------------------------------|--------|
+| Enabled | Yes | Commands auto-run but **cannot escape CWD** - safe automation |
+| Enabled | No | Commands prompt for approval, stay confined to CWD |
+| Disabled | Yes | Commands auto-run with **full system access** - dangerous |
+| Disabled | No | Commands prompt for approval, have full system access if approved |
+
+**Critical insight**: `--dangerously-skip-permissions` only skips the permission prompts—it does **not** bypass sandbox restrictions. When sandbox is enabled, Claude cannot:
+
+- Edit files outside the current working directory
+- Access `~/.ssh`, `~/.bashrc`, or other sensitive paths
+- Connect to non-allowed network domains
+
+This makes **sandbox + skip-permissions** a safe combination for automation: you get unattended execution while maintaining OS-level isolation.
+
+### Recommended Full Automation Setup
+
+```yaml
+# ~/.config/autospec/config.yml
+custom_agent:
+  command: "claude"
+  args:
+    - "-p"
+    - "--dangerously-skip-permissions"
+    - "--verbose"
+    - "--output-format"
+    - "stream-json"
+    - "{{PROMPT}}"
+  post_processor: "cclean"
+```
+
+Combined with sandbox enabled in `.claude/settings.local.json`:
+
+```json
+{
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  }
+}
+```
+
+This provides:
+- Unattended automation (no permission prompts)
+- OS-level filesystem isolation (can't escape project directory)
+- Readable output via cclean
 
 ## Security Considerations
 

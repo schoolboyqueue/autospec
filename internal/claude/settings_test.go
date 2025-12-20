@@ -299,6 +299,63 @@ func TestAddPermission(t *testing.T) {
 	}
 }
 
+func TestAddPermissions(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		initialAllow  []string
+		permsToAdd    []string
+		wantAdded     []string
+		wantFinalList []string
+	}{
+		"add multiple to empty list": {
+			initialAllow:  nil,
+			permsToAdd:    []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+			wantAdded:     []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+			wantFinalList: []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+		},
+		"add multiple to existing list": {
+			initialAllow:  []string{"Bash(foo:*)"},
+			permsToAdd:    []string{"Bash(autospec:*)", "Edit(.autospec/**)"},
+			wantAdded:     []string{"Bash(autospec:*)", "Edit(.autospec/**)"},
+			wantFinalList: []string{"Bash(foo:*)", "Bash(autospec:*)", "Edit(.autospec/**)"},
+		},
+		"skip duplicates": {
+			initialAllow:  []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+			permsToAdd:    []string{"Bash(autospec:*)", "Write(.autospec/**)", "Edit(specs/**)"},
+			wantAdded:     []string{"Edit(specs/**)"},
+			wantFinalList: []string{"Bash(autospec:*)", "Write(.autospec/**)", "Edit(specs/**)"},
+		},
+		"all duplicates returns empty": {
+			initialAllow:  []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+			permsToAdd:    []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+			wantAdded:     nil,
+			wantFinalList: []string{"Bash(autospec:*)", "Write(.autospec/**)"},
+		},
+		"empty input returns nil": {
+			initialAllow:  []string{"Bash(autospec:*)"},
+			permsToAdd:    []string{},
+			wantAdded:     nil,
+			wantFinalList: []string{"Bash(autospec:*)"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			if tt.initialAllow != nil {
+				setAllowList(s, tt.initialAllow)
+			}
+
+			added := s.AddPermissions(tt.permsToAdd)
+
+			assert.Equal(t, tt.wantAdded, added)
+			assert.Equal(t, tt.wantFinalList, s.getAllowList())
+		})
+	}
+}
+
 func TestSave(t *testing.T) {
 	t.Parallel()
 
@@ -505,4 +562,359 @@ func setDenyList(s *Settings, perms []string) {
 		deny[i] = p
 	}
 	permData["deny"] = deny
+}
+
+func TestIsSandboxEnabled(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup func(s *Settings)
+		want  bool
+	}{
+		"no sandbox config": {
+			setup: func(s *Settings) {},
+			want:  false,
+		},
+		"sandbox disabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": false}
+			},
+			want: false,
+		},
+		"sandbox enabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": true}
+			},
+			want: true,
+		},
+		"sandbox missing enabled field": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"other": "value"}
+			},
+			want: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			tt.setup(s)
+
+			got := s.IsSandboxEnabled()
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestEnableSandbox(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup         func(s *Settings)
+		wantEnabled   bool
+		wantPreserved map[string]interface{}
+	}{
+		"enables sandbox when not configured": {
+			setup:       func(s *Settings) {},
+			wantEnabled: true,
+		},
+		"enables sandbox when disabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": false}
+			},
+			wantEnabled: true,
+		},
+		"no-op when already enabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": true}
+			},
+			wantEnabled: true,
+		},
+		"preserves existing sandbox config": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"enabled":                   false,
+					"additionalAllowWritePaths": []interface{}{"path1", "path2"},
+				}
+			},
+			wantEnabled: true,
+			wantPreserved: map[string]interface{}{
+				"additionalAllowWritePaths": []interface{}{"path1", "path2"},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			tt.setup(s)
+
+			s.EnableSandbox()
+
+			assert.Equal(t, tt.wantEnabled, s.IsSandboxEnabled())
+
+			if tt.wantPreserved != nil {
+				sandbox := s.data["sandbox"].(map[string]interface{})
+				for k, v := range tt.wantPreserved {
+					assert.Equal(t, v, sandbox[k], "preserved field %s", k)
+				}
+			}
+		})
+	}
+}
+
+func TestGetAdditionalWritePaths(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup func(s *Settings)
+		want  []string
+	}{
+		"no sandbox config": {
+			setup: func(s *Settings) {},
+			want:  nil,
+		},
+		"empty paths": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"additionalAllowWritePaths": []interface{}{},
+				}
+			},
+			want: []string{},
+		},
+		"with paths": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"additionalAllowWritePaths": []interface{}{
+						"~/.autospec/state",
+						".autospec",
+					},
+				}
+			},
+			want: []string{"~/.autospec/state", ".autospec"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			tt.setup(s)
+
+			got := s.GetAdditionalWritePaths()
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestHasWritePath(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		existingPaths []string
+		checkPath     string
+		want          bool
+	}{
+		"empty paths": {
+			existingPaths: nil,
+			checkPath:     "~/.autospec/state",
+			want:          false,
+		},
+		"path exists": {
+			existingPaths: []string{"~/.autospec/state", ".autospec"},
+			checkPath:     "~/.autospec/state",
+			want:          true,
+		},
+		"path not found": {
+			existingPaths: []string{"~/.autospec/state", ".autospec"},
+			checkPath:     "specs",
+			want:          false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			if tt.existingPaths != nil {
+				setSandboxPaths(s, tt.existingPaths)
+			}
+
+			got := s.HasWritePath(tt.checkPath)
+
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestAddWritePaths(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		existingPaths []string
+		pathsToAdd    []string
+		wantAdded     []string
+		wantFinal     []string
+	}{
+		"add to empty": {
+			existingPaths: nil,
+			pathsToAdd:    []string{"~/.autospec/state", ".autospec"},
+			wantAdded:     []string{"~/.autospec/state", ".autospec"},
+			wantFinal:     []string{"~/.autospec/state", ".autospec"},
+		},
+		"add to existing": {
+			existingPaths: []string{"/existing/path"},
+			pathsToAdd:    []string{"~/.autospec/state"},
+			wantAdded:     []string{"~/.autospec/state"},
+			wantFinal:     []string{"/existing/path", "~/.autospec/state"},
+		},
+		"skip duplicates": {
+			existingPaths: []string{"~/.autospec/state"},
+			pathsToAdd:    []string{"~/.autospec/state", ".autospec"},
+			wantAdded:     []string{".autospec"},
+			wantFinal:     []string{"~/.autospec/state", ".autospec"},
+		},
+		"all duplicates": {
+			existingPaths: []string{"~/.autospec/state", ".autospec"},
+			pathsToAdd:    []string{"~/.autospec/state", ".autospec"},
+			wantAdded:     nil,
+			wantFinal:     []string{"~/.autospec/state", ".autospec"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			if tt.existingPaths != nil {
+				setSandboxPaths(s, tt.existingPaths)
+			}
+
+			added := s.AddWritePaths(tt.pathsToAdd)
+
+			assert.Equal(t, tt.wantAdded, added)
+			assert.Equal(t, tt.wantFinal, s.GetAdditionalWritePaths())
+		})
+	}
+}
+
+func TestGetSandboxConfigDiff(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		setup         func(s *Settings)
+		requiredPaths []string
+		wantToAdd     []string
+		wantExisting  []string
+		wantEnabled   bool
+	}{
+		"all paths need adding": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": true}
+			},
+			requiredPaths: []string{"~/.autospec/state", ".autospec"},
+			wantToAdd:     []string{"~/.autospec/state", ".autospec"},
+			wantExisting:  nil,
+			wantEnabled:   true,
+		},
+		"some paths exist": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"enabled":                   true,
+					"additionalAllowWritePaths": []interface{}{"~/.autospec/state"},
+				}
+			},
+			requiredPaths: []string{"~/.autospec/state", ".autospec", "specs"},
+			wantToAdd:     []string{".autospec", "specs"},
+			wantExisting:  []string{"~/.autospec/state"},
+			wantEnabled:   true,
+		},
+		"all paths exist": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{
+					"enabled": true,
+					"additionalAllowWritePaths": []interface{}{
+						"~/.autospec/state",
+						".autospec",
+					},
+				}
+			},
+			requiredPaths: []string{"~/.autospec/state", ".autospec"},
+			wantToAdd:     nil,
+			wantExisting:  []string{"~/.autospec/state", ".autospec"},
+			wantEnabled:   true,
+		},
+		"sandbox disabled": {
+			setup: func(s *Settings) {
+				s.data["sandbox"] = map[string]interface{}{"enabled": false}
+			},
+			requiredPaths: []string{"~/.autospec/state"},
+			wantToAdd:     []string{"~/.autospec/state"},
+			wantExisting:  nil,
+			wantEnabled:   false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			s := &Settings{data: make(map[string]interface{})}
+			tt.setup(s)
+
+			diff := s.GetSandboxConfigDiff(tt.requiredPaths)
+
+			assert.Equal(t, tt.wantToAdd, diff.PathsToAdd)
+			assert.Equal(t, tt.wantExisting, diff.ExistingPaths)
+			assert.Equal(t, tt.wantEnabled, diff.Enabled)
+		})
+	}
+}
+
+func TestSandboxRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+
+	original := `{
+  "sandbox": {
+    "enabled": true,
+    "additionalAllowWritePaths": ["/existing/path"]
+  }
+}`
+	createSettingsFile(t, dir, original)
+
+	// Load
+	s, err := Load(dir)
+	require.NoError(t, err)
+
+	// Add new paths
+	added := s.AddWritePaths([]string{"~/.autospec/state", ".autospec"})
+	assert.Equal(t, []string{"~/.autospec/state", ".autospec"}, added)
+
+	// Save
+	err = s.Save()
+	require.NoError(t, err)
+
+	// Reload and verify
+	s2, err := Load(dir)
+	require.NoError(t, err)
+
+	assert.True(t, s2.IsSandboxEnabled())
+	paths := s2.GetAdditionalWritePaths()
+	assert.Contains(t, paths, "/existing/path")
+	assert.Contains(t, paths, "~/.autospec/state")
+	assert.Contains(t, paths, ".autospec")
+}
+
+func setSandboxPaths(s *Settings, paths []string) {
+	sandbox := s.getSandboxConfig()
+	pathsInterface := make([]interface{}, len(paths))
+	for i, p := range paths {
+		pathsInterface[i] = p
+	}
+	sandbox["additionalAllowWritePaths"] = pathsInterface
 }

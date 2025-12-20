@@ -278,6 +278,12 @@ Priority: Environment vars > Project config > User config > Defaults
 
 ```yaml
 # .autospec/config.yml
+
+# Agent configuration (recommended)
+agent_preset: claude                  # Built-in: claude | gemini | cline | codex | opencode | goose
+custom_agent_cmd: ""                  # Custom agent template with {{PROMPT}} placeholder
+
+# Legacy Claude CLI settings (deprecated - use agent_preset instead)
 claude_cmd: claude                    # Claude CLI command
 claude_args:                          # Arguments passed to Claude CLI
   - -p
@@ -285,6 +291,8 @@ claude_args:                          # Arguments passed to Claude CLI
   - --output-format
   - stream-json
 custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
+
+# Workflow settings
 max_retries: 0                        # Max retry attempts per stage (0-10)
 specs_dir: ./specs                    # Directory for feature specs
 state_dir: ~/.autospec/state          # Directory for state files
@@ -304,6 +312,8 @@ notifications:
   on_long_running: false              # Notify after threshold
   long_running_threshold: 2m          # Duration threshold
 ```
+
+> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/agents.md](docs/agents.md) for migration guide.
 
 ### Claude CLI Arguments (`claude_args`)
 
@@ -420,13 +430,9 @@ Use these when you prefer chat-based iteration over autospec's automated (`-p`) 
 
 ### Readable Streaming Output with claude-clean
 
-[claude-clean](https://github.com/ariel-frischer/claude-clean) makes Claude's `stream-json` output readable in real-time:
+[claude-clean](https://github.com/ariel-frischer/claude-clean) makes Claude's `stream-json` output readable in real-time.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/ariel-frischer/claude-clean/main/install.sh | sh
-```
-
-Then configure a custom command in `~/.config/autospec/config.yml`:
+Configure a custom command in `~/.config/autospec/config.yml`:
 
 ```yaml
 custom_claude_cmd: "claude -p --verbose --output-format stream-json {{PROMPT}} | cclean"

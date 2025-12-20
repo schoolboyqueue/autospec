@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -117,12 +118,20 @@ Stages are always executed in canonical order:
 			return cliErr
 		}
 
+		// Show security notice (once per user)
+		shared.ShowSecurityNotice(cmd.OutOrStdout(), cfg)
+
 		// Override settings from flags
 		if cmd.Flags().Changed("skip-preflight") {
 			cfg.SkipPreflight = skipPreflight
 		}
 		if cmd.Flags().Changed("max-retries") {
 			cfg.MaxRetries = maxRetries
+		}
+
+		// Apply agent override from --agent flag
+		if _, err := shared.ApplyAgentOverride(cmd, cfg); err != nil {
+			return err
 		}
 
 		// Resolve skip confirmations (flag > env > config)
@@ -178,6 +187,9 @@ Stages are always executed in canonical order:
 		orchestrator := workflow.NewWorkflowOrchestrator(cfg)
 		orchestrator.Debug = debug
 		orchestrator.Executor.Debug = debug
+
+		// Apply output style from CLI flag (overrides config)
+		shared.ApplyOutputStyle(cmd, orchestrator)
 
 		if debug {
 			fmt.Println("[DEBUG] Debug mode enabled")
@@ -491,4 +503,7 @@ func init() {
 	runCmd.Flags().Int("max-retries", 0, "Override max retry attempts (overrides config when set)")
 	runCmd.Flags().Bool("resume", false, "Resume implementation from where it left off")
 	runCmd.Flags().Bool("dry-run", false, "Preview what stages would run without executing")
+
+	// Agent override flag
+	shared.AddAgentFlag(runCmd)
 }

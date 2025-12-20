@@ -20,10 +20,8 @@ func TestGetDefaultConfigTemplate(t *testing.T) {
 
 	// Verify key sections are present
 	expectedSections := []string{
-		"Claude CLI settings",
-		"claude_cmd:",
-		"claude_args:",
-		"custom_claude_cmd:",
+		"Agent settings",
+		"agent_preset:",
 		"Workflow settings",
 		"max_retries:",
 		"specs_dir:",
@@ -44,6 +42,8 @@ func TestGetDefaultConfigTemplate(t *testing.T) {
 		"on_error:",
 		"on_long_running:",
 		"long_running_threshold:",
+		"Agent initialization settings",
+		"default_agents:",
 	}
 
 	for _, section := range expectedSections {
@@ -60,9 +60,7 @@ func TestGetDefaults(t *testing.T) {
 
 	// Verify required keys exist
 	requiredKeys := []string{
-		"claude_cmd",
-		"claude_args",
-		"custom_claude_cmd",
+		"agent_preset",
 		"max_retries",
 		"specs_dir",
 		"state_dir",
@@ -72,6 +70,7 @@ func TestGetDefaults(t *testing.T) {
 		"implement_method",
 		"notifications",
 		"max_history_entries",
+		"default_agents",
 	}
 
 	for _, key := range requiredKeys {
@@ -81,8 +80,8 @@ func TestGetDefaults(t *testing.T) {
 	}
 
 	// Verify specific default values
-	if defaults["claude_cmd"] != "claude" {
-		t.Errorf("claude_cmd default = %v, want 'claude'", defaults["claude_cmd"])
+	if defaults["agent_preset"] != "" {
+		t.Errorf("agent_preset default = %v, want ''", defaults["agent_preset"])
 	}
 
 	if defaults["max_retries"] != 0 {

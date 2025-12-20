@@ -66,6 +66,11 @@ You can optionally provide a prompt to guide the planning process.`,
 			cfg.MaxRetries = maxRetries
 		}
 
+		// Apply agent override from --agent flag
+		if _, err := shared.ApplyAgentOverride(cmd, cfg); err != nil {
+			return err
+		}
+
 		// Check if constitution exists (required for plan)
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
@@ -101,6 +106,9 @@ You can optionally provide a prompt to guide the planning process.`,
 			orch := workflow.NewWorkflowOrchestrator(cfg)
 			orch.Executor.NotificationHandler = notifHandler
 
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orch)
+
 			// Execute plan stage
 			if err := orch.ExecutePlan("", prompt); err != nil {
 				return fmt.Errorf("plan stage failed: %w", err)
@@ -116,4 +124,7 @@ func init() {
 
 	// Command-specific flags
 	planCmd.Flags().IntP("max-retries", "r", 0, "Override max retry attempts (overrides config when set)")
+
+	// Agent override flag
+	shared.AddAgentFlag(planCmd)
 }

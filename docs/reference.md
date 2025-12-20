@@ -6,11 +6,11 @@ Complete reference for autospec commands, configuration options, exit codes, and
 
 All commands support global flags: `--config`, `--specs-dir`, `--debug`, `--verbose`
 
-### autospec full
+### autospec all
 
 Execute complete workflow: specify → plan → tasks → implement
 
-**Syntax**: `autospec full "<feature description>" [flags]`
+**Syntax**: `autospec all "<feature description>" [flags]`
 
 **Description**: Creates specification, generates plan and tasks, then executes implementation in a single command.
 
@@ -18,12 +18,14 @@ Execute complete workflow: specify → plan → tasks → implement
 - `--skip-preflight`: Skip dependency health checks
 - `--timeout <seconds>`: Command timeout (0=infinite, 1-604800)
 - `--max-retries <count>`: Maximum retry attempts (1-10, default: 3)
+- `--agent <name>`: Override agent for this run (see [CLI Agents](#cli-agents))
 
 **Examples**:
 ```bash
-autospec full "Add user authentication with OAuth"
-autospec full "Add dark mode toggle" --timeout 600
-autospec full "Export data to CSV" --skip-preflight
+autospec all "Add user authentication with OAuth"
+autospec all "Add dark mode toggle" --timeout 600
+autospec all "Export data to CSV" --skip-preflight
+autospec all "Add caching" --agent gemini
 ```
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
@@ -36,7 +38,7 @@ Prepare for implementation: specify → plan → tasks (no implementation)
 
 **Description**: Creates specification and generates plan/tasks for review before implementation.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -56,7 +58,7 @@ Create feature specification from natural language description
 
 **Description**: Generate detailed specification with requirements, acceptance criteria, and success metrics.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -76,7 +78,7 @@ Generate technical implementation plan from specification
 
 **Description**: Create technical plan with architecture, file structure, and design decisions.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -97,7 +99,7 @@ Generate task breakdown from implementation plan
 
 **Description**: Break down plan into ordered, actionable tasks with dependencies.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -124,7 +126,7 @@ Execute implementation phase using tasks breakdown
 - `--tasks`: Run each task in a separate Claude session (maximum context isolation)
 - `--from-task <ID>`: Resume from specific task ID
 - `--single-session`: Run all tasks in one Claude session (legacy mode)
-- Plus all flags from `autospec full`
+- Plus all flags from `autospec all`
 
 **Execution Modes**:
 
@@ -281,6 +283,60 @@ autospec status 003-feature  # Specific spec
 
 **Exit Codes**: 0 (success), 3 (invalid args)
 
+### autospec view
+
+Display dashboard overview of all specs in the project
+
+**Syntax**: `autospec view [flags]`
+
+**Description**: Shows project-wide spec statistics, recent specs with task progress, and completed specs in a single dashboard view.
+
+**Flags**:
+- `-l, --limit <count>`: Number of recent specs to display (default: from config or 5)
+
+**Output Sections**:
+1. **Dashboard Header**: Total specs, in-progress count, completed count, skipped count
+2. **Recent Specs**: Top N most recently modified specs with status and task progress
+3. **Completed Specs**: All specs with Completed status or 100% task completion
+
+**Examples**:
+```bash
+autospec view                  # Show dashboard with default limit (5)
+autospec view --limit 10       # Show top 10 recent specs
+autospec view -l 3             # Short flag for limit
+```
+
+**Output**:
+```
+Spec Dashboard
+----------------------------------------
+Total specs:   48
+In progress:   10
+Completed:     37
+Skipped:       1
+
+Recent Specs (top 5)
+----------------------------------------
+  063-view-dashboard             Draft
+    Progress: 4/18 tasks
+  058-config-set-command         Completed
+    Progress: 18/18 tasks
+  057-fix-description-propaga... Completed
+    Progress: 10/10 tasks
+
+Completed Specs
+----------------------------------------
+  058-config-set-command         18/18 tasks
+  057-fix-description-propaga... 10/10 tasks
+```
+
+**Status Categories**:
+- **In Progress**: Draft, In Progress, Review, or any non-completed/non-skipped status
+- **Completed**: Completed status OR 100% task completion
+- **Skipped**: Rejected or Skipped status
+
+**Exit Codes**: 0 (success)
+
 ### autospec config
 
 Manage configuration settings
@@ -309,17 +365,28 @@ Initialize configuration files and directories
 
 **Syntax**: `autospec init [flags]`
 
-**Description**: Create `~/.config/autospec/config.yml` with default settings. If config already exists, it is left unchanged (use `--force` to overwrite).
+**Description**: Set up autospec with everything needed to get started:
+1. Installs command templates to `.claude/commands/` (automatic)
+2. Creates configuration at `~/.config/autospec/config.yml`
+3. Prompts for agent selection and configuration
+4. Optionally creates project constitution
+5. Optionally generates worktree setup script
+
+If config already exists, it is left unchanged (use `--force` to overwrite).
 
 **Flags**:
 - `--project, -p`: Create project-level config (`.autospec/config.yml`)
 - `--force, -f`: Overwrite existing configuration with defaults
+- `--no-agents`: Skip agent configuration prompt (for non-interactive environments)
+
+**Agent Selection**: During initialization, you'll be prompted to select which CLI agents to configure. Selected agents will have their settings configured for your project. Your selections are saved to `default_agents` in config for future runs.
 
 **Examples**:
 ```bash
-autospec init              # Create user config if missing
+autospec init              # Interactive setup with agent selection
 autospec init --project    # Create project-level config
 autospec init --force      # Overwrite existing config with defaults
+autospec init --no-agents  # Skip agent prompts (CI/CD friendly)
 ```
 
 **Exit Codes**: 0 (success)
@@ -420,22 +487,125 @@ autospec version
 
 **Exit Codes**: 0 (success)
 
+## CLI Agents
+
+autospec supports multiple CLI-based AI coding agents. The `--agent` flag is available on all workflow commands to override the configured agent for a single execution.
+
+### Available Agents
+
+| Agent | Binary | Description |
+|-------|--------|-------------|
+| `claude` | `claude` | Anthropic's Claude Code CLI (default) |
+| `cline` | `cline` | Cline VSCode extension CLI |
+| `gemini` | `gemini` | Google Gemini CLI |
+| `codex` | `codex` | OpenAI Codex CLI |
+| `opencode` | `opencode` | OpenCode CLI |
+| `goose` | `goose` | Goose AI CLI |
+
+### Agent Override Examples
+
+```bash
+# Use gemini for all stages
+autospec run -a "Add caching" --agent gemini
+
+# Use cline for planning
+autospec plan --agent cline
+
+# Use codex for implementation
+autospec implement --agent codex
+```
+
+### Agent Status
+
+Check agent availability with `autospec doctor`:
+
+```bash
+$ autospec doctor
+
+CLI Agents:
+  ✓ claude: installed (v1.0.5)
+  ○ cline: not found in PATH
+  ✓ gemini: installed (v0.8.2)
+```
+
+See [CLI Agent Configuration](./agents.md) for detailed documentation on agent configuration, custom agents, and migration from legacy settings.
+
+### autospec worktree
+
+Manage git worktrees with project-aware setup automation
+
+**Syntax**: `autospec worktree <subcommand> [flags]`
+
+**Description**: Create and manage git worktrees with automatic copying of non-tracked directories (`.autospec/`, `.claude/`) and execution of project-specific setup scripts.
+
+**Subcommands**:
+- `create <name> --branch <branch> [--path <path>]`: Create new worktree
+- `list`: List all tracked worktrees
+- `remove <name> [--force]`: Remove a worktree
+- `setup <path> [--track]`: Run setup on existing worktree
+- `prune`: Remove stale tracking entries
+
+**Examples**:
+```bash
+# Create a new worktree
+autospec worktree create feature-auth --branch feat/user-auth
+
+# Create at custom location
+autospec worktree create zoom --branch feat/zoom --path /tmp/zoom-dev
+
+# List all worktrees
+autospec worktree list
+
+# Remove (with safety checks)
+autospec worktree remove feature-auth
+
+# Force remove (bypass checks)
+autospec worktree remove feature-auth --force
+
+# Setup existing worktree
+autospec worktree setup ../my-worktree --track
+
+# Clean up stale entries
+autospec worktree prune
+```
+
+**Exit Codes**: 0 (success), 1 (operation failed), 3 (invalid args)
+
+See [docs/worktree.md](worktree.md) for detailed documentation.
+
 ## Configuration Options
 
 Configuration sources (priority order): Environment variables > Local config > Global config > Defaults
 
-### claude_cmd
+### agent_preset
 
 **Type**: string
 **Default**: `"claude"`
-**Description**: Command to invoke Claude CLI
+**Description**: Name of the built-in agent to use for workflow execution
+
+**Available presets**: `claude`, `cline`, `gemini`, `codex`, `opencode`, `goose`
 
 **Example**:
 ```yaml
-claude_cmd: /usr/local/bin/claude
+agent_preset: gemini
 ```
 
-**Environment**: `AUTOSPEC_CLAUDE_CMD`
+**Environment**: `AUTOSPEC_AGENT_PRESET`
+
+See [CLI Agent Configuration](./agents.md) for detailed agent documentation.
+
+### custom_agent_cmd
+
+**Type**: string
+**Default**: `""` (not set)
+**Description**: Custom agent command template with `{{PROMPT}}` placeholder. Takes precedence over `agent_preset`.
+
+**Example**:
+```yaml
+custom_agent_cmd: "my-agent run --prompt {{PROMPT}} --mode headless"
+```
+
+**Environment**: `AUTOSPEC_CUSTOM_AGENT_CMD`
 
 ### max_retries
 
@@ -530,19 +700,6 @@ implement_method: tasks  # Each task in separate Claude session
 
 **Note**: CLI flags (`--phases`, `--tasks`, `--single-session`) override this config setting.
 
-### custom_claude_cmd
-
-**Type**: string
-**Default**: `""` (not set)
-**Description**: Custom command template with `{{PROMPT}}` placeholder
-
-**Example**:
-```yaml
-custom_claude_cmd: "claude -p {{PROMPT}} | process-output"
-```
-
-**Environment**: `AUTOSPEC_CUSTOM_CLAUDE_CMD`
-
 ### max_history_entries
 
 **Type**: integer
@@ -555,6 +712,21 @@ max_history_entries: 1000
 ```
 
 **Environment**: `AUTOSPEC_MAX_HISTORY_ENTRIES`
+
+### view_limit
+
+**Type**: integer
+**Default**: `5`
+**Description**: Number of recent specs to display in the view command dashboard
+
+**Example**:
+```yaml
+view_limit: 10
+```
+
+**Environment**: `AUTOSPEC_VIEW_LIMIT`
+
+**Note**: Can be overridden by the `--limit` flag on the `autospec view` command.
 
 ### notifications
 
@@ -750,7 +922,7 @@ elif [ $? -eq 2 ]; then
 fi
 
 # Use in CI/CD
-autospec full "feature" || exit 1
+autospec all "feature" || exit 1
 ```
 
 ## Prerequisite Validation
@@ -883,10 +1055,14 @@ autospec implement 003-feature "Document all public APIs"
 
 ### Custom Command Templates
 
-Use `custom_claude_cmd` for complex pipelines:
+Use `custom_agent` for complex pipelines:
 
 ```yaml
-custom_claude_cmd: "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
+custom_agent:
+  command: sh
+  args:
+    - -c
+    - "claude -p {{PROMPT}} | tee logs/$(date +%s).log | grep -v DEBUG"
 ```
 
 **Placeholders**:
@@ -930,7 +1106,7 @@ Configure different timeouts for different operations:
 AUTOSPEC_TIMEOUT=60 autospec doctor
 
 # Long timeout for complex workflows
-AUTOSPEC_TIMEOUT=3600 autospec full "complex feature"
+AUTOSPEC_TIMEOUT=3600 autospec all "complex feature"
 
 # No timeout (default)
 AUTOSPEC_TIMEOUT=0 autospec prep "feature"
@@ -940,4 +1116,5 @@ AUTOSPEC_TIMEOUT=0 autospec prep "feature"
 
 - **[Quick Start Guide](./quickstart.md)**: Installation and first workflow
 - **[Architecture Overview](./architecture.md)**: System design and components
+- **[CLI Agent Configuration](./agents.md)**: Multi-agent support and custom agents
 - **[Troubleshooting](./troubleshooting.md)**: Common issues and solutions

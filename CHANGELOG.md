@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Multi-agent support (in development) now gated to dev builds only; production builds default to Claude Code
+- DAG-based parallel execution (in development) gated to dev builds only
+- `init` command now collects all user choices before applying changes, with final confirmation before running Claude sessions
+
+### Added
+- **[Dev builds only]** DAG-based parallel task execution with `implement --parallel` flag for concurrent task processing
+- **[Dev builds only]** `--max-parallel` flag to limit concurrent task execution (default: number of CPU cores)
+- **[Dev builds only]** `--worktrees` flag for git worktree-based task isolation during parallel execution
+- **[Dev builds only]** `--dry-run` flag to preview execution plan without running tasks
+- **[Dev builds only]** `--yes` flag to skip resume confirmation prompts
+- **[Dev builds only]** `dag` command to visualize task dependencies as ASCII graph with wave grouping
+- **[Dev builds only]** Parallel execution state persistence with resume support (R/W/S/A options: resume, resume wave, skip failed, abort)
+- Multi-agent CLI abstraction layer with 6 built-in agents (claude, cline, gemini, codex, opencode, goose) and custom agent support via `agent_preset` config or `--agent` flag
+- Structured `custom_agent` config with explicit `command`, `args`, `env`, and `post_processor` fields (replaces error-prone shell string parsing)
+- Agent discovery and status in `autospec doctor` showing installed agents with versions
+- `view` command to display dashboard overview of all specs with completion status and task progress
+- `worktree` command for git worktree management (create, list, remove, setup, prune) with automatic project setup
+- `worktree gen-script` command to generate project-specific setup scripts for worktrees
+- `init` command now prompts to create constitution if none exists (Y/n default yes)
+- `init` command now prompts to generate worktree setup script if not already present (y/N default no)
+- Dark mode support for GitHub Pages documentation site
+- `init` command now displays permissions/sandbox configuration status and prompts to configure sandbox if not set up
+- `init` command shows recommended full automation setup with cclean post_processor and --dangerously-skip-permissions disclaimer on first run
+- Native cclean (claude-clean) library integration as internal dependency for beautiful Claude JSONL output parsing with `--output-style` flag and `output_style` config option
+- One-time security notice on first workflow run explaining `--dangerously-skip-permissions` usage with sandbox status; suppress via `AUTOSPEC_SKIP_PERMISSIONS_NOTICE=1`
+- `init` command now prompts to add `.autospec/` to `.gitignore` with guidance for shared vs personal repos
+
+### Changed
+- `init` constitution prompt now explains it's a one-time setup that defines project coding standards
+- `init` agent selection now uses interactive arrow-key navigation with space to toggle (replaces number input)
+
+### Removed
+- **BREAKING**: Removed legacy config fields `claude_cmd`, `claude_args`, `custom_claude_cmd` (use `agent_preset` or structured `custom_agent` instead)
+
 ## [0.5.0] - 2025-12-18
 
 ### Added

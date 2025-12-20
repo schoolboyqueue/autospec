@@ -199,8 +199,8 @@ export MOCK_RESPONSE_FILE=/tmp/response.yaml
 export MOCK_CALL_LOG=/tmp/calls.log
 export MOCK_EXIT_CODE=0
 
-# Run tests with mock claude
-AUTOSPEC_CLAUDE_CMD="./mocks/scripts/mock-claude.sh" go test ./...
+# Run tests with mock claude (using custom agent configuration)
+AUTOSPEC_CUSTOM_AGENT_CMD="./mocks/scripts/mock-claude.sh {{PROMPT}}" go test ./...
 
 # Verify calls
 cat /tmp/calls.log

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/ariel-frischer/autospec/internal/cli/shared"
 	"github.com/ariel-frischer/autospec/internal/config"
 	clierrors "github.com/ariel-frischer/autospec/internal/errors"
 	"github.com/ariel-frischer/autospec/internal/history"
@@ -57,6 +58,9 @@ This is useful when you want to review the generated artifacts before implementa
 		notifHandler := notify.NewHandler(cfg.Notifications)
 		historyLogger := history.NewWriter(cfg.StateDir, cfg.MaxHistoryEntries)
 
+		// Show security notice (once per user)
+		shared.ShowSecurityNotice(cmd.OutOrStdout(), cfg)
+
 		// Wrap command execution with lifecycle for timing, notification, and history
 		// Use RunWithHistoryContext to support context cancellation (e.g., Ctrl+C)
 		// Note: spec name is empty for prep since we're creating a new spec
@@ -71,6 +75,11 @@ This is useful when you want to review the generated artifacts before implementa
 				cfg.MaxRetries = maxRetries
 			}
 
+			// Apply agent override from --agent flag
+			if _, err := shared.ApplyAgentOverride(cmd, cfg); err != nil {
+				return err
+			}
+
 			// Check if constitution exists (required for all workflow stages)
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
@@ -81,6 +90,9 @@ This is useful when you want to review the generated artifacts before implementa
 			// Create workflow orchestrator
 			orchestrator := workflow.NewWorkflowOrchestrator(cfg)
 			orchestrator.Executor.NotificationHandler = notifHandler
+
+			// Apply output style from CLI flag (overrides config)
+			shared.ApplyOutputStyle(cmd, orchestrator)
 
 			// Run complete workflow (specify → plan → tasks, no implementation)
 			if err := orchestrator.RunCompleteWorkflow(featureDescription); err != nil {
@@ -98,4 +110,7 @@ func init() {
 
 	// Command-specific flags
 	prepCmd.Flags().IntP("max-retries", "r", 0, "Override max retry attempts (overrides config when set)")
+
+	// Agent override flag
+	shared.AddAgentFlag(prepCmd)
 }

@@ -212,7 +212,7 @@ autospec doctor
 
 **Problem**: Claude blocks commands (can't respond to approval prompts).
 
-**Solutions**: Allow commands in `~/.claude/settings.json`: `{"permissions":{"allow":["Bash(mkdir:*)", "Edit", "Write", "Read"]}}`. Or add `--dangerously-skip-permissions` to `claude_args`—enable Claude's sandbox first (`/sandbox`, uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux). **WARNING**: bypasses ALL safety checks—never use with API keys/credentials/production data.
+**Solutions**: Allow commands in `~/.claude/settings.json`: `{"permissions":{"allow":["Bash(mkdir:*)", "Edit", "Write", "Read"]}}`. Or configure `custom_agent` with `--dangerously-skip-permissions` in the args—enable Claude's sandbox first (`/sandbox`, uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux). **WARNING**: bypasses ALL safety checks—never use with API keys/credentials/production data.
 
 ### Prerequisite Validation Errors
 
@@ -827,7 +827,7 @@ ls -la /path/to/your/sound.wav
 ```bash
 # Temporarily unset CI variable
 unset CI
-autospec full "feature"
+autospec all "feature"
 ```
 
 ### Notifications in headless/SSH sessions
@@ -890,14 +890,14 @@ if [ -t 0 ]; then echo "Interactive"; else echo "Non-interactive"; fi
 **Diagnostics**:
 ```bash
 # Run with debug to see notification timing
-autospec --debug full "test"
+autospec --debug all "test"
 ```
 
 **Solutions**:
 - If notifications are causing delays, switch to `type: visual` (sound playback can take longer)
 - Disable notifications for time-critical operations:
   ```bash
-  AUTOSPEC_NOTIFICATIONS_ENABLED=false autospec full "feature"
+  AUTOSPEC_NOTIFICATIONS_ENABLED=false autospec all "feature"
   ```
 
 ## Quick Reference

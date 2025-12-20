@@ -10,11 +10,29 @@ import (
 	"testing"
 
 	claudepkg "github.com/ariel-frischer/autospec/internal/claude"
+	"github.com/ariel-frischer/autospec/internal/cli/config"
 	"github.com/ariel-frischer/autospec/internal/commands"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// mockClaudeRunners sets up mocks to prevent real Claude execution in tests.
+// Returns a cleanup function that must be called with defer.
+func mockClaudeRunners() func() {
+	originalConstitutionRunner := config.ConstitutionRunner
+	originalWorktreeRunner := config.WorktreeScriptRunner
+	config.ConstitutionRunner = func(cmd *cobra.Command, configPath string) bool {
+		return true // Simulate successful constitution creation
+	}
+	config.WorktreeScriptRunner = func(cmd *cobra.Command, configPath string) bool {
+		return true // Simulate successful worktree script creation
+	}
+	return func() {
+		config.ConstitutionRunner = originalConstitutionRunner
+		config.WorktreeScriptRunner = originalWorktreeRunner
+	}
+}
 
 // getInitCmd finds the init command from rootCmd
 func getInitCmd() *cobra.Command {
@@ -189,6 +207,10 @@ func TestInitCmdLongDescription(t *testing.T) {
 
 // TestRunInit_CreateUserConfig tests user config creation.
 func TestRunInit_CreateUserConfig(t *testing.T) {
+	// CRITICAL: Mock Claude runners to prevent real API calls
+	cleanup := mockClaudeRunners()
+	defer cleanup()
+
 	// Setup temp directories
 	tmpDir := t.TempDir()
 
@@ -205,6 +227,12 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
 
+	// Skip agent prompts
+	cmd.Flags().Set("no-agents", "true")
+
+	// Provide "n" to decline any remaining prompts (e.g., worktree)
+	cmd.SetIn(bytes.NewBufferString("n\n"))
+
 	// Capture output
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
@@ -219,6 +247,10 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 
 // TestRunInit_ProjectConfig tests project config creation.
 func TestRunInit_ProjectConfig(t *testing.T) {
+	// CRITICAL: Mock Claude runners to prevent real API calls
+	cleanup := mockClaudeRunners()
+	defer cleanup()
+
 	// Setup temp directory
 	tmpDir := t.TempDir()
 
@@ -233,8 +265,12 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 	cmd := getInitCmd()
 	require.NotNil(t, cmd, "init command must exist")
 
-	// Set flag directly
+	// Set flags directly - skip agent prompts
 	cmd.Flags().Set("project", "true")
+	cmd.Flags().Set("no-agents", "true")
+
+	// Provide "n" to decline any remaining prompts (e.g., worktree)
+	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)
@@ -249,6 +285,10 @@ func TestRunInit_ProjectConfig(t *testing.T) {
 
 // TestRunInit_ForceOverwrite tests force overwrite behavior.
 func TestRunInit_ForceOverwrite(t *testing.T) {
+	// CRITICAL: Mock Claude runners to prevent real API calls
+	cleanup := mockClaudeRunners()
+	defer cleanup()
+
 	tmpDir := t.TempDir()
 
 	// Create project directory
@@ -273,6 +313,10 @@ func TestRunInit_ForceOverwrite(t *testing.T) {
 	// Set flags directly
 	cmd.Flags().Set("project", "true")
 	cmd.Flags().Set("force", "true")
+	cmd.Flags().Set("no-agents", "true") // Skip agent selection in non-interactive environment
+
+	// Provide "n" to decline worktree prompt
+	cmd.SetIn(bytes.NewBufferString("n\n"))
 
 	var buf bytes.Buffer
 	cmd.SetOut(&buf)

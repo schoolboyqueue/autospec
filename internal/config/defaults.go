@@ -8,14 +8,30 @@ func GetDefaultConfigTemplate() string {
 	return `# Autospec Configuration
 # See 'autospec --help' for command reference
 
-# Claude CLI settings
-claude_cmd: claude                    # Claude CLI command
-claude_args:                          # Arguments passed to Claude CLI
-  - -p
-  - --verbose
-  - --output-format
-  - stream-json
-custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
+# ============================================================================
+# RECOMMENDED SETUP FOR FULL AUTOMATION
+# ============================================================================
+# The custom_agent config below enables fully automated Claude Code execution.
+# - Uses --dangerously-skip-permissions for unattended operation
+# - Pipes output through cclean for readable terminal output
+#
+# Uncomment the custom_agent section to enable:
+#
+# custom_agent:
+#   command: "claude"
+#   args:
+#     - "-p"
+#     - "--dangerously-skip-permissions"
+#     - "--verbose"
+#     - "--output-format"
+#     - "stream-json"
+#     - "{{PROMPT}}"
+#   post_processor: "cclean"
+#
+# ============================================================================
+
+# Agent settings
+agent_preset: ""                      # Built-in agent: claude | gemini | cline | codex | opencode | goose
 
 # Workflow settings
 max_retries: 0                        # Max retry attempts per stage (0-10)
@@ -28,6 +44,26 @@ implement_method: phases              # Default: phases | tasks | single-session
 
 # History settings
 max_history_entries: 500              # Max command history entries to retain
+
+# View dashboard settings
+view_limit: 5                         # Number of recent specs to display
+
+# Agent initialization settings
+default_agents: []                    # Agents to pre-select in 'autospec init' prompt
+
+# Output formatting for stream-json mode
+output_style: default                 # default | compact | minimal | plain | raw
+
+# Worktree management settings
+worktree:
+  base_dir: ""                        # Parent dir for worktrees (default: parent of repo)
+  prefix: ""                          # Directory name prefix
+  setup_script: ""                    # Path to setup script relative to repo
+  auto_setup: true                    # Run setup automatically on create
+  track_status: true                  # Persist worktree state
+  copy_dirs:                          # Non-tracked dirs to copy
+    - .autospec
+    - .claude
 
 # Notifications (all platforms)
 notifications:
@@ -45,14 +81,8 @@ notifications:
 // GetDefaults returns the default configuration values
 func GetDefaults() map[string]interface{} {
 	return map[string]interface{}{
-		"claude_cmd": "claude",
-		"claude_args": []string{
-			"-p",
-			"--verbose",
-			"--output-format",
-			"stream-json",
-		},
-		"custom_claude_cmd":  "",
+		// Agent configuration
+		"agent_preset":       "",
 		"max_retries":        0,
 		"specs_dir":          "./specs",
 		"state_dir":          "~/.autospec/state",
@@ -78,5 +108,25 @@ func GetDefaults() map[string]interface{} {
 		// max_history_entries: Maximum number of command history entries to retain.
 		// Oldest entries are pruned when this limit is exceeded.
 		"max_history_entries": 500,
+		// view_limit: Number of recent specs to display in the view command.
+		// Default: 5. Can be overridden with --limit flag.
+		"view_limit": 5,
+		// default_agents: List of agent names to pre-select in 'autospec init' prompts.
+		// Saved from previous init selections. Empty by default.
+		"default_agents": []string{},
+		// output_style: Controls how stream-json output is formatted for display.
+		// Valid values: default, compact, minimal, plain, raw
+		// Default style uses box-drawing characters with colors.
+		"output_style": "default",
+		// worktree: Configuration for git worktree management.
+		// Used by 'autospec worktree' command for creating and managing worktrees.
+		"worktree": map[string]interface{}{
+			"base_dir":     "",                               // Parent directory for new worktrees
+			"prefix":       "",                               // Directory name prefix
+			"setup_script": "",                               // Path to setup script relative to repo
+			"auto_setup":   true,                             // Run setup automatically on create
+			"track_status": true,                             // Persist worktree state
+			"copy_dirs":    []string{".autospec", ".claude"}, // Non-tracked dirs to copy
+		},
 	}
 }
