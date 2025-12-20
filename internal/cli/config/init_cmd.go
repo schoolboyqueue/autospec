@@ -234,6 +234,72 @@ func checkSandboxConfiguration(agentName string, agent cliagent.Agent, specsDir 
 	}
 }
 
+// handleSandboxConfiguration prompts for and applies sandbox configuration.
+func handleSandboxConfiguration(cmd *cobra.Command, out io.Writer, prompts []sandboxPromptInfo, specsDir string) error {
+	if len(prompts) == 0 {
+		return nil
+	}
+
+	if specsDir == "" {
+		specsDir = "specs"
+	}
+
+	for _, info := range prompts {
+		if err := promptAndConfigureSandbox(cmd, out, info, specsDir); err != nil {
+			fmt.Fprintf(out, "⚠ %s sandbox configuration failed: %v\n", info.displayName, err)
+		}
+	}
+
+	return nil
+}
+
+// promptAndConfigureSandbox displays the sandbox diff and prompts for confirmation.
+func promptAndConfigureSandbox(cmd *cobra.Command, out io.Writer, info sandboxPromptInfo, specsDir string) error {
+	// Display the proposed changes
+	fmt.Fprintf(out, "\n%s sandbox configuration detected.\n\n", info.displayName)
+	fmt.Fprintf(out, "Proposed changes to .claude/settings.local.json:\n\n")
+	fmt.Fprintf(out, "  sandbox.additionalAllowWritePaths:\n")
+
+	for _, path := range info.pathsToAdd {
+		fmt.Fprintf(out, "  + %q\n", path)
+	}
+
+	if len(info.existing) > 0 {
+		fmt.Fprintf(out, "\n  (existing paths preserved)\n")
+	}
+
+	fmt.Fprintf(out, "\n")
+
+	// Prompt for confirmation
+	if !promptYesNo(cmd, "Configure Claude sandbox for autospec?") {
+		fmt.Fprintf(out, "⏭ Sandbox configuration: skipped\n")
+		return nil
+	}
+
+	// Apply the configuration
+	agent := cliagent.Get(info.agentName)
+	if agent == nil {
+		return fmt.Errorf("agent %s not found", info.agentName)
+	}
+
+	result, err := cliagent.ConfigureSandbox(agent, ".", specsDir)
+	if err != nil {
+		return err
+	}
+
+	if result == nil || result.AlreadyConfigured {
+		fmt.Fprintf(out, "✓ %s sandbox: already configured\n", info.displayName)
+		return nil
+	}
+
+	fmt.Fprintf(out, "✓ %s sandbox: configured with paths:\n", info.displayName)
+	for _, path := range result.PathsAdded {
+		fmt.Fprintf(out, "    + %s\n", path)
+	}
+
+	return nil
+}
+
 // displayAgentConfigResult displays the configuration result for an agent.
 func displayAgentConfigResult(out io.Writer, agentName string, result *cliagent.ConfigResult) {
 	displayName := agentDisplayNames[agentName]
