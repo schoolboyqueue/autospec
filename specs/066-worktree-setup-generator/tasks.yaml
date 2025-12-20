@@ -54,7 +54,7 @@ phases:
       tasks:
         - id: "T003"
           title: "Create gen_script_test.go with unit tests for gen-script command"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
@@ -68,7 +68,7 @@ phases:
             - "Tests error handling for non-git-repo scenarios"
         - id: "T004"
           title: "Implement gen_script.go CLI command with Claude invocation"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-004"
