@@ -381,7 +381,36 @@ func TestCreateBranch_InTempRepo(t *testing.T) {
 	// Create a temp directory for our test git repo
 	tmpDir := t.TempDir()
 
-	// Save current directory and change to temp dir
+	// Helper to run git commands in tmpDir (avoids global config pollution from race conditions)
+	runGit := func(args ...string) error {
+		cmd := exec.Command("git", args...)
+		cmd.Dir = tmpDir
+		return cmd.Run()
+	}
+
+	// Initialize a git repo
+	err := runGit("init")
+	require.NoError(t, err)
+
+	// Configure git user for the test repo (uses cmd.Dir to ensure local config)
+	err = runGit("config", "user.email", "test@test.com")
+	require.NoError(t, err)
+
+	err = runGit("config", "user.name", "Test User")
+	require.NoError(t, err)
+
+	// Create an initial commit (needed for branches to work)
+	testFile := filepath.Join(tmpDir, "test.txt")
+	err = os.WriteFile(testFile, []byte("test"), 0644)
+	require.NoError(t, err)
+
+	err = runGit("add", ".")
+	require.NoError(t, err)
+
+	err = runGit("commit", "-m", "initial commit")
+	require.NoError(t, err)
+
+	// Change to temp dir for the functions under test (they use cwd)
 	origDir, err := os.Getwd()
 	require.NoError(t, err)
 
@@ -390,33 +419,6 @@ func TestCreateBranch_InTempRepo(t *testing.T) {
 	t.Cleanup(func() {
 		_ = os.Chdir(origDir)
 	})
-
-	// Initialize a git repo
-	cmd := exec.Command("git", "init")
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Configure git user for the test repo
-	cmd = exec.Command("git", "config", "user.email", "test@test.com")
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	cmd = exec.Command("git", "config", "user.name", "Test User")
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	// Create an initial commit (needed for branches to work)
-	testFile := filepath.Join(tmpDir, "test.txt")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
-	require.NoError(t, err)
-
-	cmd = exec.Command("git", "add", ".")
-	err = cmd.Run()
-	require.NoError(t, err)
-
-	cmd = exec.Command("git", "commit", "-m", "initial commit")
-	err = cmd.Run()
-	require.NoError(t, err)
 
 	tests := map[string]struct {
 		branchName string
@@ -451,11 +453,9 @@ func TestCreateBranch_InTempRepo(t *testing.T) {
 				assert.Equal(t, tt.branchName, branch)
 
 				// Switch back to main for next test
-				cmd := exec.Command("git", "checkout", "master")
-				if err := cmd.Run(); err != nil {
+				if err := runGit("checkout", "master"); err != nil {
 					// Try main instead of master
-					cmd = exec.Command("git", "checkout", "main")
-					_ = cmd.Run()
+					_ = runGit("checkout", "main")
 				}
 			}
 		})
