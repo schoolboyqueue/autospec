@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `init` command now prompts to add `.autospec/` to `.gitignore` with guidance for shared vs personal repos
 
 ### Changed
+- `init` constitution prompt now explains it's a one-time setup that defines project coding standards
 - `init` agent selection now uses interactive arrow-key navigation with space to toggle (replaces number input)
 
 ### Removed

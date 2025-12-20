@@ -94,7 +94,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	// If no constitution, prompt user to create one
 	if !constitutionExists {
-		if promptYesNoDefaultYes(cmd, "\nWould you like to create a constitution now?") {
+		fmt.Fprintf(out, "\n📜 Constitution required (one-time setup per project)\n")
+		fmt.Fprintf(out, "   → Defines your project's coding standards and principles\n")
+		fmt.Fprintf(out, "   → Required before running any autospec workflows\n")
+		fmt.Fprintf(out, "   → Runs a Claude session to analyze your project\n")
+		if promptYesNoDefaultYes(cmd, "Create constitution now?") {
 			configPath, _ := cmd.Flags().GetString("config")
 			if runConstitutionFromInit(cmd, configPath) {
 				constitutionExists = true
