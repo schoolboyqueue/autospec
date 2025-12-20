@@ -174,7 +174,7 @@ sequenceDiagram
     participant V as Validation
     participant R as Retry State
 
-    U->>CLI: autospec full "feature"
+    U->>CLI: autospec all "feature"
     CLI->>O: RunFullWorkflow()
 
     Note over O: Phase 1: Specify

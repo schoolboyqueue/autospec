@@ -41,6 +41,7 @@ autospec doctor                          # Check dependencies
 | `docs/SHELL-COMPLETION.md` | Shell completion implementation |
 | `docs/troubleshooting.md` | Common issues and solutions |
 | `docs/claude-settings.md` | Claude Code settings and sandboxing configuration |
+| `docs/agents.md` | CLI agent configuration and migration guide |
 
 ## Architecture Overview
 
@@ -54,20 +55,27 @@ autospec is a Go CLI that orchestrates SpecKit workflows. Key distinction:
 - `internal/cli/`: Cobra commands (root + orchestration)
   - `internal/cli/stages/`: Stage commands (specify, plan, tasks, implement)
   - `internal/cli/config/`: Configuration commands (init, config, migrate, doctor)
-  - `internal/cli/util/`: Utility commands (status, history, version, clean)
+  - `internal/cli/util/`: Utility commands (status, history, version, clean, view)
   - `internal/cli/admin/`: Admin commands (commands, completion, uninstall)
+  - `internal/cli/worktree/`: Worktree management commands (create, list, remove, prune)
   - `internal/cli/shared/`: Shared types and constants
 - `internal/workflow/`: Workflow orchestration and Claude execution
 - `internal/config/`: Hierarchical config (env > project > user > defaults)
 - `internal/validation/`: Artifact validation (<10ms performance contract)
 - `internal/retry/`: Persistent retry state
 - `internal/spec/`: Spec detection from git branch or recent directory
+- `internal/agent/`: Agent abstraction (Claude, Gemini, Cline, etc.)
+- `internal/cliagent/`: CLI agent integration and Configurator interface
+- `internal/worktree/`: Git worktree management logic
+- `internal/dag/`: DAG support for parallel task execution
 
 ### Configuration
 
 Priority: Environment (`AUTOSPEC_*`) > `.autospec/config.yml` > `~/.config/autospec/config.yml` > defaults
 
-Key settings: `claude_cmd`, `max_retries`, `specs_dir`, `timeout`, `implement_method`
+Key settings: `agent_preset`, `max_retries`, `specs_dir`, `timeout`, `implement_method`
+
+> **Note**: The legacy `claude_cmd` and `claude_args` fields are deprecated. Use `agent_preset` instead. See `docs/agents.md`.
 
 ## Constitution Principles
 

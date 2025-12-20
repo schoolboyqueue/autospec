@@ -6,11 +6,11 @@ Complete reference for autospec commands, configuration options, exit codes, and
 
 All commands support global flags: `--config`, `--specs-dir`, `--debug`, `--verbose`
 
-### autospec full
+### autospec all
 
 Execute complete workflow: specify → plan → tasks → implement
 
-**Syntax**: `autospec full "<feature description>" [flags]`
+**Syntax**: `autospec all "<feature description>" [flags]`
 
 **Description**: Creates specification, generates plan and tasks, then executes implementation in a single command.
 
@@ -22,10 +22,10 @@ Execute complete workflow: specify → plan → tasks → implement
 
 **Examples**:
 ```bash
-autospec full "Add user authentication with OAuth"
-autospec full "Add dark mode toggle" --timeout 600
-autospec full "Export data to CSV" --skip-preflight
-autospec full "Add caching" --agent gemini
+autospec all "Add user authentication with OAuth"
+autospec all "Add dark mode toggle" --timeout 600
+autospec all "Export data to CSV" --skip-preflight
+autospec all "Add caching" --agent gemini
 ```
 
 **Exit Codes**: 0 (success), 1 (validation failed), 2 (retries exhausted), 3 (invalid args), 4 (missing deps), 5 (timeout)
@@ -38,7 +38,7 @@ Prepare for implementation: specify → plan → tasks (no implementation)
 
 **Description**: Creates specification and generates plan/tasks for review before implementation.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -58,7 +58,7 @@ Create feature specification from natural language description
 
 **Description**: Generate detailed specification with requirements, acceptance criteria, and success metrics.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -78,7 +78,7 @@ Generate technical implementation plan from specification
 
 **Description**: Create technical plan with architecture, file structure, and design decisions.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -99,7 +99,7 @@ Generate task breakdown from implementation plan
 
 **Description**: Break down plan into ordered, actionable tasks with dependencies.
 
-**Flags**: Same as `autospec full`
+**Flags**: Same as `autospec all`
 
 **Examples**:
 ```bash
@@ -126,7 +126,7 @@ Execute implementation phase using tasks breakdown
 - `--tasks`: Run each task in a separate Claude session (maximum context isolation)
 - `--from-task <ID>`: Resume from specific task ID
 - `--single-session`: Run all tasks in one Claude session (legacy mode)
-- Plus all flags from `autospec full`
+- Plus all flags from `autospec all`
 
 **Execution Modes**:
 
@@ -365,17 +365,28 @@ Initialize configuration files and directories
 
 **Syntax**: `autospec init [flags]`
 
-**Description**: Create `~/.config/autospec/config.yml` with default settings. If config already exists, it is left unchanged (use `--force` to overwrite).
+**Description**: Set up autospec with everything needed to get started:
+1. Installs command templates to `.claude/commands/` (automatic)
+2. Creates configuration at `~/.config/autospec/config.yml`
+3. Prompts for agent selection and configuration
+4. Optionally creates project constitution
+5. Optionally generates worktree setup script
+
+If config already exists, it is left unchanged (use `--force` to overwrite).
 
 **Flags**:
 - `--project, -p`: Create project-level config (`.autospec/config.yml`)
 - `--force, -f`: Overwrite existing configuration with defaults
+- `--no-agents`: Skip agent configuration prompt (for non-interactive environments)
+
+**Agent Selection**: During initialization, you'll be prompted to select which CLI agents to configure. Selected agents will have their settings configured for your project. Your selections are saved to `default_agents` in config for future runs.
 
 **Examples**:
 ```bash
-autospec init              # Create user config if missing
+autospec init              # Interactive setup with agent selection
 autospec init --project    # Create project-level config
 autospec init --force      # Overwrite existing config with defaults
+autospec init --no-agents  # Skip agent prompts (CI/CD friendly)
 ```
 
 **Exit Codes**: 0 (success)
@@ -937,7 +948,7 @@ elif [ $? -eq 2 ]; then
 fi
 
 # Use in CI/CD
-autospec full "feature" || exit 1
+autospec all "feature" || exit 1
 ```
 
 ## Prerequisite Validation
@@ -1117,7 +1128,7 @@ Configure different timeouts for different operations:
 AUTOSPEC_TIMEOUT=60 autospec doctor
 
 # Long timeout for complex workflows
-AUTOSPEC_TIMEOUT=3600 autospec full "complex feature"
+AUTOSPEC_TIMEOUT=3600 autospec all "complex feature"
 
 # No timeout (default)
 AUTOSPEC_TIMEOUT=0 autospec prep "feature"

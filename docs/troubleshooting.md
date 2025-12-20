@@ -827,7 +827,7 @@ ls -la /path/to/your/sound.wav
 ```bash
 # Temporarily unset CI variable
 unset CI
-autospec full "feature"
+autospec all "feature"
 ```
 
 ### Notifications in headless/SSH sessions
@@ -890,14 +890,14 @@ if [ -t 0 ]; then echo "Interactive"; else echo "Non-interactive"; fi
 **Diagnostics**:
 ```bash
 # Run with debug to see notification timing
-autospec --debug full "test"
+autospec --debug all "test"
 ```
 
 **Solutions**:
 - If notifications are causing delays, switch to `type: visual` (sound playback can take longer)
 - Disable notifications for time-critical operations:
   ```bash
-  AUTOSPEC_NOTIFICATIONS_ENABLED=false autospec full "feature"
+  AUTOSPEC_NOTIFICATIONS_ENABLED=false autospec all "feature"
   ```
 
 ## Quick Reference

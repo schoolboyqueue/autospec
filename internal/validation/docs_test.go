@@ -365,7 +365,7 @@ func TestMermaidDiagrams(t *testing.T) {
 // Test that all CLI commands are documented in reference.md
 func TestCommandCompleteness(t *testing.T) {
 	requiredCommands := []string{
-		"autospec full",
+		"autospec all",
 		"autospec prep",
 		"autospec specify",
 		"autospec plan",
