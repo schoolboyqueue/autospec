@@ -75,7 +75,7 @@ phases:
       tasks:
         - id: "T005"
           title: "Implement CompactInstructionsForDisplay function in internal/workflow/executor.go"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-001"

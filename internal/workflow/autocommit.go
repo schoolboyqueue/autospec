@@ -66,9 +66,18 @@ func InjectInstructions(command string, instructions []InjectableInstruction) st
 }
 
 // formatInstructionBlock wraps an instruction's content with start/end markers.
+// The opening marker includes the DisplayHint (if present) for verbose display:
+// <!-- AUTOSPEC_INJECT:Name:DisplayHint -->
 func formatInstructionBlock(inst InjectableInstruction) string {
-	return fmt.Sprintf("%s%s%s\n%s\n%s%s%s",
-		InjectMarkerPrefix, inst.Name, InjectMarkerSuffix,
+	// Include DisplayHint in marker if present: <!-- AUTOSPEC_INJECT:Name:Hint -->
+	openMarker := fmt.Sprintf("%s%s", InjectMarkerPrefix, inst.Name)
+	if inst.DisplayHint != "" {
+		openMarker += ":" + inst.DisplayHint
+	}
+	openMarker += InjectMarkerSuffix
+
+	return fmt.Sprintf("%s\n%s\n%s%s%s",
+		openMarker,
 		inst.Content,
 		InjectMarkerEndPrefix, inst.Name, InjectMarkerSuffix,
 	)
