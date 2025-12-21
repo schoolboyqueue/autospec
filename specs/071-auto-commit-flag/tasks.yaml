@@ -255,7 +255,7 @@ phases:
       tasks:
         - id: "T018"
           title: "Integrate instruction injection into workflow executor when auto_commit is enabled"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -267,7 +267,7 @@ phases:
             - "Instructions are agent-agnostic"
         - id: "T019"
           title: "Add state capture/comparison to lifecycle wrapper in internal/lifecycle/autocommit.go"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-002"
