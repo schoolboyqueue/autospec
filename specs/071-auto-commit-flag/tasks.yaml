@@ -30,7 +30,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Add AutoCommit field to Configuration struct in internal/config/config.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -41,7 +41,7 @@ phases:
             - "Field follows existing Configuration struct patterns"
         - id: "T003"
           title: "Add auto_commit schema entry to KnownKeys map in internal/config/schema.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -53,7 +53,7 @@ phases:
             - "Appropriate description provided"
         - id: "T004"
           title: "Set auto_commit default to true in GetDefaults() in internal/config/defaults.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -64,7 +64,7 @@ phases:
             - "Default follows FR-007 requirement"
         - id: "T005"
           title: "Add tests for auto_commit config parsing in internal/config/config_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -81,7 +81,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Create GitState struct and CaptureGitState function in internal/git/state.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -94,7 +94,7 @@ phases:
             - "Returns error only for fatal conditions (not for detached HEAD)"
         - id: "T007"
           title: "Implement CompareGitStates function in internal/git/state.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -107,7 +107,7 @@ phases:
             - "Returns empty slice when commit was created successfully"
         - id: "T008"
           title: "Add tests for git state capture using in-memory go-git repos in internal/git/state_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
