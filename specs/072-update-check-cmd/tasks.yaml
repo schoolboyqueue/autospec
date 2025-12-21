@@ -51,7 +51,7 @@ phases:
       tasks:
         - id: "T003"
           title: "Implement ck command with update check logic"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-001"

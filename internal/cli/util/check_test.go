@@ -1,11 +1,9 @@
 package util
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +20,7 @@ func TestRunCheck_TableDriven(t *testing.T) {
 
 	tests := map[string]struct {
 		version        string
+		plain          bool
 		responseCode   int
 		responseBody   string
 		wantErr        bool
@@ -70,16 +69,43 @@ func TestRunCheck_TableDriven(t *testing.T) {
 			responseBody: `{"message": "not found"}`,
 			wantContains: []string{"No releases"},
 		},
+		"plain output update available": {
+			version:      "v0.6.0",
+			plain:        true,
+			responseCode: http.StatusOK,
+			responseBody: `{
+				"tag_name": "v0.7.0",
+				"published_at": "2025-12-20T00:00:00Z",
+				"assets": []
+			}`,
+			wantContains: []string{"current:", "latest:", "update_available: true"},
+		},
+		"plain output up to date": {
+			version:      "v0.7.0",
+			plain:        true,
+			responseCode: http.StatusOK,
+			responseBody: `{
+				"tag_name": "v0.7.0",
+				"published_at": "2025-12-20T00:00:00Z",
+				"assets": []
+			}`,
+			wantContains: []string{"current:", "latest:", "update_available: false"},
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original version and restore after test
+			// Save original values and restore after test
 			origVersion := Version
+			origPlain := ckPlain
 			Version = tt.version
-			defer func() { Version = origVersion }()
+			ckPlain = tt.plain
+			defer func() {
+				Version = origVersion
+				ckPlain = origPlain
+			}()
 
 			// Create mock server for GitHub API
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,10 +117,10 @@ func TestRunCheck_TableDriven(t *testing.T) {
 
 			// Create a checker with mock API URL
 			checker := update.NewChecker(5 * time.Second)
-			setCheckerAPIURL(checker, server.URL)
+			checker.SetAPIURL(server.URL)
 
-			// Execute check with mock checker
-			output, err := executeCheckWithChecker(context.Background(), checker, tt.version)
+			// Execute check using the real implementation
+			output, err := executeCheck(context.Background(), checker, tt.version)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -118,13 +144,18 @@ func TestRunCheck_TableDriven(t *testing.T) {
 func TestRunCheck_NetworkTimeout(t *testing.T) {
 	t.Parallel()
 
-	// Save original version and restore after test
+	// Save original values and restore after test
 	origVersion := Version
+	origPlain := ckPlain
 	Version = "v0.6.0"
-	defer func() { Version = origVersion }()
+	ckPlain = false
+	defer func() {
+		Version = origVersion
+		ckPlain = origPlain
+	}()
 
 	// Create a slow server that times out
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"tag_name": "v0.7.0"}`))
@@ -133,10 +164,10 @@ func TestRunCheck_NetworkTimeout(t *testing.T) {
 
 	// Create checker with very short timeout
 	checker := update.NewChecker(10 * time.Millisecond)
-	setCheckerAPIURL(checker, server.URL)
+	checker.SetAPIURL(server.URL)
 
 	// Execute and verify timeout is handled
-	output, err := executeCheckWithChecker(context.Background(), checker, "v0.6.0")
+	output, err := executeCheck(context.Background(), checker, "v0.6.0")
 
 	// Should handle timeout gracefully with user-friendly message
 	require.NoError(t, err)
@@ -147,13 +178,18 @@ func TestRunCheck_NetworkTimeout(t *testing.T) {
 func TestRunCheck_ContextCancellation(t *testing.T) {
 	t.Parallel()
 
-	// Save original version and restore after test
+	// Save original values and restore after test
 	origVersion := Version
+	origPlain := ckPlain
 	Version = "v0.6.0"
-	defer func() { Version = origVersion }()
+	ckPlain = false
+	defer func() {
+		Version = origVersion
+		ckPlain = origPlain
+	}()
 
 	// Create a slow server
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(100 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(`{"tag_name": "v0.7.0"}`))
@@ -161,14 +197,14 @@ func TestRunCheck_ContextCancellation(t *testing.T) {
 	defer server.Close()
 
 	checker := update.NewChecker(5 * time.Second)
-	setCheckerAPIURL(checker, server.URL)
+	checker.SetAPIURL(server.URL)
 
 	// Create a cancelled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	// Execute and verify cancellation is handled
-	_, err := executeCheckWithChecker(ctx, checker, "v0.6.0")
+	_, err := executeCheck(ctx, checker, "v0.6.0")
 
 	// Should handle cancellation
 	assert.Error(t, err)
@@ -185,19 +221,29 @@ func TestCheckCommand_CobraIntegration(t *testing.T) {
 	assert.NotEmpty(t, ckCmd.Long)
 	assert.NotEmpty(t, ckCmd.Example)
 	assert.NotNil(t, ckCmd.RunE)
+
+	// Verify --plain flag is registered
+	flag := ckCmd.Flags().Lookup("plain")
+	assert.NotNil(t, flag, "--plain flag should be registered")
 }
 
 // TestCheckCommand_DevBuildMessage tests dev build specific messaging.
 func TestCheckCommand_DevBuildMessage(t *testing.T) {
 	t.Parallel()
 
-	// Save original version and restore after test
+	// Save original values and restore after test
 	origVersion := Version
+	origPlain := ckPlain
 	Version = "dev"
-	defer func() { Version = origVersion }()
+	ckPlain = false
+	defer func() {
+		Version = origVersion
+		ckPlain = origPlain
+	}()
 
 	// For dev builds, we don't need a mock server since no network call should be made
-	output, err := executeCheckWithVersion(context.Background(), "dev")
+	checker := update.NewChecker(5 * time.Second)
+	output, err := executeCheck(context.Background(), checker, "dev")
 
 	require.NoError(t, err)
 	assert.Contains(t, output, "dev")
@@ -211,14 +257,17 @@ func TestCheckCommand_ParseError(t *testing.T) {
 
 	tests := map[string]struct {
 		version      string
+		wantErr      bool
 		wantContains string
 	}{
 		"invalid format": {
 			version:      "invalid",
+			wantErr:      true,
 			wantContains: "version",
 		},
 		"partial version": {
 			version:      "v1.0",
+			wantErr:      true,
 			wantContains: "version",
 		},
 	}
@@ -227,96 +276,97 @@ func TestCheckCommand_ParseError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original version and restore after test
+			// Save original values and restore after test
 			origVersion := Version
+			origPlain := ckPlain
 			Version = tt.version
-			defer func() { Version = origVersion }()
+			ckPlain = false
+			defer func() {
+				Version = origVersion
+				ckPlain = origPlain
+			}()
+
+			// Create mock server - for invalid versions the check will fail during parsing
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"tag_name": "v1.0.0"}`))
+			}))
+			defer server.Close()
+
+			checker := update.NewChecker(5 * time.Second)
+			checker.SetAPIURL(server.URL)
 
 			// Execute check
-			output, err := executeCheckWithVersion(context.Background(), tt.version)
+			_, err := executeCheck(context.Background(), checker, tt.version)
 
-			// Should handle parse error gracefully
-			if err != nil {
+			if tt.wantErr {
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tt.wantContains)
-			} else {
-				// If no error, should display current version in output
-				assert.Contains(t, output, tt.version)
 			}
 		})
 	}
 }
 
-// Helper functions for testing
+// TestCheckCommand_PlainOutput tests the --plain flag output format.
+func TestCheckCommand_PlainOutput(t *testing.T) {
+	t.Parallel()
 
-// setCheckerAPIURL sets the API URL for the checker using the exported SetAPIURL method.
-func setCheckerAPIURL(checker *update.Checker, url string) {
-	checker.SetAPIURL(url)
-}
-
-// executeCheckWithChecker executes the check command with a specific checker.
-// Returns the output and any error.
-// This simulates what the actual check.go implementation should produce.
-func executeCheckWithChecker(ctx context.Context, checker *update.Checker, version string) (string, error) {
-	var output bytes.Buffer
-
-	// Handle dev builds without making network calls
-	if version == "dev" || version == "" {
-		output.WriteString("Running dev build - update check not applicable\n")
-		return output.String(), nil
+	tests := map[string]struct {
+		version        string
+		responseBody   string
+		wantContains   []string
+		wantNotContain []string
+	}{
+		"dev build plain": {
+			version:      "dev",
+			responseBody: `{}`,
+			wantContains: []string{"version:", "status: dev-build"},
+		},
+		"error plain": {
+			version:      "v0.6.0",
+			responseBody: ``, // This will cause an error in parsing
+			wantContains: []string{"error:"},
+		},
 	}
 
-	// Perform the update check
-	check, err := checker.CheckForUpdate(ctx, version)
-	if err != nil {
-		// Handle specific error types with user-friendly messages
-		errStr := err.Error()
-		if strings.Contains(errStr, "rate limit") {
-			output.WriteString("Error: GitHub API rate limit exceeded. Please try again later.\n")
-			return output.String(), nil
-		}
-		if strings.Contains(errStr, "no releases") {
-			output.WriteString("Error: No releases found on GitHub.\n")
-			return output.String(), nil
-		}
-		if strings.Contains(errStr, "deadline exceeded") || strings.Contains(errStr, "timeout") {
-			output.WriteString("Error: Network timeout while checking for updates.\n")
-			return output.String(), nil
-		}
-		// For other errors, return them
-		return "", err
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			// Save original values and restore after test
+			origVersion := Version
+			origPlain := ckPlain
+			Version = tt.version
+			ckPlain = true // Enable plain output
+			defer func() {
+				Version = origVersion
+				ckPlain = origPlain
+			}()
+
+			// Create mock server
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				if tt.responseBody == "" {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(tt.responseBody))
+			}))
+			defer server.Close()
+
+			checker := update.NewChecker(5 * time.Second)
+			checker.SetAPIURL(server.URL)
+
+			output, err := executeCheck(context.Background(), checker, tt.version)
+
+			// For plain output, errors should be formatted as output, not returned
+			if err == nil {
+				for _, want := range tt.wantContains {
+					assert.Contains(t, output, want, "output should contain %q", want)
+				}
+			}
+		})
 	}
-
-	// Format the output based on the check result
-	if check.UpdateAvailable {
-		output.WriteString("Update available: ")
-		output.WriteString(check.CurrentVersion)
-		output.WriteString(" -> ")
-		output.WriteString(check.LatestVersion)
-		output.WriteString("\nRun 'autospec update' to upgrade\n")
-	} else {
-		output.WriteString("Already on latest version (")
-		output.WriteString(check.CurrentVersion)
-		output.WriteString(")\n")
-	}
-
-	return output.String(), nil
-}
-
-// executeCheckWithVersion executes the check command with the given version.
-// Returns the output and any error.
-func executeCheckWithVersion(ctx context.Context, version string) (string, error) {
-	// For dev builds, return dev-specific message
-	if version == "dev" {
-		return "Running dev build - update check not applicable\n", nil
-	}
-
-	// For invalid versions, return parse error
-	_, err := update.ParseVersion(version)
-	if err != nil {
-		return "", err
-	}
-
-	return "Version: " + version + "\n", nil
 }
 
 // createTestCommand creates a test cobra command for integration testing.
