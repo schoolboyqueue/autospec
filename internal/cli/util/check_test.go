@@ -29,6 +29,7 @@ func TestRunCheck_TableDriven(t *testing.T) {
 	}{
 		"update available": {
 			version:      "v0.6.0",
+			plain:        false,
 			responseCode: http.StatusOK,
 			responseBody: `{
 				"tag_name": "v0.7.0",
@@ -42,6 +43,7 @@ func TestRunCheck_TableDriven(t *testing.T) {
 		},
 		"already on latest version": {
 			version:      "v0.7.0",
+			plain:        false,
 			responseCode: http.StatusOK,
 			responseBody: `{
 				"tag_name": "v0.7.0",
@@ -53,18 +55,21 @@ func TestRunCheck_TableDriven(t *testing.T) {
 		},
 		"dev build": {
 			version:      "dev",
+			plain:        false,
 			responseCode: http.StatusOK,
 			responseBody: `{}`,
 			wantContains: []string{"dev", "update check"},
 		},
 		"rate limit error": {
 			version:      "v0.6.0",
+			plain:        false,
 			responseCode: http.StatusForbidden,
 			responseBody: `{"message": "rate limit exceeded"}`,
 			wantContains: []string{"rate limit"},
 		},
 		"not found error": {
 			version:      "v0.6.0",
+			plain:        false,
 			responseCode: http.StatusNotFound,
 			responseBody: `{"message": "not found"}`,
 			wantContains: []string{"No releases"},
@@ -76,7 +81,10 @@ func TestRunCheck_TableDriven(t *testing.T) {
 			responseBody: `{
 				"tag_name": "v0.7.0",
 				"published_at": "2025-12-20T00:00:00Z",
-				"assets": []
+				"assets": [
+					{"name": "autospec_0.7.0_Linux_x86_64.tar.gz", "browser_download_url": "https://example.com/download.tar.gz"},
+					{"name": "checksums.txt", "browser_download_url": "https://example.com/checksums.txt"}
+				]
 			}`,
 			wantContains: []string{"current:", "latest:", "update_available: true"},
 		},
@@ -97,16 +105,6 @@ func TestRunCheck_TableDriven(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original values and restore after test
-			origVersion := Version
-			origPlain := ckPlain
-			Version = tt.version
-			ckPlain = tt.plain
-			defer func() {
-				Version = origVersion
-				ckPlain = origPlain
-			}()
-
 			// Create mock server for GitHub API
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, "application/vnd.github.v3+json", r.Header.Get("Accept"))
@@ -119,8 +117,8 @@ func TestRunCheck_TableDriven(t *testing.T) {
 			checker := update.NewChecker(5 * time.Second)
 			checker.SetAPIURL(server.URL)
 
-			// Execute check using the real implementation
-			output, err := executeCheck(context.Background(), checker, tt.version)
+			// Execute check using the real implementation - pass plain as parameter
+			output, err := executeCheck(context.Background(), checker, tt.version, tt.plain)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -144,16 +142,6 @@ func TestRunCheck_TableDriven(t *testing.T) {
 func TestRunCheck_NetworkTimeout(t *testing.T) {
 	t.Parallel()
 
-	// Save original values and restore after test
-	origVersion := Version
-	origPlain := ckPlain
-	Version = "v0.6.0"
-	ckPlain = false
-	defer func() {
-		Version = origVersion
-		ckPlain = origPlain
-	}()
-
 	// Create a slow server that times out
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(200 * time.Millisecond)
@@ -166,8 +154,8 @@ func TestRunCheck_NetworkTimeout(t *testing.T) {
 	checker := update.NewChecker(10 * time.Millisecond)
 	checker.SetAPIURL(server.URL)
 
-	// Execute and verify timeout is handled
-	output, err := executeCheck(context.Background(), checker, "v0.6.0")
+	// Execute and verify timeout is handled - pass plain=false
+	output, err := executeCheck(context.Background(), checker, "v0.6.0", false)
 
 	// Should handle timeout gracefully with user-friendly message
 	require.NoError(t, err)
@@ -177,16 +165,6 @@ func TestRunCheck_NetworkTimeout(t *testing.T) {
 // TestRunCheck_ContextCancellation tests that the check command respects context cancellation.
 func TestRunCheck_ContextCancellation(t *testing.T) {
 	t.Parallel()
-
-	// Save original values and restore after test
-	origVersion := Version
-	origPlain := ckPlain
-	Version = "v0.6.0"
-	ckPlain = false
-	defer func() {
-		Version = origVersion
-		ckPlain = origPlain
-	}()
 
 	// Create a slow server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -203,8 +181,8 @@ func TestRunCheck_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	// Execute and verify cancellation is handled
-	_, err := executeCheck(ctx, checker, "v0.6.0")
+	// Execute and verify cancellation is handled - pass plain=false
+	_, err := executeCheck(ctx, checker, "v0.6.0", false)
 
 	// Should handle cancellation
 	assert.Error(t, err)
@@ -231,19 +209,9 @@ func TestCheckCommand_CobraIntegration(t *testing.T) {
 func TestCheckCommand_DevBuildMessage(t *testing.T) {
 	t.Parallel()
 
-	// Save original values and restore after test
-	origVersion := Version
-	origPlain := ckPlain
-	Version = "dev"
-	ckPlain = false
-	defer func() {
-		Version = origVersion
-		ckPlain = origPlain
-	}()
-
 	// For dev builds, we don't need a mock server since no network call should be made
 	checker := update.NewChecker(5 * time.Second)
-	output, err := executeCheck(context.Background(), checker, "dev")
+	output, err := executeCheck(context.Background(), checker, "dev", false)
 
 	require.NoError(t, err)
 	assert.Contains(t, output, "dev")
@@ -276,16 +244,6 @@ func TestCheckCommand_ParseError(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original values and restore after test
-			origVersion := Version
-			origPlain := ckPlain
-			Version = tt.version
-			ckPlain = false
-			defer func() {
-				Version = origVersion
-				ckPlain = origPlain
-			}()
-
 			// Create mock server - for invalid versions the check will fail during parsing
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
@@ -296,8 +254,8 @@ func TestCheckCommand_ParseError(t *testing.T) {
 			checker := update.NewChecker(5 * time.Second)
 			checker.SetAPIURL(server.URL)
 
-			// Execute check
-			_, err := executeCheck(context.Background(), checker, tt.version)
+			// Execute check - pass plain=false
+			_, err := executeCheck(context.Background(), checker, tt.version, false)
 
 			if tt.wantErr {
 				require.Error(t, err)
@@ -333,16 +291,6 @@ func TestCheckCommand_PlainOutput(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			// Save original values and restore after test
-			origVersion := Version
-			origPlain := ckPlain
-			Version = tt.version
-			ckPlain = true // Enable plain output
-			defer func() {
-				Version = origVersion
-				ckPlain = origPlain
-			}()
-
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				if tt.responseBody == "" {
@@ -357,7 +305,8 @@ func TestCheckCommand_PlainOutput(t *testing.T) {
 			checker := update.NewChecker(5 * time.Second)
 			checker.SetAPIURL(server.URL)
 
-			output, err := executeCheck(context.Background(), checker, tt.version)
+			// Pass plain=true for plain output
+			output, err := executeCheck(context.Background(), checker, tt.version, true)
 
 			// For plain output, errors should be formatted as output, not returned
 			if err == nil {

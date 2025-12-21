@@ -51,7 +51,7 @@ phases:
       tasks:
         - id: "T003"
           title: "Implement ck command with update check logic"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -68,7 +68,7 @@ phases:
             - "All errors wrapped with context"
         - id: "T004"
           title: "Add pretty and plain output formats to ck command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -80,7 +80,7 @@ phases:
             - "Plain output is deterministic and machine-parseable"
         - id: "T005"
           title: "Register ck command in util package"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"

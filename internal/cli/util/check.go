@@ -43,7 +43,7 @@ func runCheck(cmd *cobra.Command, _ []string) error {
 	}
 
 	checker := update.NewChecker(update.DefaultHTTPTimeout)
-	output, err := executeCheck(ctx, checker, Version)
+	output, err := executeCheck(ctx, checker, Version, ckPlain)
 	if err != nil {
 		return err
 	}
@@ -53,24 +53,25 @@ func runCheck(cmd *cobra.Command, _ []string) error {
 }
 
 // executeCheck performs the update check and returns formatted output.
-func executeCheck(ctx context.Context, checker *update.Checker, version string) (string, error) {
+// The plain parameter controls whether output is formatted for scripts.
+func executeCheck(ctx context.Context, checker *update.Checker, version string, plain bool) (string, error) {
 	// Handle dev builds without making network calls
 	if version == "dev" || version == "" {
-		return formatDevBuildMessage(version), nil
+		return formatDevBuildMessage(version, plain), nil
 	}
 
 	// Perform the update check
 	check, err := checker.CheckForUpdate(ctx, version)
 	if err != nil {
-		return handleCheckError(err, version)
+		return handleCheckError(err, plain)
 	}
 
-	return formatCheckResult(check), nil
+	return formatCheckResult(check, plain), nil
 }
 
 // formatDevBuildMessage returns a message for dev builds.
-func formatDevBuildMessage(version string) string {
-	if ckPlain {
+func formatDevBuildMessage(version string, plain bool) string {
+	if plain {
 		return fmt.Sprintf("version: %s\nstatus: dev-build\nmessage: update check not applicable\n", version)
 	}
 
@@ -82,16 +83,18 @@ func formatDevBuildMessage(version string) string {
 }
 
 // handleCheckError converts errors to user-friendly messages.
-func handleCheckError(err error, version string) (string, error) {
+func handleCheckError(err error, plain bool) (string, error) {
 	errStr := err.Error()
 
 	switch {
 	case strings.Contains(errStr, "rate limit"):
-		return formatErrorMessage("GitHub API rate limit exceeded", "Please try again later"), nil
+		return formatErrorMessage("GitHub API rate limit exceeded", "Please try again later", plain), nil
 	case strings.Contains(errStr, "no releases"):
-		return formatErrorMessage("No releases found", "No releases found on GitHub"), nil
+		return formatErrorMessage("No releases found", "No releases found on GitHub", plain), nil
 	case strings.Contains(errStr, "deadline exceeded") || strings.Contains(errStr, "timeout"):
-		return formatErrorMessage("Network timeout", "Network timeout while checking for updates"), nil
+		return formatErrorMessage("Network timeout", "Network timeout while checking for updates", plain), nil
+	case strings.Contains(errStr, "no asset found"):
+		return formatErrorMessage("Platform not supported", "No release asset for this platform", plain), nil
 	case strings.Contains(errStr, "context canceled"):
 		return "", err
 	default:
@@ -100,8 +103,8 @@ func handleCheckError(err error, version string) (string, error) {
 }
 
 // formatErrorMessage returns a formatted error message.
-func formatErrorMessage(title, detail string) string {
-	if ckPlain {
+func formatErrorMessage(title, detail string, plain bool) string {
+	if plain {
 		return fmt.Sprintf("error: %s - %s\n", title, detail)
 	}
 	red := color.New(color.FgRed).SprintFunc()
@@ -109,16 +112,16 @@ func formatErrorMessage(title, detail string) string {
 }
 
 // formatCheckResult formats the update check result for display.
-func formatCheckResult(check *update.UpdateCheck) string {
+func formatCheckResult(check *update.UpdateCheck, plain bool) string {
 	if check.UpdateAvailable {
-		return formatUpdateAvailable(check)
+		return formatUpdateAvailable(check, plain)
 	}
-	return formatUpToDate(check)
+	return formatUpToDate(check, plain)
 }
 
 // formatUpdateAvailable returns output when an update is available.
-func formatUpdateAvailable(check *update.UpdateCheck) string {
-	if ckPlain {
+func formatUpdateAvailable(check *update.UpdateCheck, plain bool) string {
+	if plain {
 		return fmt.Sprintf("current: %s\nlatest: %s\nupdate_available: true\n",
 			check.CurrentVersion, check.LatestVersion)
 	}
@@ -135,8 +138,8 @@ func formatUpdateAvailable(check *update.UpdateCheck) string {
 }
 
 // formatUpToDate returns output when already on latest version.
-func formatUpToDate(check *update.UpdateCheck) string {
-	if ckPlain {
+func formatUpToDate(check *update.UpdateCheck, plain bool) string {
+	if plain {
 		return fmt.Sprintf("current: %s\nlatest: %s\nupdate_available: false\n",
 			check.CurrentVersion, check.LatestVersion)
 	}
