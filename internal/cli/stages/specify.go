@@ -85,6 +85,9 @@ The feature description should be a clear, concise description of what you want 
 				return err
 			}
 
+			// Apply auto-commit override from flags
+			shared.ApplyAutoCommitOverride(cmd, cfg)
+
 			// Check if constitution exists (required for specify)
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
@@ -119,4 +122,7 @@ func init() {
 
 	// Agent override flag
 	shared.AddAgentFlag(specifyCmd)
+
+	// Auto-commit flags
+	shared.AddAutoCommitFlags(specifyCmd)
 }

@@ -71,6 +71,9 @@ You can optionally provide a prompt to guide the task generation.`,
 			return err
 		}
 
+		// Apply auto-commit override from flags
+		shared.ApplyAutoCommitOverride(cmd, cfg)
+
 		// Check if constitution exists (required for tasks)
 		constitutionCheck := workflow.CheckConstitutionExists()
 		if !constitutionCheck.Exists {
@@ -127,4 +130,7 @@ func init() {
 
 	// Agent override flag
 	shared.AddAgentFlag(tasksCmd)
+
+	// Auto-commit flags
+	shared.AddAutoCommitFlags(tasksCmd)
 }

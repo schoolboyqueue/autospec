@@ -158,7 +158,7 @@ phases:
       tasks:
         - id: "T011"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/stages/specify.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -171,7 +171,7 @@ phases:
             - "Flag-to-config resolution using cmd.Flags().Changed() pattern"
         - id: "T012"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/stages/plan.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -184,7 +184,7 @@ phases:
             - "Flag-to-config resolution using Changed() pattern"
         - id: "T013"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/stages/tasks.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -197,7 +197,7 @@ phases:
             - "Flag-to-config resolution using Changed() pattern"
         - id: "T014"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/stages/implement.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -210,7 +210,7 @@ phases:
             - "Flag-to-config resolution using Changed() pattern"
         - id: "T015"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/prep.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -223,7 +223,7 @@ phases:
             - "Flag-to-config resolution using Changed() pattern"
         - id: "T016"
           title: "Add --auto-commit and --no-auto-commit flags to internal/cli/run.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -236,7 +236,7 @@ phases:
             - "Flag-to-config resolution using Changed() pattern"
         - id: "T017"
           title: "Add tests for flag handling in internal/cli/stages/flags_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -255,7 +255,7 @@ phases:
       tasks:
         - id: "T018"
           title: "Integrate instruction injection into workflow executor when auto_commit is enabled"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-002"
