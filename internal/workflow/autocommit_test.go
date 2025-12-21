@@ -8,6 +8,184 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestInjectableInstruction(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		inst     InjectableInstruction
+		wantName string
+		wantHint string
+	}{
+		"all fields populated": {
+			inst: InjectableInstruction{
+				Name:        "AutoCommit",
+				DisplayHint: "post-work git commit with conventional format",
+				Content:     "Do the commit",
+			},
+			wantName: "AutoCommit",
+			wantHint: "post-work git commit with conventional format",
+		},
+		"name only with content": {
+			inst: InjectableInstruction{
+				Name:    "TestInstruction",
+				Content: "Test content",
+			},
+			wantName: "TestInstruction",
+			wantHint: "",
+		},
+		"empty display hint is valid": {
+			inst: InjectableInstruction{
+				Name:        "MinimalInst",
+				DisplayHint: "",
+				Content:     "Content here",
+			},
+			wantName: "MinimalInst",
+			wantHint: "",
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.wantName, tc.inst.Name)
+			assert.Equal(t, tc.wantHint, tc.inst.DisplayHint)
+			assert.NotEmpty(t, tc.inst.Content)
+		})
+	}
+}
+
+func TestInjectInstructions(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		command      string
+		instructions []InjectableInstruction
+		wantContains []string
+		wantExact    string
+	}{
+		"empty instruction list returns original": {
+			command:      "original command",
+			instructions: []InjectableInstruction{},
+			wantExact:    "original command",
+		},
+		"nil instruction list returns original": {
+			command:      "original command",
+			instructions: nil,
+			wantExact:    "original command",
+		},
+		"single instruction with markers": {
+			command: "base command",
+			instructions: []InjectableInstruction{
+				{Name: "AutoCommit", Content: "Commit instructions"},
+			},
+			wantContains: []string{
+				"base command",
+				"<!-- AUTOSPEC_INJECT:AutoCommit -->",
+				"Commit instructions",
+				"<!-- /AUTOSPEC_INJECT:AutoCommit -->",
+			},
+		},
+		"multiple instructions": {
+			command: "multi command",
+			instructions: []InjectableInstruction{
+				{Name: "First", Content: "First content"},
+				{Name: "Second", Content: "Second content"},
+			},
+			wantContains: []string{
+				"multi command",
+				"<!-- AUTOSPEC_INJECT:First -->",
+				"First content",
+				"<!-- /AUTOSPEC_INJECT:First -->",
+				"<!-- AUTOSPEC_INJECT:Second -->",
+				"Second content",
+				"<!-- /AUTOSPEC_INJECT:Second -->",
+			},
+		},
+		"skips instruction with empty name": {
+			command: "cmd",
+			instructions: []InjectableInstruction{
+				{Name: "", Content: "Should be skipped"},
+				{Name: "Valid", Content: "Should be included"},
+			},
+			wantContains: []string{
+				"<!-- AUTOSPEC_INJECT:Valid -->",
+				"Should be included",
+			},
+		},
+		"skips instruction with empty content": {
+			command: "cmd",
+			instructions: []InjectableInstruction{
+				{Name: "EmptyContent", Content: ""},
+				{Name: "Valid", Content: "Valid content"},
+			},
+			wantContains: []string{
+				"<!-- AUTOSPEC_INJECT:Valid -->",
+				"Valid content",
+			},
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			result := InjectInstructions(tc.command, tc.instructions)
+
+			if tc.wantExact != "" {
+				assert.Equal(t, tc.wantExact, result)
+				return
+			}
+
+			for _, want := range tc.wantContains {
+				assert.Contains(t, result, want,
+					"result should contain: %s", want)
+			}
+		})
+	}
+}
+
+func TestInjectInstructionsMarkerFormat(t *testing.T) {
+	t.Parallel()
+
+	command := "test"
+	instructions := []InjectableInstruction{
+		{Name: "TestMarker", Content: "Test content"},
+	}
+
+	result := InjectInstructions(command, instructions)
+
+	// Verify marker structure is correct for parsing
+	require.Contains(t, result, "<!-- AUTOSPEC_INJECT:TestMarker -->")
+	require.Contains(t, result, "<!-- /AUTOSPEC_INJECT:TestMarker -->")
+
+	// Verify content is between markers
+	startIdx := strings.Index(result, "<!-- AUTOSPEC_INJECT:TestMarker -->")
+	endIdx := strings.Index(result, "<!-- /AUTOSPEC_INJECT:TestMarker -->")
+	contentIdx := strings.Index(result, "Test content")
+
+	assert.Less(t, startIdx, contentIdx, "start marker should come before content")
+	assert.Less(t, contentIdx, endIdx, "content should come before end marker")
+}
+
+func TestInjectInstructionsPreservesOriginal(t *testing.T) {
+	t.Parallel()
+
+	// Original command with complex content
+	original := `Some complex command
+with multiple lines
+and special chars: $VAR && || > <`
+
+	instructions := []InjectableInstruction{
+		{Name: "Append", Content: "Appended content"},
+	}
+
+	result := InjectInstructions(original, instructions)
+
+	// Original should be fully preserved at the start
+	assert.True(t, strings.HasPrefix(result, original),
+		"result should start with original command")
+}
+
 func TestBuildAutoCommitInstructions(t *testing.T) {
 	t.Parallel()
 

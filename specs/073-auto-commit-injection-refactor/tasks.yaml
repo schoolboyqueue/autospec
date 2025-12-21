@@ -56,7 +56,7 @@ phases:
             - "Appends marked instruction blocks to command"
         - id: "T004"
           title: "Add unit tests for InjectableInstruction and InjectInstructions in internal/workflow/autocommit_test.go"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
