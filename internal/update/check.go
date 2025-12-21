@@ -58,6 +58,11 @@ func NewChecker(timeout time.Duration) *Checker {
 	}
 }
 
+// SetAPIURL sets the API URL for the checker. This is intended for testing purposes.
+func (c *Checker) SetAPIURL(url string) {
+	c.apiURL = url
+}
+
 // CheckForUpdate checks GitHub for a newer version of autospec.
 func (c *Checker) CheckForUpdate(ctx context.Context, currentVersion string) (*UpdateCheck, error) {
 	current, err := ParseVersion(currentVersion)

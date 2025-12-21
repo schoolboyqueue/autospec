@@ -31,7 +31,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Create check_test.go with table-driven test cases"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
