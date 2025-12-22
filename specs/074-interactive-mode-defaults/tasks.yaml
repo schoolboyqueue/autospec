@@ -87,7 +87,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Update stageExecutionContext to include Interactive flag"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -99,7 +99,7 @@ phases:
             - "Interactive flag propagated to ClaudeExecutor"
         - id: "T007"
           title: "Update ClaudeExecutor to pass Interactive flag to agent"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -111,7 +111,7 @@ phases:
             - "Existing automated execution unaffected"
         - id: "T008"
           title: "Update StageExecutor.ExecuteAnalyze() to use interactive mode"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: true
           story_id: "US-001"
