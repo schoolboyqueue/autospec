@@ -215,13 +215,11 @@ func TestBuildAutoCommitInstructions(t *testing.T) {
 		t.Parallel()
 
 		content := inst.Content
-		// Should include commit format and types
+		// Should include commit format template (minimal instructions don't list all types)
 		assert.Contains(t, content, "type(scope): description",
 			"instructions should include commit format template")
-		assert.Contains(t, content, "feat",
-			"instructions should mention feat commit type")
-		assert.Contains(t, content, "fix",
-			"instructions should mention fix commit type")
+		assert.Contains(t, content, "conventional format",
+			"instructions should mention conventional format")
 	})
 
 	t.Run("is agent-agnostic", func(t *testing.T) {
