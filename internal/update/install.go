@@ -1,9 +1,12 @@
 package update
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 // Installer handles binary installation with backup and rollback.
@@ -57,10 +60,63 @@ func (i *Installer) CreateBackup() error {
 }
 
 // InstallBinary moves a new binary into place.
+// Uses rename for same-filesystem moves, falls back to copy for cross-device.
 func (i *Installer) InstallBinary(newBinaryPath string) error {
-	if err := os.Rename(newBinaryPath, i.executablePath); err != nil {
+	err := os.Rename(newBinaryPath, i.executablePath)
+	if err == nil {
+		return nil
+	}
+
+	// Check if this is a cross-device link error
+	if !isCrossDeviceError(err) {
 		return fmt.Errorf("installing new binary: %w", err)
 	}
+
+	// Fall back to copy-and-delete for cross-device moves
+	if err := copyFile(newBinaryPath, i.executablePath); err != nil {
+		return fmt.Errorf("copying binary across devices: %w", err)
+	}
+
+	if err := os.Remove(newBinaryPath); err != nil {
+		// Non-fatal: binary is installed, just couldn't clean up temp file
+		return nil
+	}
+
+	return nil
+}
+
+// isCrossDeviceError checks if an error is due to cross-device rename.
+func isCrossDeviceError(err error) bool {
+	var linkErr *os.LinkError
+	if errors.As(err, &linkErr) {
+		return errors.Is(linkErr.Err, syscall.EXDEV)
+	}
+	return false
+}
+
+// copyFile copies a file from src to dst, preserving permissions.
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("opening source: %w", err)
+	}
+	defer srcFile.Close()
+
+	srcInfo, err := srcFile.Stat()
+	if err != nil {
+		return fmt.Errorf("stating source: %w", err)
+	}
+
+	dstFile, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return fmt.Errorf("creating destination: %w", err)
+	}
+	defer dstFile.Close()
+
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		return fmt.Errorf("copying content: %w", err)
+	}
+
 	return nil
 }
 
