@@ -25,6 +25,7 @@ type Executor struct {
 	MaxRetries          int                       // Maximum retry attempts (1-10 range)
 	TotalStages         int                       // Total stages in workflow
 	Debug               bool                      // Enable debug logging
+	AutoCommit          bool                      // Enable auto-commit instruction injection
 	Progress            *ProgressController       // Optional progress display controller
 	Notify              *NotifyDispatcher         // Optional notification dispatcher
 	ProgressDisplay     *progress.ProgressDisplay // Deprecated: use Progress instead
@@ -126,11 +127,15 @@ func (e *Executor) ExecuteStage(specName string, stage Stage, command string, va
 		return result, err
 	}
 
+	// Inject auto-commit instructions if enabled
+	commandWithInstructions := InjectAutoCommitInstructions(command, e.AutoCommit)
+	e.debugLog("AutoCommit enabled: %v", e.AutoCommit)
+
 	ctx := &stageExecutionContext{
 		specName:       specName,
 		stage:          stage,
-		command:        command,
-		currentCommand: command,
+		command:        commandWithInstructions,
+		currentCommand: commandWithInstructions,
 		validateFunc:   validateFunc,
 		result:         result,
 		retryState:     retryState,
@@ -258,9 +263,12 @@ func (e *Executor) startProgressDisplay(stageInfo progress.StageInfo) {
 	}
 }
 
-// displayCommandExecution shows the command being executed
+// displayCommandExecution shows the command being executed.
+// Compact tags [+Name] are shown for injected instructions.
+// In debug mode, shows [+Name: hint] if a DisplayHint is present.
 func (e *Executor) displayCommandExecution(command string) {
-	fullCommand := e.Claude.FormatCommand(command)
+	compactedCommand := CompactInstructionsForDisplay(command, e.Debug)
+	fullCommand := e.Claude.FormatCommand(compactedCommand)
 	fmt.Printf("\n→ Executing: %s\n\n", fullCommand)
 	e.debugLog("About to call Claude.Execute()")
 }
@@ -555,6 +563,83 @@ func BuildRetryCommand(command string, retryContext string, originalArgs string)
 	// Separate retry context from original args with a blank line
 	combinedArgs := fmt.Sprintf("%s\n\n%s", retryContext, originalArgs)
 	return fmt.Sprintf("%s %s", command, combinedArgs)
+}
+
+// CompactInstructionsForDisplay replaces injectable instruction blocks with compact tags.
+// For non-verbose mode: [+Name]
+// For verbose mode: [+Name: DisplayHint] (if hint exists)
+//
+// Markers are parsed using the format:
+// <!-- AUTOSPEC_INJECT:Name[:DisplayHint] --> content <!-- /AUTOSPEC_INJECT:Name -->
+func CompactInstructionsForDisplay(command string, verbose bool) string {
+	result := command
+	for {
+		startIdx := strings.Index(result, InjectMarkerPrefix)
+		if startIdx == -1 {
+			break
+		}
+		name, hint, endIdx := parseInjectableBlock(result, startIdx)
+		if endIdx == -1 {
+			break // Malformed marker, stop processing
+		}
+		tag := formatCompactTag(name, hint, verbose)
+		result = result[:startIdx] + tag + result[endIdx:]
+	}
+	return result
+}
+
+// parseInjectableBlock extracts name, hint, and end position from an instruction block.
+// Returns name, hint, and endIdx (position after closing marker). Returns -1 for endIdx if malformed.
+func parseInjectableBlock(s string, startIdx int) (name, hint string, endIdx int) {
+	markerEnd := strings.Index(s[startIdx:], InjectMarkerSuffix)
+	if markerEnd == -1 {
+		return "", "", -1
+	}
+	markerEnd += startIdx
+
+	// Extract "Name[:Hint]" from between prefix and suffix
+	nameHint := s[startIdx+len(InjectMarkerPrefix) : markerEnd]
+	name, hint = splitNameHint(nameHint)
+
+	// Find closing marker: <!-- /AUTOSPEC_INJECT:Name -->
+	closeMarker := InjectMarkerEndPrefix + name + InjectMarkerSuffix
+	closeIdx := strings.Index(s[markerEnd:], closeMarker)
+	if closeIdx == -1 {
+		return "", "", -1
+	}
+	return name, hint, markerEnd + closeIdx + len(closeMarker)
+}
+
+// splitNameHint splits "Name:Hint" into name and hint parts.
+func splitNameHint(nameHint string) (name, hint string) {
+	parts := strings.SplitN(nameHint, ":", 2)
+	name = parts[0]
+	if len(parts) > 1 {
+		hint = parts[1]
+	}
+	return name, hint
+}
+
+// formatCompactTag creates the display tag for an instruction.
+func formatCompactTag(name, hint string, verbose bool) string {
+	if verbose && hint != "" {
+		return fmt.Sprintf("[+%s: %s]", name, hint)
+	}
+	return fmt.Sprintf("[+%s]", name)
+}
+
+// InjectAutoCommitInstructions appends auto-commit instructions to a command string.
+// The instructions are wrapped with markers for reliable detection and extraction,
+// enabling compact output display (e.g., [+AutoCommit]) while preserving full
+// instruction content for agents.
+//
+// If autoCommit is false, the original command is returned unchanged.
+func InjectAutoCommitInstructions(command string, autoCommit bool) string {
+	if !autoCommit {
+		return command
+	}
+	instruction := BuildAutoCommitInstructions()
+	return InjectInstructions(command, []InjectableInstruction{instruction})
 }
 
 // ExtractValidationErrors parses a validation error message and extracts individual error lines.

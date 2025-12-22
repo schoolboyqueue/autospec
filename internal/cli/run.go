@@ -134,6 +134,12 @@ Stages are always executed in canonical order:
 			return err
 		}
 
+		// Apply auto-commit override from flags
+		shared.ApplyAutoCommitOverride(cmd, cfg)
+
+		// Show one-time auto-commit notice if using default value
+		lifecycle.ShowAutoCommitNoticeIfNeeded(cfg.StateDir, cfg.AutoCommitSource)
+
 		// Resolve skip confirmations (flag > env > config)
 		if skipConfirm || os.Getenv("AUTOSPEC_YES") != "" || cfg.SkipConfirmations {
 			cfg.SkipConfirmations = true
@@ -506,4 +512,7 @@ func init() {
 
 	// Agent override flag
 	shared.AddAgentFlag(runCmd)
+
+	// Auto-commit flags
+	shared.AddAutoCommitFlags(runCmd)
 }

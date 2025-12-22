@@ -1,0 +1,5 @@
+# Prevent merge conflicts for development-only directories
+# These are tracked in feature branches but should not be merged to main
+specs/** merge=ours
+.dev/** merge=ours
+.claude/commands/** merge=ours

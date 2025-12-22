@@ -80,6 +80,12 @@ This is useful when you want to review the generated artifacts before implementa
 				return err
 			}
 
+			// Apply auto-commit override from flags
+			shared.ApplyAutoCommitOverride(cmd, cfg)
+
+			// Show one-time auto-commit notice if using default value
+			lifecycle.ShowAutoCommitNoticeIfNeeded(cfg.StateDir, cfg.AutoCommitSource)
+
 			// Check if constitution exists (required for all workflow stages)
 			constitutionCheck := workflow.CheckConstitutionExists()
 			if !constitutionCheck.Exists {
@@ -113,4 +119,7 @@ func init() {
 
 	// Agent override flag
 	shared.AddAgentFlag(prepCmd)
+
+	// Auto-commit flags
+	shared.AddAutoCommitFlags(prepCmd)
 }

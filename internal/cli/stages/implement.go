@@ -180,6 +180,12 @@ The --tasks mode provides maximum context isolation:
 			return err
 		}
 
+		// Apply auto-commit override from flags
+		shared.ApplyAutoCommitOverride(cmd, cfg)
+
+		// Show one-time auto-commit notice if using default value
+		lifecycle.ShowAutoCommitNoticeIfNeeded(cfg.StateDir, cfg.AutoCommitSource)
+
 		// Resolve execution mode based on flags and config
 		anyFlagsChanged := cmd.Flags().Changed("phases") ||
 			cmd.Flags().Changed("tasks") ||
@@ -432,4 +438,7 @@ func init() {
 
 	// Agent override flag
 	shared.AddAgentFlag(implementCmd)
+
+	// Auto-commit flags
+	shared.AddAutoCommitFlags(implementCmd)
 }
