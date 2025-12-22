@@ -111,7 +111,7 @@ phases:
             - "Existing automated execution unaffected"
         - id: "T008"
           title: "Update StageExecutor.ExecuteAnalyze() to use interactive mode"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
@@ -123,7 +123,7 @@ phases:
             - "Returns after Claude session ends"
         - id: "T009"
           title: "Update StageExecutor.ExecuteClarify() to use interactive mode"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-001"
