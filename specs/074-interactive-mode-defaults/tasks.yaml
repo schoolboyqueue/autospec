@@ -171,7 +171,7 @@ phases:
       tasks:
         - id: "T012"
           title: "Add OnInteractiveSessionStart method to notify.Handler"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -183,7 +183,7 @@ phases:
             - "Sends notification with message about interactive session starting"
         - id: "T013"
           title: "Add on_interactive_session to NotificationConfig"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -195,7 +195,7 @@ phases:
             - "Default value allows notifications to work out of the box"
         - id: "T014"
           title: "Track hadAutomatedStage in run command"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-004"
@@ -207,7 +207,7 @@ phases:
             - "Used to decide whether to send interactive session notification"
         - id: "T015"
           title: "Call OnInteractiveSessionStart before interactive stages in run"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-004"
@@ -219,7 +219,7 @@ phases:
             - "If false (only interactive stages requested), skip notification"
         - id: "T016"
           title: "Add unit tests for OnInteractiveSessionStart"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
