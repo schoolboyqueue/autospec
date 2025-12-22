@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Hide help menu on workflow execution errors; still shown for incorrect command usage
+
 ### Removed
 - `handoffs` frontmatter field from command templates (was non-functional)
 

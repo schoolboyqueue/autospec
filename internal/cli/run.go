@@ -53,6 +53,7 @@ Stages are always executed in canonical order:
   # Skip confirmation prompts for CI/CD
   autospec run -ti -y`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true // Don't show help for execution errors
 		// Get core stage flags
 		specify, _ := cmd.Flags().GetBool("specify")
 		plan, _ := cmd.Flags().GetBool("plan")
