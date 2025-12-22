@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Interactive mode defaults for `clarify` and `analyze` commands; notification when interactive session starts after automated stages in `run` command
+- Process replacement via `syscall.Exec` for interactive stages to ensure full terminal control in TUI applications
+
+### Fixed
+- Hide help menu on workflow execution errors; still shown for incorrect command usage
+- Spec status validation now accepts `Completed` instead of `Implemented` as final status
+
 ## [0.7.0] - 2025-12-21
 
 ### Added
 - `--auto-commit` and `--no-auto-commit` flags for automatic git commit creation after workflow completion with conventional commit messages
 - Compact auto-commit output display (`[+AutoCommit]` tag) and minimal agent instructions (~15 lines vs ~90)
-- `auto_commit` config option to enable automatic commits by default (overridable via CLI flags)
+- `auto_commit` config option (disabled by default due to inconsistent behavior; enable with `autospec config set auto_commit true`)
 - `update` command for self-updating autospec to the latest GitHub release with SHA256 checksum verification, automatic backup, and atomic installation with rollback on failure
 - `ck` (check) command to quickly check for newer versions on GitHub releases
 
