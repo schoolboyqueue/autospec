@@ -88,7 +88,10 @@ func (b *BaseAgent) buildArgs(prompt string, opts ExecOptions) []string {
 	}
 
 	// Add default args (e.g., --verbose --output-format stream-json for Claude)
-	args = append(args, b.AgentCaps.DefaultArgs...)
+	// Skip in interactive mode to allow multi-turn conversation (no -p or --output-format)
+	if !opts.Interactive {
+		args = append(args, b.AgentCaps.DefaultArgs...)
+	}
 	args = b.appendAutonomousArgs(args, opts)
 	args = append(args, opts.ExtraArgs...)
 	return args

@@ -2,6 +2,10 @@
 
 Guidance for Claude Code when working with this repository.
 
+## Slash Commands vs Skills (CRITICAL)
+
+Files in `.claude/commands/` (e.g., `autospec.plan.md`, `speckit.specify.md`) are **slash commands**, NOT skills. **DO NOT use the Skill tool to invoke them.** They are user-invoked via `/autospec.plan` syntax, not model-invoked.
+
 ## Commands
 
 ```bash

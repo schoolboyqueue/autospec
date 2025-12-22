@@ -31,7 +31,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Add Interactive field to ExecOptions struct"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -43,7 +43,7 @@ phases:
             - "Existing ExecOptions usage unaffected"
         - id: "T003"
           title: "Update BaseAgent.buildArgs() to respect Interactive flag"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -56,7 +56,7 @@ phases:
             - "No changes to autonomous mode handling"
         - id: "T004"
           title: "Add unit tests for stage_mode.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -69,7 +69,7 @@ phases:
             - "Map-based table-driven tests with t.Parallel()"
         - id: "T005"
           title: "Add unit tests for Interactive flag in buildArgs"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null

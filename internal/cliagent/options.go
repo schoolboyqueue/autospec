@@ -38,6 +38,11 @@ type ExecOptions struct {
 	// When true, ANTHROPIC_API_KEY is set to empty string in the execution environment.
 	// This prevents accidental API charges when users have API keys in their shell.
 	UseSubscription bool
+
+	// Interactive enables interactive conversation mode (skips headless flags).
+	// When true, -p and --output-format flags are omitted, allowing multi-turn conversation.
+	// Used for recommendation-focused stages like analyze and clarify.
+	Interactive bool
 }
 
 // Result contains the outcome of an agent execution.
