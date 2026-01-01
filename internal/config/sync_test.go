@@ -142,7 +142,7 @@ func TestFindDeprecatedKeys(t *testing.T) {
 	}
 }
 
-func TestGenerateCommentedBlock(t *testing.T) {
+func TestGenerateNewKeysBlock(t *testing.T) {
 	t.Parallel()
 
 	defaults := map[string]interface{}{
@@ -155,9 +155,9 @@ func TestGenerateCommentedBlock(t *testing.T) {
 		missing      []string
 		wantContains []string
 	}{
-		"generates comments for missing keys": {
+		"generates uncommented keys for missing keys": {
 			missing:      []string{"max_retries", "timeout"},
-			wantContains: []string{"# max_retries: 0", "# timeout: 2400"},
+			wantContains: []string{"max_retries: 0", "timeout: 2400"},
 		},
 		"empty missing returns empty": {
 			missing:      []string{},
@@ -168,7 +168,7 @@ func TestGenerateCommentedBlock(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			block := generateCommentedBlock(tt.missing, defaults)
+			block := generateNewKeysBlock(tt.missing, defaults)
 
 			if len(tt.wantContains) == 0 {
 				assert.Empty(t, block)

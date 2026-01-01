@@ -30,7 +30,7 @@ func TestGetKeySchema(t *testing.T) {
 			wantErr:  false,
 		},
 		"known string key": {
-			key:      "claude_cmd",
+			key:      "specs_dir",
 			wantType: TypeString,
 			wantErr:  false,
 		},
@@ -139,8 +139,8 @@ func TestKnownKeysComplete(t *testing.T) {
 		"timeout",
 		"skip_preflight",
 		"skip_confirmations",
-		"claude_cmd",
 		"specs_dir",
+		"state_dir",
 	}
 
 	for _, key := range expectedKeys {
@@ -243,9 +243,9 @@ func TestValidateValue(t *testing.T) {
 			errContain: "valid options: sound, visual, both",
 		},
 		"valid string": {
-			key:        "claude_cmd",
-			value:      "/usr/local/bin/claude",
-			wantParsed: "/usr/local/bin/claude",
+			key:        "specs_dir",
+			value:      "/custom/specs",
+			wantParsed: "/custom/specs",
 			wantType:   TypeString,
 		},
 		"unknown key": {
