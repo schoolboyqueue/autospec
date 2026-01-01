@@ -36,22 +36,10 @@ generate_doc() {
         return 1
     fi
 
-    # Read source content (skip first line if it's a # heading that matches title)
-    local content
-    content=$(cat "$src")
-
-    # Check if first line is a markdown heading
-    local first_line
-    first_line=$(echo "$content" | head -1)
-    if [[ "$first_line" =~ ^#[[:space:]] ]]; then
-        # Skip the first heading line since Jekyll will use the title
-        content=$(echo "$content" | tail -n +2)
-    fi
-
     # Create destination directory if needed
     mkdir -p "$(dirname "$dest")"
 
-    # Write file with frontmatter
+    # Write frontmatter
     if [[ "$mermaid" == "true" ]]; then
         cat > "$dest" << EOF
 ---
@@ -82,8 +70,15 @@ EOF
         echo "{: .fs-6 .fw-300 }" >> "$dest"
     fi
 
-    # Append the content
-    echo "$content" >> "$dest"
+    # Append source content, skipping first line if it's a heading
+    local first_line
+    first_line=$(head -1 "$src")
+    if [[ "$first_line" =~ ^#[[:space:]] ]]; then
+        # Skip the first heading line since Jekyll will use the title
+        tail -n +2 "$src" >> "$dest"
+    else
+        cat "$src" >> "$dest"
+    fi
 
     log_info "Generated: $dest"
 }
