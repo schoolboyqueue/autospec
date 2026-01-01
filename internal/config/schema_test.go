@@ -297,3 +297,39 @@ func findSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+// TestKnownKeysSyncWithDefaults ensures KnownKeys schema stays in sync with GetDefaults().
+// This prevents drift between the two sources of truth for configuration keys.
+func TestKnownKeysSyncWithDefaults(t *testing.T) {
+	t.Parallel()
+
+	// Get flattened defaults (the source of truth for valid config keys)
+	defaults := flattenDefaults()
+
+	// Collect keys that are in defaults but not in KnownKeys
+	var missingFromSchema []string
+	for key := range defaults {
+		if _, exists := KnownKeys[key]; !exists {
+			missingFromSchema = append(missingFromSchema, key)
+		}
+	}
+
+	// Collect keys that are in KnownKeys but not in defaults (deprecated)
+	var deprecatedInSchema []string
+	for key := range KnownKeys {
+		if _, exists := defaults[key]; !exists {
+			deprecatedInSchema = append(deprecatedInSchema, key)
+		}
+	}
+
+	// Report any mismatches
+	if len(missingFromSchema) > 0 {
+		t.Errorf("Keys in GetDefaults() but missing from KnownKeys (add to schema.go):\n  %v",
+			missingFromSchema)
+	}
+
+	if len(deprecatedInSchema) > 0 {
+		t.Errorf("Keys in KnownKeys but not in GetDefaults() (remove from schema.go):\n  %v",
+			deprecatedInSchema)
+	}
+}
