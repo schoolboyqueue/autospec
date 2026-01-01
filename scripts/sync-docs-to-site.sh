@@ -97,28 +97,28 @@ main() {
     log_info "Syncing Reference docs..."
 
     generate_doc \
-        "$DOCS_DIR/agents.md" \
+        "$DOCS_DIR/public/agents.md" \
         "$SITE_DIR/reference/agents.md" \
         "Agent Configuration" \
         "Reference" \
         4
 
     generate_doc \
-        "$DOCS_DIR/claude-settings.md" \
+        "$DOCS_DIR/public/claude-settings.md" \
         "$SITE_DIR/reference/claude-settings.md" \
         "Claude Settings" \
         "Reference" \
         5
 
     generate_doc \
-        "$DOCS_DIR/SHELL-COMPLETION.md" \
+        "$DOCS_DIR/public/SHELL-COMPLETION.md" \
         "$SITE_DIR/reference/shell-completion.md" \
         "Shell Completion" \
         "Reference" \
         6
 
     generate_doc \
-        "$DOCS_DIR/TIMEOUT.md" \
+        "$DOCS_DIR/public/TIMEOUT.md" \
         "$SITE_DIR/reference/timeout.md" \
         "Timeout Configuration" \
         "Reference" \
@@ -129,14 +129,14 @@ main() {
     log_info "Syncing Guide docs..."
 
     generate_doc \
-        "$DOCS_DIR/checklists.md" \
+        "$DOCS_DIR/public/checklists.md" \
         "$SITE_DIR/guides/checklists.md" \
         "Checklists" \
         "Guides" \
         5
 
     generate_doc \
-        "$DOCS_DIR/self-update.md" \
+        "$DOCS_DIR/public/self-update.md" \
         "$SITE_DIR/guides/self-update.md" \
         "Self-Update" \
         "Guides" \

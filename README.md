@@ -57,7 +57,7 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 
 ## 🚀 Quick Start
 
-> **New to autospec?** See the [Quickstart Guide](docs/quickstart.md) or run the [interactive demo](scripts/quickstart-demo.sh).
+> **New to autospec?** See the [Quickstart Guide](docs/public/quickstart.md) or run the [interactive demo](scripts/quickstart-demo.sh).
 
 ### Prerequisites
 
@@ -176,7 +176,7 @@ autospec implement --single-session
 
 > `--tasks`, `--phases`, and `--single-session` are mutually exclusive. Task-level execution respects dependency order and validates each task completes before proceeding.
 
-> **Why isolate sessions?** Context accumulation causes LLM performance degradation and higher API costs (each turn bills the entire context). Phase/task isolation can reduce costs by **80%+** on large specs. See [FAQ](docs/faq.md#why-use---phases-or---tasks-instead-of-running-everything-in-one-session) for details.
+> **Why isolate sessions?** Context accumulation causes LLM performance degradation and higher API costs (each turn bills the entire context). Phase/task isolation can reduce costs by **80%+** on large specs. See [FAQ](docs/public/faq.md#why-use---phases-or---tasks-instead-of-running-everything-in-one-session) for details.
 
 ### Optional Stage Commands
 
@@ -223,7 +223,7 @@ autospec update-task T001 Blocked
 
 ### History Tracking
 
-View command execution history with filtering and status tracking. See [docs/reference.md](docs/reference.md#autospec-history) for details.
+View command execution history with filtering and status tracking. See [docs/public/reference.md](docs/public/reference.md#autospec-history) for details.
 
 ```bash
 autospec history              # View all history
@@ -311,7 +311,7 @@ notifications:
   long_running_threshold: 2m          # Duration threshold
 ```
 
-> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/agents.md](docs/agents.md) for migration guide.
+> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/public/agents.md](docs/public/agents.md) for migration guide.
 
 ### Claude CLI Arguments (`claude_args`)
 
@@ -349,7 +349,7 @@ claude_args:
   - --dangerously-skip-permissions
 ```
 
-> **Warning:** `--dangerously-skip-permissions` bypasses all Claude safety prompts. Only use in trusted environments with proper sandboxing. See [Claude Settings docs](docs/claude-settings.md).
+> **Warning:** `--dangerously-skip-permissions` bypasses all Claude safety prompts. Only use in trusted environments with proper sandboxing. See [Claude Settings docs](docs/public/claude-settings.md).
 
 > For complete control, use `custom_claude_cmd` to replace both `claude_cmd` and `claude_args`. See [Pro Tips](#readable-streaming-output-with-claude-clean) for examples.
 
@@ -380,11 +380,11 @@ autospec completion install zsh
 autospec completion install fish
 ```
 
-See [docs/SHELL-COMPLETION.md](docs/SHELL-COMPLETION.md) for detailed setup and manual instructions.
+See [docs/public/SHELL-COMPLETION.md](docs/public/SHELL-COMPLETION.md) for detailed setup and manual instructions.
 
 ## 🔧 Exit Codes
 
-Uses standardized exit codes (0-5) for CI/CD integration. See [docs/reference.md](docs/reference.md#exit-codes) for full details.
+Uses standardized exit codes (0-5) for CI/CD integration. See [docs/public/reference.md](docs/public/reference.md#exit-codes) for full details.
 
 ```bash
 autospec run -a "feature" && echo "Success" || echo "Failed: $?"
@@ -398,7 +398,7 @@ autospec --debug run -a "feature"
 autospec config show
 ```
 
-See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and solutions.
+See [docs/public/troubleshooting.md](docs/public/troubleshooting.md) for common issues and solutions.
 
 ## 📝 Slash Commands for Interactive Sessions
 
@@ -423,13 +423,13 @@ Use these when you prefer chat-based iteration over autospec's automated (`-p`) 
 
 | Document | Description |
 |----------|-------------|
-| [Quickstart Guide](docs/quickstart.md) | Complete your first workflow in 10 minutes |
-| [CLI Reference](docs/reference.md) | Full command reference with all flags and options |
-| [Agent Configuration](docs/agents.md) | Configure Claude, Gemini, Cline, and custom agents |
-| [Worktree Management](docs/worktree.md) | Run multiple features in parallel with git worktrees |
-| [Claude Settings](docs/claude-settings.md) | Sandboxing, permissions, and Claude Code configuration |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
-| [FAQ](docs/faq.md) | Frequently asked questions |
+| [Quickstart Guide](docs/public/quickstart.md) | Complete your first workflow in 10 minutes |
+| [CLI Reference](docs/public/reference.md) | Full command reference with all flags and options |
+| [Agent Configuration](docs/public/agents.md) | Configure Claude, Gemini, Cline, and custom agents |
+| [Worktree Management](docs/public/worktree.md) | Run multiple features in parallel with git worktrees |
+| [Claude Settings](docs/public/claude-settings.md) | Sandboxing, permissions, and Claude Code configuration |
+| [Troubleshooting](docs/public/troubleshooting.md) | Common issues and solutions |
+| [FAQ](docs/public/faq.md) | Frequently asked questions |
 
 ## 📥 Build from Source
 

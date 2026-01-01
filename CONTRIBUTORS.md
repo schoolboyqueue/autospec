@@ -139,7 +139,7 @@ notifications:
 | `notifications.enabled` | bool | `false` | Enable desktop notifications |
 | `notifications.type` | string | `"both"` | Notification type: `sound`, `visual`, `both` |
 
-See [docs/reference.md](docs/reference.md) for complete configuration documentation.
+See [docs/public/reference.md](docs/public/reference.md) for complete configuration documentation.
 
 ### Environment Variables
 
@@ -388,9 +388,9 @@ Built with:
 | [CLAUDE.md](CLAUDE.md) | Development guide and coding standards |
 | [README.md](README.md) | User guide and quick start |
 | [docs/internal/architecture.md](docs/internal/architecture.md) | System design and component diagrams |
-| [docs/reference.md](docs/reference.md) | Complete CLI command reference |
+| [docs/public/reference.md](docs/public/reference.md) | Complete CLI command reference |
 | [docs/internal/go-best-practices.md](docs/internal/go-best-practices.md) | Go conventions and patterns |
 | [docs/internal/internals.md](docs/internal/internals.md) | Spec detection, validation, retry system |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Common issues and solutions |
+| [docs/public/troubleshooting.md](docs/public/troubleshooting.md) | Common issues and solutions |
 
 - **Issue tracker**: https://github.com/ariel-frischer/autospec/issues

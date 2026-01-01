@@ -36,16 +36,16 @@ autospec doctor                          # Check dependencies
 |------|---------|
 | `docs/internal/architecture.md` | System design, component diagrams, execution flows |
 | `docs/internal/go-best-practices.md` | Go conventions, naming, error handling patterns |
-| `docs/reference.md` | Complete CLI command reference with all flags |
+| `docs/public/reference.md` | Complete CLI command reference with all flags |
 | `docs/internal/internals.md` | Spec detection, validation, retry system, phase context |
-| `docs/TIMEOUT.md` | Timeout configuration and behavior |
+| `docs/public/TIMEOUT.md` | Timeout configuration and behavior |
 | `docs/internal/YAML-STRUCTURED-OUTPUT.md` | YAML artifact schemas and slash commands |
-| `docs/checklists.md` | Checklist generation, validation, and implementation gating |
+| `docs/public/checklists.md` | Checklist generation, validation, and implementation gating |
 | `docs/internal/risks.md` | Risk documentation in plan.yaml |
-| `docs/SHELL-COMPLETION.md` | Shell completion implementation |
-| `docs/troubleshooting.md` | Common issues and solutions |
-| `docs/claude-settings.md` | Claude Code settings and sandboxing configuration |
-| `docs/agents.md` | CLI agent configuration and migration guide |
+| `docs/public/SHELL-COMPLETION.md` | Shell completion implementation |
+| `docs/public/troubleshooting.md` | Common issues and solutions |
+| `docs/public/claude-settings.md` | Claude Code settings and sandboxing configuration |
+| `docs/public/agents.md` | CLI agent configuration and migration guide |
 
 ## Architecture Overview
 
@@ -79,7 +79,7 @@ Priority: Environment (`AUTOSPEC_*`) > `.autospec/config.yml` > `~/.config/autos
 
 Key settings: `agent_preset`, `max_retries`, `specs_dir`, `timeout`, `implement_method`
 
-> **Note**: The legacy `claude_cmd` and `claude_args` fields are deprecated. Use `agent_preset` instead. See `docs/agents.md`.
+> **Note**: The legacy `claude_cmd` and `claude_args` fields are deprecated. Use `agent_preset` instead. See `docs/public/agents.md`.
 
 ## Constitution Principles
 
