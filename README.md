@@ -417,28 +417,19 @@ See [docs/troubleshooting.md](docs/troubleshooting.md) for common issues and sol
 
 Use these when you prefer chat-based iteration over autospec's automated (`-p`) mode.
 
-## 💡 Pro Tips
+## 📚 Documentation
 
-### Optional Dependencies
+**Full documentation:** [ariel-frischer.github.io/autospec](https://ariel-frischer.github.io/autospec/)
 
-- [claude-clean](https://github.com/ariel-frischer/claude-clean) — Beautiful terminal parser for Claude Code's streaming JSON output
-- [bubblewrap](https://github.com/containers/bubblewrap) (Linux) / Seatbelt (macOS) — OS-level sandboxing. See [Claude Settings](docs/claude-settings.md)
-- Go 1.21+ — For building from source
-- make — For Makefile commands
-
-### Readable Streaming Output with claude-clean
-
-[claude-clean](https://github.com/ariel-frischer/claude-clean) makes Claude's `stream-json` output readable in real-time.
-
-Configure a custom command in `~/.config/autospec/config.yml`:
-
-```yaml
-custom_claude_cmd: "claude -p --verbose --output-format stream-json {{PROMPT}} | cclean"
-```
-
-> **DANGER:** Adding `--dangerously-skip-permissions` bypasses ALL Claude safety checks. Never use with credentials, API keys, or production data. Your system becomes fully exposed to any command Claude generates.
->
-> **Recommended:** Enable Claude Code's sandbox first (`/sandbox` command) which uses [bubblewrap](https://github.com/containers/bubblewrap) on Linux or Seatbelt on macOS for OS-level isolation. See [Claude Settings docs](docs/claude-settings.md) for configuration via settings.json.
+| Document | Description |
+|----------|-------------|
+| [Quickstart Guide](docs/quickstart.md) | Complete your first workflow in 10 minutes |
+| [CLI Reference](docs/reference.md) | Full command reference with all flags and options |
+| [Agent Configuration](docs/agents.md) | Configure Claude, Gemini, Cline, and custom agents |
+| [Worktree Management](docs/worktree.md) | Run multiple features in parallel with git worktrees |
+| [Claude Settings](docs/claude-settings.md) | Sandboxing, permissions, and Claude Code configuration |
+| [Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
+| [FAQ](docs/faq.md) | Frequently asked questions |
 
 ## 📥 Build from Source
 
