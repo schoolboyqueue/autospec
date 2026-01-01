@@ -1,21 +1,28 @@
 # CLI Agent Configuration
 
+> **🚧 In Development**: Multi-agent support is under active development. **Only the Claude agent is fully supported at this time.** Other agents listed below are planned but not yet functional.
+
 autospec supports multiple CLI-based AI coding agents through a unified agent abstraction layer. This allows you to use your preferred agent while maintaining compatibility with the same workflow commands.
 
 ## Supported Agents
 
-### Tier 1 Agents (Built-in)
+### Currently Supported
 
-| Agent | Binary | Description |
-|-------|--------|-------------|
-| `claude` | `claude` | Anthropic's Claude Code CLI (default) |
-| `cline` | `cline` | Cline VSCode extension CLI |
-| `gemini` | `gemini` | Google Gemini CLI |
-| `codex` | `codex` | OpenAI Codex CLI |
-| `opencode` | `opencode` | OpenCode CLI |
-| `goose` | `goose` | Goose AI CLI |
+| Agent | Binary | Description | Status |
+|-------|--------|-------------|--------|
+| `claude` | `claude` | Anthropic's Claude Code CLI (default) | ✅ Supported |
 
-All built-in agents support headless/automated execution suitable for CI/CD pipelines.
+### Planned Agents (Not Yet Implemented)
+
+| Agent | Binary | Description | Status |
+|-------|--------|-------------|--------|
+| `cline` | `cline` | Cline VSCode extension CLI | 🚧 Planned |
+| `gemini` | `gemini` | Google Gemini CLI | 🚧 Planned |
+| `codex` | `codex` | OpenAI Codex CLI | 🚧 Planned |
+| `opencode` | `opencode` | OpenCode CLI | 🚧 Planned |
+| `goose` | `goose` | Goose AI CLI | 🚧 Planned |
+
+Once implemented, all built-in agents will support headless/automated execution suitable for CI/CD pipelines.
 
 ### Custom Agents
 

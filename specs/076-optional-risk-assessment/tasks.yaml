@@ -143,7 +143,7 @@ phases:
       tasks:
         - id: "T010"
           title: "Ensure verbose mode displays [+RiskAssessment] indicator"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -159,7 +159,7 @@ phases:
       tasks:
         - id: "T011"
           title: "Update docs/internal/risks.md with opt-in instructions"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -171,7 +171,7 @@ phases:
             - "Document includes example configuration YAML"
         - id: "T012"
           title: "Update docs/reference.md with enable_risk_assessment config option"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: null
@@ -183,7 +183,7 @@ phases:
             - "Follows existing config option documentation format"
         - id: "T013"
           title: "Run quality gates: make test, make fmt, make lint, make build"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null

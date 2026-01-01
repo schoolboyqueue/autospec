@@ -810,6 +810,35 @@ auto_commit: false  # Disable auto-commit
 
 **Failure Handling**: If the auto-commit process fails (e.g., git add fails, .gitignore write fails), the workflow still succeeds (exit 0) and a warning is logged to stderr.
 
+### enable_risk_assessment
+
+**Type**: boolean
+**Default**: `false`
+**Description**: Controls whether risk assessment instructions are injected into the plan stage prompt. When enabled, the generated `plan.yaml` will include a `risks` section documenting potential implementation risks and mitigations.
+
+**Example**:
+```yaml
+enable_risk_assessment: false  # Disabled by default
+enable_risk_assessment: true   # Enable risk documentation in plan.yaml
+```
+
+**Environment**: `AUTOSPEC_ENABLE_RISK_ASSESSMENT`
+
+**Behavior**:
+- When disabled (default), plan generation skips the `risks` section to reduce cognitive overhead for simple features
+- When enabled, the agent receives instructions to document:
+  - Technical risks (dependencies, performance, scalability, security)
+  - Integration risks (third-party APIs, data migration, system compatibility)
+  - Operational risks (deployment, monitoring, maintenance complexity)
+  - Schedule risks (complexity underestimation, external blockers)
+- Each risk includes: description, likelihood (low/medium/high), impact (low/medium/high), and optional mitigation strategy
+- For trivial features, an empty `risks: []` array is acceptable
+
+**Use Cases**:
+- Enable for complex features with significant technical unknowns
+- Enable for projects with strict risk management requirements
+- Keep disabled for simple bug fixes or small enhancements
+
 ### notifications
 
 **Type**: object

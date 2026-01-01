@@ -263,29 +263,29 @@ func TestNewStageExecutorWithOptions(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		opts                       StageExecutorOptions
-		wantDebug                  bool
-		wantEnableRiskAssessment   bool
+		opts                     StageExecutorOptions
+		wantDebug                bool
+		wantEnableRiskAssessment bool
 	}{
 		"default options": {
-			opts:                       StageExecutorOptions{},
-			wantDebug:                  false,
-			wantEnableRiskAssessment:   false,
+			opts:                     StageExecutorOptions{},
+			wantDebug:                false,
+			wantEnableRiskAssessment: false,
 		},
 		"debug enabled": {
-			opts:                       StageExecutorOptions{Debug: true},
-			wantDebug:                  true,
-			wantEnableRiskAssessment:   false,
+			opts:                     StageExecutorOptions{Debug: true},
+			wantDebug:                true,
+			wantEnableRiskAssessment: false,
 		},
 		"risk assessment enabled": {
-			opts:                       StageExecutorOptions{EnableRiskAssessment: true},
-			wantDebug:                  false,
-			wantEnableRiskAssessment:   true,
+			opts:                     StageExecutorOptions{EnableRiskAssessment: true},
+			wantDebug:                false,
+			wantEnableRiskAssessment: true,
 		},
 		"both enabled": {
-			opts:                       StageExecutorOptions{Debug: true, EnableRiskAssessment: true},
-			wantDebug:                  true,
-			wantEnableRiskAssessment:   true,
+			opts:                     StageExecutorOptions{Debug: true, EnableRiskAssessment: true},
+			wantDebug:                true,
+			wantEnableRiskAssessment: true,
 		},
 	}
 

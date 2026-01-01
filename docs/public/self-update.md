@@ -4,48 +4,28 @@ autospec includes built-in version checking and self-update functionality to hel
 
 ## Checking for Updates
 
-When you run `autospec version`, the command automatically checks GitHub for newer versions:
+Use `autospec check` (or the short alias `autospec ck`) to check for newer versions:
 
 ```bash
-autospec version
+autospec check
+autospec ck       # Short alias
 ```
 
 Output example (when update is available):
 
 ```
-                   ▄▀█ █ █ ▀█▀ █▀█ █▀ █▀█ █▀▀ █▀▀
-                   █▀█ █▄█  █  █▄█ ▄█ █▀▀ ██▄ █▄▄
+Current version: v0.6.0
+Latest version:  v0.7.0
 
-                   Spec-Driven Development Automation
-
-              ╭──────────────────────────────────────────╮
-              │                                          │
-              │        Version    0.6.0                  │
-              │         Commit    abc12345               │
-              │          Built    2025-12-20             │
-              │             Go    go1.23.0               │
-              │       Platform    linux/amd64            │
-              │                                          │
-              ╰──────────────────────────────────────────╯
-
-→ A new version is available: v0.7.0 (run 'autospec update' to upgrade)
+→ A new version is available! Run 'autospec update' to upgrade.
 ```
-
-### Non-Blocking Check
-
-The version check is performed asynchronously:
-
-- Version information displays immediately (within 100ms)
-- Update notification appears afterward if the check completes in time
-- Slow or failed network connections don't delay the version output
-- The check times out after 500ms to prevent blocking
 
 ### Plain Output
 
-For scripts, use `--plain` to get machine-readable output without the update check:
+For scripts, use `--plain` to get machine-readable output:
 
 ```bash
-autospec version --plain
+autospec ck --plain
 ```
 
 ## Updating autospec
@@ -144,7 +124,6 @@ Update checks require network access to GitHub:
 
 - Ensure you can reach `api.github.com`
 - Check your firewall/proxy settings
-- The version command will still work without network (just no update check)
 
 ### Checksum mismatch
 
@@ -159,5 +138,4 @@ If checksum verification fails:
 autospec uses the GitHub API to check for updates:
 
 - Unauthenticated requests: 60 per hour per IP
-- If rate limited, the update check silently fails (version command still works)
-- Consider using fewer terminals/scripts that run version checks
+- If rate limited, the check command will report an error

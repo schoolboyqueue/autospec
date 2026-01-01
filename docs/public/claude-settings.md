@@ -162,40 +162,6 @@ custom_agent:
 
 The sandbox provides OS-level isolation even when permission prompts are bypassed.
 
-### Custom Claude Command with cclean
-
-For piping through [cclean](https://github.com/ariel-frischer/claude-clean):
-
-```yaml
-custom_agent:
-  command: sh
-  args:
-    - -c
-    - "ANTHROPIC_API_KEY='' claude -p --dangerously-skip-permissions --verbose --output-format stream-json {{PROMPT}} | cclean"
-```
-
-## Manual bubblewrap Wrapper
-
-For custom sandbox control outside Claude's built-in sandbox:
-
-```bash
-bwrap \
-  --ro-bind / / \
-  --bind $PWD $PWD \
-  --dev /dev \
-  --proc /proc \
-  --tmpfs /tmp \
-  --unshare-pid \
-  -- claude -p --dangerously-skip-permissions "{{PROMPT}}"
-```
-
-Key flags:
-- `--ro-bind / /`: Read-only root filesystem
-- `--bind $PWD $PWD`: Read-write current directory
-- `--tmpfs /tmp`: Isolated temp directory
-- `--unshare-pid`: PID namespace isolation
-- `--unshare-net`: Full network isolation (breaks most workflows)
-
 ## Sandbox vs --dangerously-skip-permissions
 
 These are **two separate security layers** that work independently:

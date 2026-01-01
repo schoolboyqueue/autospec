@@ -311,7 +311,7 @@ notifications:
   long_running_threshold: 2m          # Duration threshold
 ```
 
-> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/public/agents.md](docs/public/agents.md) for migration guide.
+> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/internal/agents.md](docs/internal/agents.md) for details.
 
 ### Claude CLI Arguments (`claude_args`)
 
@@ -425,7 +425,7 @@ Use these when you prefer chat-based iteration over autospec's automated (`-p`) 
 |----------|-------------|
 | [Quickstart Guide](docs/public/quickstart.md) | Complete your first workflow in 10 minutes |
 | [CLI Reference](docs/public/reference.md) | Full command reference with all flags and options |
-| [Agent Configuration](docs/public/agents.md) | Configure Claude, Gemini, Cline, and custom agents |
+| [Agent Configuration](docs/internal/agents.md) | Agent configuration (in development, Claude only) |
 | [Worktree Management](docs/public/worktree.md) | Run multiple features in parallel with git worktrees |
 | [Claude Settings](docs/public/claude-settings.md) | Sandboxing, permissions, and Claude Code configuration |
 | [Troubleshooting](docs/public/troubleshooting.md) | Common issues and solutions |
