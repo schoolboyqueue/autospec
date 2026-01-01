@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Risk assessment in `plan` stage now opt-in (disabled by default); enable with `autospec config set enable_risk_assessment true`
 - Reorganized `docs/` into `public/` (user-facing) and `internal/` (contributor) subdirectories
 - Site generation now automated via GitHub Actions - generated files no longer committed to git
 - Added `make docs-sync` and updated `make serve` to auto-sync docs before serving
