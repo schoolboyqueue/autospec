@@ -1,0 +1,287 @@
+feature:
+  branch: "077-opencode-agent-preset"
+  created: "2026-01-02"
+  status: "Draft"
+  input: |
+    Just like we have 1st integration support for claude code and claude args - we should also
+    now try to support preset commands for opencode specifically running it in like yolo mode/
+    non-interactive mode by default. Figure out if opencode cli supports slash commands like
+    claude code - if not we should figure out the best way to set up opencode for spec based
+    development without slash commands. I see this new specify init created these commands:
+    .opencode/command/*.md files for opencode specifically - for .claude/commands/* it did
+    something similar -> so I think autospec init should also maybe need to do this for opencode
+    if user specifies that agent perhaps with 'autospec init --ai opencode' or something similar.
+    Speckit's commands are meant for markdown spec generation but see our own internal/commands/*.md
+    files they ask for yaml instead. I need you to first validate our internal commands made for
+    claude code should still work for opencode if not we need separate folder of autospec commands
+    for opencode specifically? but prefer one source if possible.
+
+user_stories:
+  - id: "US-001"
+    title: "Run OpenCode in non-interactive mode for spec workflows"
+    priority: "P1"
+    as_a: "developer using OpenCode as their AI agent"
+    i_want: "autospec to invoke OpenCode in non-interactive mode with auto-approved permissions"
+    so_that: "I can run automated spec-based development workflows without manual intervention"
+    why_this_priority: "Core functionality required for OpenCode to work as an autospec agent"
+    independent_test: "Run autospec specify with agent_preset=opencode and verify OpenCode executes the command without prompts"
+    acceptance_scenarios:
+      - given: "OpenCode is installed and agent_preset is set to 'opencode'"
+        when: "I run 'autospec specify \"Add feature X\"'"
+        then: "OpenCode is invoked via 'opencode run <prompt>' and the command runs to completion without user interaction"
+
+  - id: "US-002"
+    title: "Install OpenCode slash commands during init"
+    priority: "P1"
+    as_a: "developer setting up autospec with OpenCode"
+    i_want: "autospec init to install command templates to .opencode/command/"
+    so_that: "OpenCode can use /autospec.* slash commands just like Claude Code"
+    why_this_priority: "Essential for OpenCode to have equivalent functionality to Claude Code"
+    independent_test: "Run autospec init --ai opencode and verify .opencode/command/autospec.*.md files are created"
+    acceptance_scenarios:
+      - given: "A project without OpenCode commands configured"
+        when: "I run 'autospec init --ai opencode'"
+        then: "Command templates are installed to .opencode/command/ directory"
+      - given: "OpenCode commands already exist"
+        when: "I run 'autospec init --ai opencode'"
+        then: "Commands are updated if newer versions are available"
+
+  - id: "US-003"
+    title: "Use single source of command templates"
+    priority: "P1"
+    as_a: "maintainer of autospec"
+    i_want: "a single source of command templates that works for both Claude Code and OpenCode"
+    so_that: "I don't have to maintain duplicate command files for different agents"
+    why_this_priority: "Reduces maintenance burden and ensures consistency across agents"
+    independent_test: "Verify internal/commands/*.md files contain only agent-agnostic instructions"
+    acceptance_scenarios:
+      - given: "The internal/commands/*.md template files"
+        when: "Reviewed for agent-specific syntax or tool references"
+        then: "No Claude Code-specific or OpenCode-specific elements are present"
+      - given: "Command templates installed for Claude Code and OpenCode"
+        when: "Compared side by side"
+        then: "Content is identical, only installation paths differ"
+
+  - id: "US-004"
+    title: "Configure OpenCode project settings"
+    priority: "P2"
+    as_a: "developer using OpenCode"
+    i_want: "autospec init to configure OpenCode's project settings if needed"
+    so_that: "OpenCode has the necessary permissions and settings for spec workflows"
+    why_this_priority: "Improves user experience but OpenCode may not require explicit permission configuration"
+    independent_test: "Run autospec init --ai opencode and verify any required OpenCode configuration is applied"
+    acceptance_scenarios:
+      - given: "A project without OpenCode configuration"
+        when: "I run 'autospec init --ai opencode'"
+        then: "Any required OpenCode settings are created or updated"
+
+requirements:
+  functional:
+    - id: "FR-001"
+      description: "MUST invoke OpenCode using 'opencode run <args> --command <command-name>' for slash commands"
+      testable: true
+      acceptance_criteria: "OpenCode agent builds command line with 'opencode run <args> --command autospec.<stage>' format"
+
+    - id: "FR-002"
+      description: "MUST install command templates to .opencode/command/ (singular, not plural) when OpenCode is selected"
+      testable: true
+      acceptance_criteria: "autospec init --ai opencode creates .opencode/command/autospec.*.md files (note: singular 'command')"
+
+    - id: "FR-003"
+      description: "MUST use the same internal/commands/*.md templates for all agents after updating CLAUDE.md references to AGENTS.md"
+      testable: true
+      acceptance_criteria: "Templates reference AGENTS.md as primary constitution with fallback to CLAUDE.md; no agent-specific template directories"
+
+    - id: "FR-004"
+      description: "SHOULD add '--ai' or '--agent' flag to autospec init for agent selection"
+      testable: true
+      acceptance_criteria: "autospec init --ai opencode selects OpenCode as the agent to configure"
+
+    - id: "FR-005"
+      description: "MUST update OpenCode agent in internal/cliagent/opencode.go with correct capabilities"
+      testable: true
+      acceptance_criteria: "OpenCode agent uses 'run' subcommand with '--command' flag for slash command invocation"
+
+    - id: "FR-006"
+      description: "SHOULD implement Configurator interface for OpenCode to install commands"
+      testable: true
+      acceptance_criteria: "OpenCode.ConfigureProject() installs commands to .opencode/command/"
+
+    - id: "FR-007"
+      description: "MUST limit production builds to Claude + OpenCode agents only"
+      testable: true
+      acceptance_criteria: "Production builds only show/allow Claude and OpenCode; dev builds show all agents"
+
+    - id: "FR-008"
+      description: "SHOULD enable existing agent selection UI in autospec init"
+      testable: true
+      acceptance_criteria: "autospec init shows interactive agent checklist when --ai flag not provided"
+
+    - id: "FR-009"
+      description: "MUST pass all quality gates: make test, make fmt, make lint, and make build"
+      testable: true
+      acceptance_criteria: "All commands exit 0; no test failures, format changes, lint errors, or build failures"
+
+  non_functional:
+    - id: "NFR-001"
+      category: "code_quality"
+      description: "All functions must be under 40 lines; extract helpers for complex logic"
+      measurable_target: "No function exceeds 40 lines excluding comments"
+
+    - id: "NFR-002"
+      category: "code_quality"
+      description: "All errors must be wrapped with context using fmt.Errorf(\"doing X: %w\", err)"
+      measurable_target: "Zero bare 'return err' statements in new code"
+
+    - id: "NFR-003"
+      category: "code_quality"
+      description: "Tests must use map-based table-driven pattern"
+      measurable_target: "All new test functions use map[string]struct pattern"
+
+    - id: "NFR-004"
+      category: "code_quality"
+      description: "Accept interfaces, return concrete types"
+      measurable_target: "Function signatures follow interface-in, concrete-out pattern where applicable"
+
+    - id: "NFR-005"
+      category: "maintainability"
+      description: "Command templates must remain agent-agnostic for single-source maintenance"
+      measurable_target: "Zero agent-specific references in internal/commands/*.md files"
+
+success_criteria:
+  measurable_outcomes:
+    - id: "SC-001"
+      description: "Users can run complete spec workflows using OpenCode as their agent"
+      metric: "End-to-end test completion"
+      target: "autospec run -a 'feature' completes successfully with agent_preset=opencode"
+
+    - id: "SC-002"
+      description: "OpenCode slash commands work identically to Claude Code commands"
+      metric: "Command execution parity"
+      target: "/autospec.specify produces equivalent spec.yaml output on both agents"
+
+    - id: "SC-003"
+      description: "Command template maintenance effort stays constant as new agents are added"
+      metric: "Number of command template sources"
+      target: "1 source (internal/commands/) for all agents"
+
+key_entities:
+  - name: "OpenCode Agent"
+    description: "CLI agent configuration for the OpenCode AI coding tool"
+    attributes:
+      - "Base command: opencode run"
+      - "Slash command invocation: opencode run <args> --command <command-name>"
+      - "Non-interactive mode: inherent with run subcommand"
+      - "Command directory: .opencode/command/ (singular, vs Claude's .claude/commands/ plural)"
+      - "Additional flags: --model, --agent, --file"
+      - "Key difference from Claude: command name via --command flag, not embedded in prompt"
+      - "Constitution file: AGENTS.md (primary) or OPENCODE.md (agent-specific)"
+
+  - name: "Command Template"
+    description: "Markdown file defining a slash command's behavior"
+    attributes:
+      - "YAML frontmatter with description and version"
+      - "Agent-agnostic instructions"
+      - "Installed to agent-specific directories"
+
+  - name: "Agent Configurator"
+    description: "Interface for agent-specific project configuration"
+    attributes:
+      - "ConfigureProject() method"
+      - "Installs commands to agent's directory"
+      - "Sets up permissions if applicable"
+
+edge_cases:
+  - scenario: "OpenCode not installed"
+    expected_behavior: "autospec doctor shows OpenCode as unavailable; workflows fail with clear error message"
+
+  - scenario: "Both Claude and OpenCode configured"
+    expected_behavior: "agent_preset config value determines which agent is used"
+
+  - scenario: "OpenCode command directory already has non-autospec commands"
+    expected_behavior: "Only autospec.*.md files are created/updated; existing commands preserved"
+
+  - scenario: "User runs autospec init without --ai flag"
+    expected_behavior: "Continues to configure Claude by default (backward compatible)"
+
+  - scenario: "Internal command templates contain agent-specific syntax"
+    expected_behavior: "Audit and refactor templates to be agent-agnostic before implementing"
+
+  - scenario: "Project has AGENTS.md but no CLAUDE.md or OPENCODE.md"
+    expected_behavior: "Templates use AGENTS.md as constitution source for all agents"
+
+  - scenario: "Project has AGENTS.md and agent-specific file (CLAUDE.md/OPENCODE.md)"
+    expected_behavior: "AGENTS.md is primary; agent-specific file is NOT used (AGENTS.md takes precedence)"
+
+  - scenario: "Project has CLAUDE.md but no AGENTS.md, user inits for Claude"
+    expected_behavior: "Templates use CLAUDE.md as fallback constitution source"
+
+  - scenario: "Project has neither AGENTS.md nor agent-specific files"
+    expected_behavior: "Templates proceed without constitution; warn user to create AGENTS.md"
+
+assumptions:
+  - "OpenCode supports custom slash commands via .opencode/command/*.md files (singular 'command')"
+  - "OpenCode's 'run' subcommand executes prompts non-interactively and exits on completion"
+  - "Internal/commands/*.md templates need CLAUDE.md references updated to AGENTS.md (with fallback)"
+  - "OpenCode uses the same markdown frontmatter format for command metadata"
+  - "OpenCode is available as 'opencode' command in PATH"
+  - "OpenCode run supports --command flag for slash command invocation"
+  - "AGENTS.md serves as universal agent instructions file; agent-specific files override if present"
+
+constraints:
+  - "Must maintain backward compatibility - Claude Code remains the default agent"
+  - "Cannot introduce agent-specific logic into internal/commands/*.md templates"
+  - "Production builds: only Claude + OpenCode agents available"
+  - "Dev builds: all agents available via existing build.MultiAgentEnabled()"
+  - "Must not break existing Claude Code workflows or configuration"
+
+out_of_scope:
+  - "OpenCode sandbox configuration (OpenCode may not have equivalent feature)"
+  - "OpenCode-specific permission management (differs from Claude's settings.local.json)"
+  - "GUI/TUI configuration for OpenCode (focus on CLI automation only)"
+  - "Support for OpenCode's deprecated 'mode' configuration (use agent-based config)"
+  - "OpenCode MCP server configuration"
+  - "Integration testing against live OpenCode API (unit tests only)"
+
+clarifications:
+  - date: "2026-01-02"
+    question: "What is the correct CLI syntax for invoking OpenCode in non-interactive mode?"
+    answer: "Use 'opencode run <prompt>' subcommand format (not -p flag)"
+    applied_to: "FR-001, FR-005, US-001, key_entities, assumptions"
+
+  - date: "2026-01-02"
+    question: "How does OpenCode invoke slash commands compared to Claude Code?"
+    answer: "OpenCode uses 'opencode run <args> --command <command-name>' vs Claude's 'claude -p /<command> <args>'"
+    applied_to: "FR-001, FR-005, key_entities, assumptions"
+
+  - date: "2026-01-02"
+    question: "Are internal/commands/*.md templates agent-agnostic?"
+    answer: "No - templates reference CLAUDE.md for constitution. Use AGENTS.md as primary with fallback to agent-specific files."
+    applied_to: "FR-003, NFR-005, assumptions"
+
+  - date: "2026-01-02"
+    question: "What is the correct OpenCode command directory path?"
+    answer: ".opencode/command/ (singular) vs .claude/commands/ (plural)"
+    applied_to: "FR-002, FR-006, key_entities"
+
+  - date: "2026-01-02"
+    question: "Which agents should be supported in production vs dev builds?"
+    answer: "Prod: Claude + OpenCode only. Dev: all agents via existing multi-agent flag."
+    applied_to: "constraints, FR-004"
+
+  - date: "2026-01-02"
+    question: "What is the constitution file fallback order?"
+    answer: "AGENTS.md (primary) → agent-specific file (CLAUDE.md/OPENCODE.md) if AGENTS.md missing"
+    applied_to: "FR-003, edge_cases, assumptions"
+
+  - date: "2026-01-02"
+    question: "How should OpenCode's command invocation pattern be modeled in the agent interface?"
+    answer: "Add new PromptMethodSubcommandWithFlag type for 'run <args> --command <name>' pattern"
+    applied_to: "FR-005, key_entities"
+
+_meta:
+  version: "1.0.0"
+  generator: "autospec"
+  generator_version: "autospec dev"
+  created: "2026-01-02T00:40:57Z"
+  artifact_type: "spec"
