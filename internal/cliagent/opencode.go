@@ -1,7 +1,7 @@
 package cliagent
 
 // OpenCode implements the Agent interface for OpenCode CLI.
-// Command: opencode run <prompt>
+// Command: opencode run <prompt> --command <command-name>
 type OpenCode struct {
 	BaseAgent
 }
@@ -16,8 +16,9 @@ func NewOpenCode() *OpenCode {
 			AgentCaps: Caps{
 				Automatable: true,
 				PromptDelivery: PromptDelivery{
-					Method: PromptMethodSubcommand,
-					Flag:   "run",
+					Method:      PromptMethodSubcommandWithFlag,
+					Flag:        "run",
+					CommandFlag: "--command",
 				},
 				// run subcommand is inherently non-interactive
 				AutonomousFlag: "",

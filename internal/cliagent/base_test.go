@@ -157,6 +157,36 @@ func TestBaseAgent_BuildCommand(t *testing.T) {
 			opts:     ExecOptions{},
 			wantArgs: []string{"run", "-t", "fix bug"},
 		},
+		"subcommand-with-flag method": {
+			agent: &BaseAgent{
+				Cmd: "opencode",
+				AgentCaps: Caps{
+					PromptDelivery: PromptDelivery{
+						Method:      PromptMethodSubcommandWithFlag,
+						Flag:        "run",
+						CommandFlag: "--command",
+					},
+				},
+			},
+			prompt:   "fix bug",
+			opts:     ExecOptions{},
+			wantArgs: []string{"run", "fix bug"},
+		},
+		"subcommand-with-flag method with extra args for command": {
+			agent: &BaseAgent{
+				Cmd: "opencode",
+				AgentCaps: Caps{
+					PromptDelivery: PromptDelivery{
+						Method:      PromptMethodSubcommandWithFlag,
+						Flag:        "run",
+						CommandFlag: "--command",
+					},
+				},
+			},
+			prompt:   "fix bug",
+			opts:     ExecOptions{ExtraArgs: []string{"--command", "autospec.specify"}},
+			wantArgs: []string{"run", "fix bug", "--command", "autospec.specify"},
+		},
 		"with autonomous flag": {
 			agent: &BaseAgent{
 				Cmd: "agent",

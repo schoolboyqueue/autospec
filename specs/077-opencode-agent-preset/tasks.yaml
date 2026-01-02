@@ -52,7 +52,7 @@ phases:
             - "Field documented for --command flag usage"
         - id: "T004"
           title: "Update BuildCommand() in internal/cliagent/base.go to handle PromptMethodSubcommandWithFlag"
-          status: "InProgress"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -64,7 +64,7 @@ phases:
             - "Existing prompt methods unchanged"
         - id: "T005"
           title: "Write tests for PromptMethodSubcommandWithFlag in internal/cliagent/base_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null
@@ -82,7 +82,7 @@ phases:
       tasks:
         - id: "T006"
           title: "Update NewOpenCode() in internal/cliagent/opencode.go to use PromptMethodSubcommandWithFlag"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -95,7 +95,7 @@ phases:
             - "Builds: opencode run <args> --command <command-name>"
         - id: "T007"
           title: "Write tests for OpenCode command building in internal/cliagent/opencode_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -113,7 +113,7 @@ phases:
       tasks:
         - id: "T008"
           title: "Create Settings struct in internal/opencode/settings.go for opencode.json structure"
-          status: "Pending"
+          status: "InProgress"
           type: "implementation"
           parallel: false
           story_id: "US-004"
