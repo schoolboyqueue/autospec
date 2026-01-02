@@ -167,8 +167,31 @@ Body text here."
 
 ## Documentation Workflow
 
-**Before starting any task**: Review relevant docs from the list below.
-**After completing work**: Use a subagent (Task tool) to update affected documentation to preserve main agent context.
+**Before starting any task**: Use a subagent to research relevant docs and return the actual content.
+**After completing work**: Use a subagent to update affected documentation to preserve main agent context.
+
+### Subagent Pre-Task Research Pattern
+
+Before starting implementation, spawn a subagent to gather relevant documentation:
+
+```
+Task tool with prompt:
+"Research docs/* for information relevant to: [user's task description].
+Search all files in docs/internal/ and docs/public/.
+Return the actual relevant sections/content directly (not just file references).
+Focus on: patterns, constraints, examples, and gotchas related to the task."
+```
+
+### Subagent Documentation Update Pattern
+
+After completing implementation work, spawn a subagent to update docs:
+
+```
+Task tool with prompt:
+"Review and update documentation affected by [describe changes].
+Files to check: [list relevant doc files from reference below].
+Only update if changes are needed. Do not create new files."
+```
 
 ### Documentation Reference
 
@@ -205,14 +228,3 @@ Body text here."
 | Document | Purpose |
 |----------|---------|
 | `docs/research/claude-opus-4.5-context-performance.md` | Claude Opus 4.5 performance in extended sessions |
-
-### Subagent Documentation Update Pattern
-
-After completing implementation work, spawn a subagent to update docs:
-
-```
-Task tool with prompt:
-"Review and update documentation affected by [describe changes].
-Files to check: [list relevant doc files from above].
-Only update if changes are needed. Do not create new files."
-```
