@@ -54,13 +54,23 @@ const (
 // RequiredPattern is the bash permission pattern autospec needs in OpenCode settings.
 const RequiredPattern = "autospec *"
 
+// RequiredEditPatterns are the edit permission patterns autospec needs to write files.
+var RequiredEditPatterns = []string{"./.autospec/**", "./specs/**"}
+
 // SettingsFileName is the name of the OpenCode settings file.
 const SettingsFileName = "opencode.json"
+
+// EditPermission represents granular edit permissions with allow/deny patterns.
+// OpenCode supports both simple string format ("allow") and object format with patterns.
+type EditPermission struct {
+	Allow []string `json:"allow,omitempty"` // Glob patterns to allow editing
+	Deny  []string `json:"deny,omitempty"`  // Glob patterns to deny editing
+}
 
 // Permission represents the permission configuration in opencode.json.
 type Permission struct {
 	Bash map[string]string `json:"bash,omitempty"`
-	Edit string             `json:"edit,omitempty"` // "allow", "ask", or "deny" for file write/edit operations
+	Edit *EditPermission   `json:"edit,omitempty"` // Granular edit permissions with allow/deny patterns
 }
 
 // Settings represents an OpenCode settings file with flexible JSON structure.

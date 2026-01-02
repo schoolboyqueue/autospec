@@ -228,7 +228,11 @@ func (s *StageExecutor) ExecuteConstitution(prompt string) error {
 		"", // No spec name needed for constitution
 		StageConstitution,
 		command,
-		func(specDir string) error { return nil }, // Constitution doesn't produce tracked artifacts
+		func(_ string) error {
+			// Validate constitution file exists and has valid schema
+			// Use "." as project directory (autospec runs from project root)
+			return s.executor.ValidateConstitution(".")
+		},
 	)
 	if err != nil {
 		if result.Exhausted {

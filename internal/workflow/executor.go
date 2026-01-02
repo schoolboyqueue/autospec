@@ -502,6 +502,11 @@ func (e *Executor) ValidateTasks(specDir string) error {
 	return validation.ValidateTasksFile(specDir)
 }
 
+// ValidateConstitution is a convenience wrapper for constitution validation
+func (e *Executor) ValidateConstitution(projectDir string) error {
+	return validation.ValidateConstitutionFile(projectDir)
+}
+
 // ValidateTasksComplete checks if all tasks are completed
 // Supports both YAML (status field) and Markdown (checkbox) formats
 func (e *Executor) ValidateTasksComplete(tasksPath string) error {
