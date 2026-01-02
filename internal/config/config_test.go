@@ -781,9 +781,33 @@ func TestEnvTransform(t *testing.T) {
 			input:    "AUTOSPEC_TIMEOUT",
 			expected: "timeout",
 		},
-		"nested": {
+		"nested notifications": {
 			input:    "AUTOSPEC_NOTIFICATIONS_TYPE",
-			expected: "notifications_type",
+			expected: "notifications.type",
+		},
+		"nested notifications enabled": {
+			input:    "AUTOSPEC_NOTIFICATIONS_ENABLED",
+			expected: "notifications.enabled",
+		},
+		"nested cclean verbose": {
+			input:    "AUTOSPEC_CCLEAN_VERBOSE",
+			expected: "cclean.verbose",
+		},
+		"nested cclean style": {
+			input:    "AUTOSPEC_CCLEAN_STYLE",
+			expected: "cclean.style",
+		},
+		"nested cclean line_numbers": {
+			input:    "AUTOSPEC_CCLEAN_LINE_NUMBERS",
+			expected: "cclean.line_numbers",
+		},
+		"nested worktree base_dir": {
+			input:    "AUTOSPEC_WORKTREE_BASE_DIR",
+			expected: "worktree.base_dir",
+		},
+		"nested custom_agent command": {
+			input:    "AUTOSPEC_CUSTOM_AGENT_COMMAND",
+			expected: "custom_agent.command",
 		},
 	}
 
@@ -1126,4 +1150,387 @@ func TestConfiguration_ToMap_FieldCountMatchesStruct(t *testing.T) {
 
 	assert.Equal(t, expectedCount, len(m),
 		"ToMap should return exactly the number of koanf-tagged fields (excluding '-')")
+}
+
+// Cclean Configuration Tests
+
+func TestLoad_CcleanConfigDefaults(t *testing.T) {
+	// Cannot use t.Parallel() due to environment modification
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
+
+	cfg, err := Load("")
+	require.NoError(t, err)
+
+	// Verify default values
+	assert.False(t, cfg.Cclean.Verbose, "Cclean.Verbose should default to false")
+	assert.False(t, cfg.Cclean.LineNumbers, "Cclean.LineNumbers should default to false")
+	assert.Equal(t, "default", cfg.Cclean.Style, "Cclean.Style should default to 'default'")
+}
+
+func TestLoad_CcleanConfigFromYAML(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		configContent string
+		wantVerbose   bool
+		wantLineNum   bool
+		wantStyle     string
+	}{
+		"all options set": {
+			configContent: `cclean:
+  verbose: true
+  line_numbers: true
+  style: compact
+`,
+			wantVerbose: true,
+			wantLineNum: true,
+			wantStyle:   "compact",
+		},
+		"verbose only": {
+			configContent: `cclean:
+  verbose: true
+`,
+			wantVerbose: true,
+			wantLineNum: false,
+			wantStyle:   "default",
+		},
+		"line_numbers only": {
+			configContent: `cclean:
+  line_numbers: true
+`,
+			wantVerbose: false,
+			wantLineNum: true,
+			wantStyle:   "default",
+		},
+		"style minimal": {
+			configContent: `cclean:
+  style: minimal
+`,
+			wantVerbose: false,
+			wantLineNum: false,
+			wantStyle:   "minimal",
+		},
+		"style plain": {
+			configContent: `cclean:
+  style: plain
+`,
+			wantVerbose: false,
+			wantLineNum: false,
+			wantStyle:   "plain",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, "config.yml")
+			err := os.WriteFile(configPath, []byte(tt.configContent), 0o644)
+			require.NoError(t, err)
+
+			cfg, err := LoadWithOptions(LoadOptions{
+				ProjectConfigPath: configPath,
+				SkipWarnings:      true,
+			})
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.wantVerbose, cfg.Cclean.Verbose)
+			assert.Equal(t, tt.wantLineNum, cfg.Cclean.LineNumbers)
+			assert.Equal(t, tt.wantStyle, cfg.Cclean.Style)
+		})
+	}
+}
+
+func TestLoad_CcleanConfigFromEnv(t *testing.T) {
+	// Cannot use t.Parallel() due to environment modification
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
+	t.Setenv("AUTOSPEC_CCLEAN_VERBOSE", "true")
+	t.Setenv("AUTOSPEC_CCLEAN_LINE_NUMBERS", "true")
+	t.Setenv("AUTOSPEC_CCLEAN_STYLE", "compact")
+
+	cfg, err := Load("")
+	require.NoError(t, err)
+
+	assert.True(t, cfg.Cclean.Verbose, "AUTOSPEC_CCLEAN_VERBOSE should set Verbose to true")
+	assert.True(t, cfg.Cclean.LineNumbers, "AUTOSPEC_CCLEAN_LINE_NUMBERS should set LineNumbers to true")
+	assert.Equal(t, "compact", cfg.Cclean.Style, "AUTOSPEC_CCLEAN_STYLE should set Style")
+}
+
+func TestLoad_CcleanConfigEnvOverridesYAML(t *testing.T) {
+	// Test that env vars take precedence over YAML config
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "config.yml")
+
+	// YAML sets all options to one value
+	configContent := `cclean:
+  verbose: false
+  line_numbers: false
+  style: plain
+`
+	err := os.WriteFile(configPath, []byte(configContent), 0o644)
+	require.NoError(t, err)
+
+	// Environment variables override
+	t.Setenv("AUTOSPEC_CCLEAN_VERBOSE", "true")
+	t.Setenv("AUTOSPEC_CCLEAN_STYLE", "minimal")
+
+	cfg, err := LoadWithOptions(LoadOptions{
+		ProjectConfigPath: configPath,
+		SkipWarnings:      true,
+	})
+	require.NoError(t, err)
+
+	// Environment should override YAML
+	assert.True(t, cfg.Cclean.Verbose, "Env AUTOSPEC_CCLEAN_VERBOSE should override YAML")
+	assert.Equal(t, "minimal", cfg.Cclean.Style, "Env AUTOSPEC_CCLEAN_STYLE should override YAML")
+	// line_numbers not set in env, so YAML value should be used
+	assert.False(t, cfg.Cclean.LineNumbers, "YAML value should remain when no env override")
+}
+
+func TestLoad_CcleanConfigPrecedence(t *testing.T) {
+	// Test config priority: env > project > user > defaults
+	tmpDir := t.TempDir()
+
+	// Create user config directory
+	userConfigDir := filepath.Join(tmpDir, ".config", "autospec")
+	require.NoError(t, os.MkdirAll(userConfigDir, 0o755))
+
+	// Write user config
+	userConfig := `cclean:
+  verbose: true
+  line_numbers: true
+  style: minimal
+`
+	userConfigPath := filepath.Join(userConfigDir, "config.yml")
+	require.NoError(t, os.WriteFile(userConfigPath, []byte(userConfig), 0o644))
+
+	// Create project config directory
+	projectDir := filepath.Join(tmpDir, "project", ".autospec")
+	require.NoError(t, os.MkdirAll(projectDir, 0o755))
+
+	// Write project config (overrides user for style only)
+	projectConfig := `cclean:
+  style: compact
+`
+	projectConfigPath := filepath.Join(projectDir, "config.yml")
+	require.NoError(t, os.WriteFile(projectConfigPath, []byte(projectConfig), 0o644))
+
+	// Set XDG_CONFIG_HOME to use our test user config
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
+
+	// Change to project directory
+	originalWd, _ := os.Getwd()
+	defer os.Chdir(originalWd)
+	os.Chdir(filepath.Join(tmpDir, "project"))
+
+	cfg, err := LoadWithOptions(LoadOptions{
+		SkipWarnings: true,
+	})
+	require.NoError(t, err)
+
+	// User config values for verbose and line_numbers (project doesn't override)
+	assert.True(t, cfg.Cclean.Verbose, "User config verbose should be used")
+	assert.True(t, cfg.Cclean.LineNumbers, "User config line_numbers should be used")
+	// Project config value for style (overrides user)
+	assert.Equal(t, "compact", cfg.Cclean.Style, "Project config style should override user")
+}
+
+// Cclean Edge Case Tests (T010)
+
+func TestLoad_CcleanConfigInvalidStyleValue(t *testing.T) {
+	// Test that invalid style values are loaded but will be handled at usage time
+	// The config system accepts any string value; validation happens at formatting time
+	t.Parallel()
+
+	tests := map[string]struct {
+		configContent string
+		wantStyle     string
+	}{
+		"fancy style (invalid)": {
+			configContent: `cclean:
+  style: fancy
+`,
+			wantStyle: "fancy", // Config loads the value as-is
+		},
+		"garbage style": {
+			configContent: `cclean:
+  style: "!@#$%"
+`,
+			wantStyle: "!@#$%", // Config loads the value as-is
+		},
+		"empty string style": {
+			configContent: `cclean:
+  style: ""
+`,
+			wantStyle: "", // Empty string loaded as-is
+		},
+		"whitespace style": {
+			configContent: `cclean:
+  style: "   "
+`,
+			wantStyle: "   ", // Whitespace loaded as-is
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, "config.yml")
+			err := os.WriteFile(configPath, []byte(tt.configContent), 0o644)
+			require.NoError(t, err)
+
+			cfg, err := LoadWithOptions(LoadOptions{
+				ProjectConfigPath: configPath,
+				SkipWarnings:      true,
+			})
+			require.NoError(t, err)
+
+			// Config system loads the raw value; validation happens later at usage time
+			assert.Equal(t, tt.wantStyle, cfg.Cclean.Style)
+		})
+	}
+}
+
+func TestLoad_CcleanConfigNonBooleanVerbose(t *testing.T) {
+	// Test handling of non-boolean values for verbose
+	// Note: koanf/YAML accepts 0/1 as booleans but rejects strings like "yes"
+	t.Parallel()
+
+	tests := map[string]struct {
+		configContent string
+		wantErr       bool
+		wantVerbose   bool
+	}{
+		"string instead of bool": {
+			configContent: `cclean:
+  verbose: "yes"
+`,
+			wantErr: true, // YAML parsing should fail for bool field
+		},
+		"integer 1 treated as true": {
+			configContent: `cclean:
+  verbose: 1
+`,
+			wantErr:     false, // koanf treats 1 as true
+			wantVerbose: true,
+		},
+		"integer 0 treated as false": {
+			configContent: `cclean:
+  verbose: 0
+`,
+			wantErr:     false, // koanf treats 0 as false
+			wantVerbose: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, "config.yml")
+			err := os.WriteFile(configPath, []byte(tt.configContent), 0o644)
+			require.NoError(t, err)
+
+			cfg, err := LoadWithOptions(LoadOptions{
+				ProjectConfigPath: configPath,
+				SkipWarnings:      true,
+			})
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantVerbose, cfg.Cclean.Verbose)
+			}
+		})
+	}
+}
+
+func TestLoad_CcleanConfigNonBooleanLineNumbers(t *testing.T) {
+	// Test handling of non-boolean values for line_numbers
+	// Note: koanf/YAML accepts 0/1 as booleans but rejects strings like "yes"
+	t.Parallel()
+
+	tests := map[string]struct {
+		configContent   string
+		wantErr         bool
+		wantLineNumbers bool
+	}{
+		"string instead of bool": {
+			configContent: `cclean:
+  line_numbers: "yes"
+`,
+			wantErr: true, // YAML parsing should fail for bool field
+		},
+		"integer 1 treated as true": {
+			configContent: `cclean:
+  line_numbers: 1
+`,
+			wantErr:         false, // koanf treats 1 as true
+			wantLineNumbers: true,
+		},
+		"integer 0 treated as false": {
+			configContent: `cclean:
+  line_numbers: 0
+`,
+			wantErr:         false, // koanf treats 0 as false
+			wantLineNumbers: false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			tmpDir := t.TempDir()
+			configPath := filepath.Join(tmpDir, "config.yml")
+			err := os.WriteFile(configPath, []byte(tt.configContent), 0o644)
+			require.NoError(t, err)
+
+			cfg, err := LoadWithOptions(LoadOptions{
+				ProjectConfigPath: configPath,
+				SkipWarnings:      true,
+			})
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantLineNumbers, cfg.Cclean.LineNumbers)
+			}
+		})
+	}
+}
+
+func TestLoad_CcleanConfigEmptyStyleUsesDefault(t *testing.T) {
+	// Test that empty style in config results in default being used at formatting time
+	tmpDir := t.TempDir()
+	t.Setenv("HOME", tmpDir)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(tmpDir, ".config"))
+
+	// Config with empty cclean section (no style set)
+	configPath := filepath.Join(tmpDir, "config.yml")
+	configContent := `cclean:
+  verbose: true
+`
+	err := os.WriteFile(configPath, []byte(configContent), 0o644)
+	require.NoError(t, err)
+
+	cfg, err := LoadWithOptions(LoadOptions{
+		ProjectConfigPath: configPath,
+		SkipWarnings:      true,
+	})
+	require.NoError(t, err)
+
+	// Style should be "default" (from defaults.go)
+	assert.Equal(t, "default", cfg.Cclean.Style, "Empty style should use default value")
+	assert.True(t, cfg.Cclean.Verbose, "Verbose should be set from config")
 }

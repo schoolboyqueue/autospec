@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ariel-frischer/autospec/internal/cliagent"
+	"github.com/ariel-frischer/autospec/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -384,4 +385,148 @@ func TestFormatCommand(t *testing.T) {
 	result := executor.FormatCommand("/autospec.plan")
 	assert.Contains(t, result, "claude")
 	assert.Contains(t, result, "-p")
+}
+
+// Tests for cclean.style precedence over output_style (T011)
+
+func TestGetFormatterOptions_CcleanStylePrecedence(t *testing.T) {
+	// Test that cclean.style takes precedence over OutputStyle when set
+	// This verifies the precedence behavior documented in claude.go:
+	// "CcleanConfig.Style takes precedence over OutputStyle when set."
+	t.Parallel()
+
+	tests := map[string]struct {
+		outputStyle config.OutputStyle
+		ccleanStyle string
+		wantStyle   config.OutputStyle
+		description string
+	}{
+		"cclean.style takes precedence when both set": {
+			outputStyle: config.OutputStyleDefault,
+			ccleanStyle: "compact",
+			wantStyle:   config.OutputStyleCompact,
+			description: "When cclean.style is set to a valid non-default value, it overrides OutputStyle",
+		},
+		"cclean.style minimal overrides output_style plain": {
+			outputStyle: config.OutputStylePlain,
+			ccleanStyle: "minimal",
+			wantStyle:   config.OutputStyleMinimal,
+			description: "cclean.style minimal should override OutputStyle plain",
+		},
+		"output_style is fallback when cclean.style is empty": {
+			outputStyle: config.OutputStyleCompact,
+			ccleanStyle: "",
+			wantStyle:   config.OutputStyleCompact,
+			description: "When cclean.style is empty, OutputStyle is used as fallback",
+		},
+		"output_style is fallback when cclean.style is default": {
+			outputStyle: config.OutputStylePlain,
+			ccleanStyle: "default",
+			wantStyle:   config.OutputStylePlain,
+			description: "When cclean.style is 'default', OutputStyle is used (default is treated as not set)",
+		},
+		"both default results in default": {
+			outputStyle: config.OutputStyleDefault,
+			ccleanStyle: "",
+			wantStyle:   config.OutputStyleDefault,
+			description: "When both are default/empty, result is default style",
+		},
+		"invalid cclean.style falls back to output_style": {
+			outputStyle: config.OutputStyleMinimal,
+			ccleanStyle: "invalid_style_value",
+			wantStyle:   config.OutputStyleMinimal,
+			description: "Invalid cclean.style should fall back to OutputStyle",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			executor := &ClaudeExecutor{
+				OutputStyle: tt.outputStyle,
+				CcleanConfig: config.CcleanConfig{
+					Style: tt.ccleanStyle,
+				},
+			}
+
+			opts := executor.getFormatterOptions()
+			assert.Equal(t, tt.wantStyle, opts.Style, tt.description)
+		})
+	}
+}
+
+func TestGetFormatterOptions_VerboseAndLineNumbers(t *testing.T) {
+	// Test that verbose and line_numbers are passed through from CcleanConfig
+	t.Parallel()
+
+	tests := map[string]struct {
+		verbose         bool
+		lineNumbers     bool
+		wantVerbose     bool
+		wantLineNumbers bool
+	}{
+		"both enabled": {
+			verbose:         true,
+			lineNumbers:     true,
+			wantVerbose:     true,
+			wantLineNumbers: true,
+		},
+		"both disabled": {
+			verbose:         false,
+			lineNumbers:     false,
+			wantVerbose:     false,
+			wantLineNumbers: false,
+		},
+		"verbose only": {
+			verbose:         true,
+			lineNumbers:     false,
+			wantVerbose:     true,
+			wantLineNumbers: false,
+		},
+		"line_numbers only": {
+			verbose:         false,
+			lineNumbers:     true,
+			wantVerbose:     false,
+			wantLineNumbers: true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			executor := &ClaudeExecutor{
+				OutputStyle: config.OutputStyleDefault,
+				CcleanConfig: config.CcleanConfig{
+					Verbose:     tt.verbose,
+					LineNumbers: tt.lineNumbers,
+				},
+			}
+
+			opts := executor.getFormatterOptions()
+			assert.Equal(t, tt.wantVerbose, opts.Verbose)
+			assert.Equal(t, tt.wantLineNumbers, opts.LineNumbers)
+		})
+	}
+}
+
+func TestGetFormatterOptions_FullConfig(t *testing.T) {
+	// Test a full configuration with all options set
+	t.Parallel()
+
+	executor := &ClaudeExecutor{
+		OutputStyle: config.OutputStylePlain, // Will be overridden
+		CcleanConfig: config.CcleanConfig{
+			Verbose:     true,
+			LineNumbers: true,
+			Style:       "compact", // Takes precedence
+		},
+	}
+
+	opts := executor.getFormatterOptions()
+
+	assert.Equal(t, config.OutputStyleCompact, opts.Style, "cclean.style should take precedence")
+	assert.True(t, opts.Verbose, "verbose should be passed through")
+	assert.True(t, opts.LineNumbers, "line_numbers should be passed through")
 }

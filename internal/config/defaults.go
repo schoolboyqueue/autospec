@@ -77,6 +77,12 @@ notifications:
   on_error: true                      # Notify on failures
   on_long_running: false              # Enable duration-based notifications
   long_running_threshold: 2m          # Threshold for long-running notification
+
+# Cclean (claude-clean) output formatting
+cclean:
+  verbose: false                      # Verbose output with usage stats and tool IDs (-V)
+  line_numbers: false                 # Show line numbers in formatted output (-n)
+  style: default                      # Output style: default | compact | minimal | plain (-s)
 `
 }
 
@@ -143,5 +149,13 @@ func GetDefaults() map[string]interface{} {
 		// --dangerously-skip-permissions has been shown. Set to true after first display.
 		// User-level config only (not shown in project config).
 		"skip_permissions_notice_shown": false,
+		// cclean: Configuration options for cclean (claude-clean) output formatting.
+		// Controls verbose mode, line numbers, and output style for stream-json display.
+		// Environment variable support via AUTOSPEC_CCLEAN_* prefix.
+		"cclean": map[string]interface{}{
+			"verbose":      false,     // Verbose output with usage stats and tool IDs (-V flag)
+			"line_numbers": false,     // Show line numbers in formatted output (-n flag)
+			"style":        "default", // Output style: default, compact, minimal, plain (-s flag)
+		},
 	}
 }

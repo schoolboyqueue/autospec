@@ -22,7 +22,13 @@ type ClaudeExecutor struct {
 	// OutputStyle controls how stream-json output is formatted for display.
 	// When set and stream-json mode is detected, output is formatted using cclean.
 	// Valid values: default, compact, minimal, plain, raw
+	// NOTE: CcleanConfig.Style takes precedence when set.
 	OutputStyle config.OutputStyle
+
+	// CcleanConfig provides detailed configuration for cclean output formatting.
+	// Controls verbose mode, line numbers, and style for stream-json display.
+	// CcleanConfig.Style takes precedence over OutputStyle when set.
+	CcleanConfig config.CcleanConfig
 
 	// UseSubscription forces subscription mode (Pro/Max) instead of API credits.
 	// When true, ANTHROPIC_API_KEY is set to empty string in the execution environment.
@@ -183,7 +189,26 @@ func (c *ClaudeExecutor) getFormattedStdout(w io.Writer) io.Writer {
 		return w
 	}
 
-	return NewFormatterWriter(c.OutputStyle, w)
+	return NewFormatterWriterWithOptions(c.getFormatterOptions(), w)
+}
+
+// getFormatterOptions builds FormatterOptions from executor configuration.
+// CcleanConfig.Style takes precedence over OutputStyle when set.
+func (c *ClaudeExecutor) getFormatterOptions() FormatterOptions {
+	style := c.OutputStyle
+	// CcleanConfig.Style takes precedence when set (non-empty)
+	if c.CcleanConfig.Style != "" && c.CcleanConfig.Style != "default" {
+		// Convert cclean style string to OutputStyle
+		if normalizedStyle, err := config.NormalizeOutputStyle(c.CcleanConfig.Style); err == nil {
+			style = normalizedStyle
+		}
+	}
+
+	return FormatterOptions{
+		Style:       style,
+		Verbose:     c.CcleanConfig.Verbose,
+		LineNumbers: c.CcleanConfig.LineNumbers,
+	}
 }
 
 // flushFormatter flushes the FormatterWriter if the writer is one.

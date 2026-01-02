@@ -231,6 +231,25 @@ var KnownKeys = map[string]ConfigKeySchema{
 		Description: "Non-tracked directories to copy to worktrees",
 		Default:     "",
 	},
+	"cclean.verbose": {
+		Path:        "cclean.verbose",
+		Type:        TypeBool,
+		Description: "Enable verbose output with usage stats and tool IDs (-V flag)",
+		Default:     false,
+	},
+	"cclean.line_numbers": {
+		Path:        "cclean.line_numbers",
+		Type:        TypeBool,
+		Description: "Show line numbers in formatted output (-n flag)",
+		Default:     false,
+	},
+	"cclean.style": {
+		Path:          "cclean.style",
+		Type:          TypeEnum,
+		AllowedValues: []string{"default", "compact", "minimal", "plain"},
+		Description:   "Output formatting style for cclean (-s flag)",
+		Default:       "default",
+	},
 }
 
 // ErrUnknownKey is returned when trying to access an unknown configuration key.

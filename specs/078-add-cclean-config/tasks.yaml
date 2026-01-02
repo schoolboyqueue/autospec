@@ -31,7 +31,7 @@ phases:
       tasks:
         - id: "T002"
           title: "Add CcleanConfig field to Configuration struct in internal/config/config.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: null
@@ -43,7 +43,7 @@ phases:
             - "Field is embedded/nested correctly for hierarchical config"
         - id: "T003"
           title: "Add cclean keys to KnownKeys registry in internal/config/schema.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -55,7 +55,7 @@ phases:
             - "cclean.style key registered with string type and allowed values"
         - id: "T004"
           title: "Add default values for cclean config in internal/config/defaults.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: null
@@ -74,7 +74,7 @@ phases:
       tasks:
         - id: "T005"
           title: "Add tests for cclean config loading in internal/config/config_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -88,7 +88,7 @@ phases:
             - "Map-based table-driven tests with t.Parallel()"
         - id: "T006"
           title: "Update StreamFormatter.mapStyleToConfig() to use CcleanConfig in internal/workflow/formatter.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-001"
@@ -102,7 +102,7 @@ phases:
             - "Function remains <40 lines per PRIN-011"
         - id: "T007"
           title: "Add tests for cclean config application in internal/workflow/formatter_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-001"
@@ -122,7 +122,7 @@ phases:
       tasks:
         - id: "T008"
           title: "Update docs/internal/cclean.md with configuration options"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: false
           story_id: "US-002"
@@ -137,7 +137,7 @@ phases:
             - "Document default values and fallback behavior"
         - id: "T009"
           title: "Update config template in internal/config/defaults.go with cclean section comments"
-          status: "Pending"
+          status: "Completed"
           type: "documentation"
           parallel: true
           story_id: "US-002"
@@ -153,7 +153,7 @@ phases:
       tasks:
         - id: "T010"
           title: "Add edge case tests for invalid cclean config values"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: null
@@ -165,7 +165,7 @@ phases:
             - "Test empty string for style uses default"
         - id: "T011"
           title: "Verify cclean.style precedence over output_style"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: true
           story_id: null
@@ -177,7 +177,7 @@ phases:
             - "Document precedence behavior in test comments"
         - id: "T012"
           title: "Run full test suite and verify no regressions"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: null

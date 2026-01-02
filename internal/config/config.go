@@ -126,6 +126,11 @@ type Configuration struct {
 	// a risks section documenting potential implementation risks and mitigations.
 	// Default: false. Can be set via AUTOSPEC_ENABLE_RISK_ASSESSMENT env var.
 	EnableRiskAssessment bool `koanf:"enable_risk_assessment"`
+
+	// Cclean configures cclean (claude-clean) output formatting options.
+	// Controls verbose mode, line numbers, and output style for stream-json display.
+	// Environment variable support via AUTOSPEC_CCLEAN_* prefix.
+	Cclean CcleanConfig `koanf:"cclean"`
 }
 
 // LoadOptions configures how configuration is loaded
@@ -387,10 +392,30 @@ func fileExists(path string) bool {
 	return err == nil
 }
 
-// envTransform converts environment variable names to config keys
-// Example: AUTOSPEC_MAX_RETRIES -> max_retries
+// envTransform converts environment variable names to config keys.
+// For nested config structures, it converts the underscore after known
+// parent keys to a dot for proper koanf path resolution.
+//
+// Examples:
+//   - AUTOSPEC_MAX_RETRIES -> max_retries
+//   - AUTOSPEC_CCLEAN_VERBOSE -> cclean.verbose
+//   - AUTOSPEC_NOTIFICATIONS_ENABLED -> notifications.enabled
+//   - AUTOSPEC_WORKTREE_BASE_DIR -> worktree.base_dir
+//   - AUTOSPEC_CUSTOM_AGENT_COMMAND -> custom_agent.command
 func envTransform(s string) string {
-	return strings.Replace(strings.ToLower(strings.TrimPrefix(s, "AUTOSPEC_")), "_", "_", -1)
+	key := strings.ToLower(strings.TrimPrefix(s, "AUTOSPEC_"))
+
+	// Known nested config prefixes that need dot notation.
+	// Order matters: longer prefixes must come first to avoid partial matches.
+	nestedPrefixes := []string{"custom_agent_", "notifications_", "worktree_", "cclean_"}
+	for _, prefix := range nestedPrefixes {
+		if strings.HasPrefix(key, prefix) {
+			// Replace the trailing underscore of the prefix with a dot
+			return prefix[:len(prefix)-1] + "." + key[len(prefix):]
+		}
+	}
+
+	return key
 }
 
 // expandHomePath expands ~ to the user's home directory
