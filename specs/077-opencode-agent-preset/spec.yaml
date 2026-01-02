@@ -69,12 +69,12 @@ user_stories:
     i_want: "autospec init to configure OpenCode's permissions in opencode.json"
     so_that: "OpenCode can run autospec commands without prompting for approval"
     why_this_priority: "Required for non-interactive workflow execution"
-    independent_test: "Run autospec init --ai opencode and verify opencode.json has 'autospec *': 'allow' permission"
+    independent_test: "Run autospec init --ai opencode and verify ./opencode.json has 'autospec *': 'allow' permission"
     acceptance_scenarios:
-      - given: "A project without opencode.json"
+      - given: "A project without opencode.json at root"
         when: "I run 'autospec init --ai opencode'"
-        then: "opencode.json is created with permission.bash['autospec *'] = 'allow'"
-      - given: "A project with existing opencode.json"
+        then: "./opencode.json is created with permission.bash['autospec *'] = 'allow'"
+      - given: "A project with existing opencode.json at root"
         when: "I run 'autospec init --ai opencode'"
         then: "permission.bash['autospec *'] = 'allow' is added/updated without overwriting other settings"
 
@@ -96,19 +96,19 @@ requirements:
       acceptance_criteria: "Templates reference AGENTS.md as primary constitution with fallback to CLAUDE.md; no agent-specific template directories"
 
     - id: "FR-004"
-      description: "SHOULD add '--ai' or '--agent' flag to autospec init for agent selection"
+      description: "MUST add '--ai' flag to autospec init supporting multiple agents"
       testable: true
-      acceptance_criteria: "autospec init --ai opencode selects OpenCode as the agent to configure"
+      acceptance_criteria: "autospec init --ai claude,opencode configures both agents; supports comma-separated list"
 
     - id: "FR-005"
-      description: "MUST add PromptMethodSubcommandWithFlag type and update OpenCode agent to use it"
+      description: "MUST update OpenCode agent to pass --command flag via ExtraArgs or new PromptMethod"
       testable: true
-      acceptance_criteria: "New PromptMethodSubcommandWithFlag handles 'opencode run <args> --command <name>' pattern"
+      acceptance_criteria: "OpenCode agent produces 'opencode run <prompt> --command <name>' for slash commands; can use existing ExtraArgs mechanism"
 
     - id: "FR-006"
       description: "MUST implement Configurator interface for OpenCode to install commands and configure permissions"
       testable: true
-      acceptance_criteria: "OpenCode.ConfigureProject() installs commands to .opencode/command/ AND adds 'autospec *': 'allow' to opencode.json"
+      acceptance_criteria: "OpenCode.ConfigureProject() installs commands to .opencode/command/ AND adds 'autospec *': 'allow' to ./opencode.json (project root)"
 
     - id: "FR-007"
       description: "MUST limit production builds to Claude + OpenCode agents only"
@@ -116,9 +116,9 @@ requirements:
       acceptance_criteria: "Production builds only show/allow Claude and OpenCode; dev builds show all agents"
 
     - id: "FR-008"
-      description: "SHOULD enable existing agent selection UI in autospec init"
+      description: "MUST enable existing interactive agent checklist UI in autospec init"
       testable: true
-      acceptance_criteria: "autospec init shows interactive agent checklist when --ai flag not provided"
+      acceptance_criteria: "autospec init (without --ai flag) shows existing multi-select checklist for agent selection; locate and enable existing code"
 
     - id: "FR-009"
       description: "MUST support retry prompt injection identically to Claude agent"
@@ -219,13 +219,14 @@ key_entities:
       - "Distinct from: PromptMethodArg (Claude's -p pattern)"
 
   - name: "OpenCode Permissions"
-    description: "Permission configuration for OpenCode in opencode.json"
+    description: "Permission configuration for OpenCode in opencode.json at project root"
     attributes:
-      - "Config file: opencode.json at project root"
+      - "Config file: ./opencode.json (project root, not .opencode/)"
       - "Permission path: permission.bash"
       - "Required rule: 'autospec *': 'allow'"
       - "Supports glob patterns (* matches any)"
       - "Approval levels: allow, ask, deny"
+      - "Note: .opencode/ is for agents/modes/commands, config stays at root"
 
 edge_cases:
   - scenario: "OpenCode not installed"
@@ -238,7 +239,7 @@ edge_cases:
     expected_behavior: "Only autospec.*.md files are created/updated; existing commands preserved"
 
   - scenario: "User runs autospec init without --ai flag"
-    expected_behavior: "Continues to configure Claude by default (backward compatible)"
+    expected_behavior: "Shows existing interactive multi-select checklist for agent selection (enable existing disabled code)"
 
   - scenario: "Internal command templates contain agent-specific syntax"
     expected_behavior: "Audit and refactor templates to be agent-agnostic before implementing"
@@ -272,7 +273,8 @@ constraints:
   - "Must not break existing Claude Code workflows or configuration"
 
 out_of_scope:
-  - "OpenCode sandbox configuration (OpenCode may not have equivalent feature)"
+  - "OpenCode sandbox configuration (OpenCode does NOT support sandboxing - no SandboxConfigurator implementation needed)"
+  - "OpenCode DefaultArgs/output format (default output works fine, no --format flag needed)"
   - "GUI/TUI configuration for OpenCode (focus on CLI automation only)"
   - "Support for OpenCode's deprecated 'mode' configuration (use agent-based config)"
   - "OpenCode MCP server configuration"
@@ -322,8 +324,13 @@ clarifications:
 
   - date: "2026-01-02"
     question: "Does OpenCode need permissions configured for autospec commands?"
-    answer: "Yes - add 'autospec *': 'allow' to opencode.json permission.bash section during init"
+    answer: "Yes - add 'autospec *': 'allow' to ./opencode.json (project root) permission.bash section during init"
     applied_to: "FR-006, US-004, out_of_scope (removed permission exclusion)"
+
+  - date: "2026-01-02"
+    question: "Should --ai flag support multiple agents and what happens without it?"
+    answer: "Yes - --ai accepts comma-separated list (e.g., --ai claude,opencode). Without flag, show existing interactive multi-select checklist."
+    applied_to: "FR-004, FR-008, edge_cases"
 
 _meta:
   version: "1.0.0"
