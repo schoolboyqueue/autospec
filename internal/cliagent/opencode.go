@@ -41,7 +41,8 @@ func NewOpenCode() *OpenCode {
 // ConfigureProject implements the Configurator interface for OpenCode.
 // It configures the OpenCode agent for autospec:
 //   - Installs command templates to .opencode/command/
-//   - Adds 'autospec *': 'allow' permission to ./opencode.json
+//   - Adds 'autospec *': 'allow' bash permission to ./opencode.json
+//   - Adds edit.allow patterns for .autospec/** and specs/** directories
 //
 // This method is idempotent - calling it multiple times produces the same result.
 func (o *OpenCode) ConfigureProject(projectDir, specsDir string) (ConfigResult, error) {
@@ -68,14 +69,26 @@ func (o *OpenCode) ConfigureProject(projectDir, specsDir string) (ConfigResult, 
 		warning = fmt.Sprintf("permission '%s' is explicitly denied in opencode.json", opencode.RequiredPattern)
 	}
 
+	// Add bash permission for autospec commands
 	settings.AddBashPermission(opencode.RequiredPattern, opencode.PermissionAllow)
+
+	// Add edit permissions for autospec directories
+	settings.AddEditAllowPatterns(opencode.RequiredEditPatterns)
 
 	if err := settings.Save(); err != nil {
 		return ConfigResult{}, fmt.Errorf("saving opencode settings: %w", err)
 	}
 
+	// Build list of permissions added
+	permissionsAdded := []string{
+		fmt.Sprintf("Bash(%s)", opencode.RequiredPattern),
+	}
+	for _, pattern := range opencode.RequiredEditPatterns {
+		permissionsAdded = append(permissionsAdded, fmt.Sprintf("Edit(%s)", pattern))
+	}
+
 	return ConfigResult{
-		PermissionsAdded: []string{fmt.Sprintf("%s: %s", opencode.RequiredPattern, opencode.PermissionAllow)},
+		PermissionsAdded: permissionsAdded,
 		Warning:          warning,
 	}, nil
 }

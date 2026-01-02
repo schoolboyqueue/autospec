@@ -204,8 +204,9 @@ func TestHasRequiredPermission(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
-		bashPerms map[string]string
-		want      bool
+		bashPerms    map[string]string
+		editPatterns []string
+		want         bool
 	}{
 		"no permissions": {
 			bashPerms: nil,
@@ -223,9 +224,14 @@ func TestHasRequiredPermission(t *testing.T) {
 			bashPerms: map[string]string{"autospec *": "ask"},
 			want:      false,
 		},
-		"pattern allowed": {
+		"bash allowed but no edit": {
 			bashPerms: map[string]string{"autospec *": "allow"},
-			want:      true,
+			want:      false, // Now requires edit patterns too
+		},
+		"bash allowed with edit patterns": {
+			bashPerms:    map[string]string{"autospec *": "allow"},
+			editPatterns: []string{"./.autospec/**", "./specs/**"},
+			want:         true,
 		},
 	}
 
@@ -234,6 +240,9 @@ func TestHasRequiredPermission(t *testing.T) {
 			t.Parallel()
 			s := &Settings{
 				Permission: Permission{Bash: tt.bashPerms},
+			}
+			if len(tt.editPatterns) > 0 {
+				s.AddEditAllowPatterns(tt.editPatterns)
 			}
 
 			got := s.HasRequiredPermission()
@@ -327,11 +336,23 @@ func TestCheck(t *testing.T) {
 		"permission configured": {
 			setup: func(t *testing.T, dir string) {
 				createSettingsFile(t, dir, `{
-					"permission": {"bash": {"autospec *": "allow"}}
+					"permission": {
+						"bash": {"autospec *": "allow"},
+						"edit": {"allow": ["./.autospec/**", "./specs/**"]}
+					}
 				}`)
 			},
 			wantStatus:      StatusConfigured,
 			wantMsgContains: "configured",
+		},
+		"bash allowed but no edit patterns": {
+			setup: func(t *testing.T, dir string) {
+				createSettingsFile(t, dir, `{
+					"permission": {"bash": {"autospec *": "allow"}}
+				}`)
+			},
+			wantStatus:      StatusNeedsPermission,
+			wantMsgContains: "missing",
 		},
 		"empty bash map": {
 			setup: func(t *testing.T, dir string) {
@@ -526,7 +547,7 @@ func TestCheckInDir(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	createSettingsFile(t, dir, `{"permission": {"bash": {"autospec *": "allow"}}}`)
+	createSettingsFile(t, dir, `{"permission": {"bash": {"autospec *": "allow"}, "edit": {"allow": ["./.autospec/**", "./specs/**"]}}}`)
 
 	result, err := CheckInDir(dir)
 

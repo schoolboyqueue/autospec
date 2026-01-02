@@ -675,7 +675,7 @@ func displayAgentConfigResult(out io.Writer, agentName string, result *cliagent.
 	}
 
 	if result.AlreadyConfigured {
-		fmt.Fprintf(out, "%s %s: permissions already configured %s\n", cGreen("✓"), cBold(displayName), cDim("(Bash(autospec:*), Write, Edit)"))
+		fmt.Fprintf(out, "%s %s: permissions already configured\n", cGreen("✓"), cBold(displayName))
 		return
 	}
 

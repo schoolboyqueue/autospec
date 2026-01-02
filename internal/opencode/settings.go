@@ -188,30 +188,73 @@ func (s *Settings) AddBashPermission(pattern, level string) {
 	s.Permission.Bash[pattern] = level
 }
 
-// SetEditPermission sets the global edit permission level.
-// This controls OpenCode's ability to write/edit files.
-func (s *Settings) SetEditPermission(level string) {
-	s.Permission.Edit = level
+// AddEditAllowPattern adds a pattern to the edit allow list.
+// This is idempotent - calling multiple times with the same pattern has no additional effect.
+func (s *Settings) AddEditAllowPattern(pattern string) {
+	if s.Permission.Edit == nil {
+		s.Permission.Edit = &EditPermission{}
+	}
+	// Check if pattern already exists
+	for _, p := range s.Permission.Edit.Allow {
+		if p == pattern {
+			return
+		}
+	}
+	s.Permission.Edit.Allow = append(s.Permission.Edit.Allow, pattern)
 }
 
-// HasEditPermission checks if the edit permission is set to allow.
-func (s *Settings) HasEditPermission() bool {
-	return s.Permission.Edit == PermissionAllow
+// AddEditAllowPatterns adds multiple patterns to the edit allow list.
+func (s *Settings) AddEditAllowPatterns(patterns []string) {
+	for _, pattern := range patterns {
+		s.AddEditAllowPattern(pattern)
+	}
+}
+
+// HasEditPattern checks if a specific pattern is in the edit allow list.
+func (s *Settings) HasEditPattern(pattern string) bool {
+	if s.Permission.Edit == nil {
+		return false
+	}
+	for _, p := range s.Permission.Edit.Allow {
+		if p == pattern {
+			return true
+		}
+	}
+	return false
+}
+
+// HasRequiredEditPatterns checks if all required edit patterns are configured.
+func (s *Settings) HasRequiredEditPatterns() bool {
+	for _, required := range RequiredEditPatterns {
+		if !s.HasEditPattern(required) {
+			return false
+		}
+	}
+	return true
 }
 
 // HasRequiredPermission checks if all autospec permissions are properly configured.
-// This includes both the bash pattern permission and the edit permission.
+// This includes both the bash pattern permission and the edit patterns.
 func (s *Settings) HasRequiredPermission() bool {
 	bashAllowed := s.CheckBashPermission(RequiredPattern) == PermissionAllow
-	editAllowed := s.Permission.Edit == PermissionAllow
+	editAllowed := s.HasRequiredEditPatterns()
 	return bashAllowed && editAllowed
 }
 
 // IsPermissionDenied checks if any autospec permission is explicitly denied.
 func (s *Settings) IsPermissionDenied() bool {
 	bashDenied := s.CheckBashPermission(RequiredPattern) == PermissionDeny
-	editDenied := s.Permission.Edit == PermissionDeny
-	return bashDenied || editDenied
+	// Check if any required pattern is in the deny list
+	if s.Permission.Edit != nil {
+		for _, required := range RequiredEditPatterns {
+			for _, denied := range s.Permission.Edit.Deny {
+				if denied == required {
+					return true
+				}
+			}
+		}
+	}
+	return bashDenied
 }
 
 // Check validates OpenCode settings for the required autospec permissions.
@@ -239,8 +282,8 @@ func (s *Settings) Check() SettingsCheckResult {
 		if s.CheckBashPermission(RequiredPattern) != PermissionAllow {
 			missing = append(missing, fmt.Sprintf("bash '%s': 'allow'", RequiredPattern))
 		}
-		if s.Permission.Edit != PermissionAllow {
-			missing = append(missing, "edit: 'allow'")
+		if !s.HasRequiredEditPatterns() {
+			missing = append(missing, fmt.Sprintf("edit.allow: %v", RequiredEditPatterns))
 		}
 		return SettingsCheckResult{
 			Status:   StatusNeedsPermission,
@@ -251,7 +294,7 @@ func (s *Settings) Check() SettingsCheckResult {
 
 	return SettingsCheckResult{
 		Status:   StatusConfigured,
-		Message:  fmt.Sprintf("permissions configured (%s, edit)", RequiredPattern),
+		Message:  fmt.Sprintf("permissions configured (%s, edit patterns)", RequiredPattern),
 		FilePath: s.filePath,
 	}
 }
@@ -295,8 +338,9 @@ func (s *Settings) marshalWithExtra() ([]byte, error) {
 		result[k] = val
 	}
 
-	// Add permission if it has content (bash rules or edit setting)
-	if len(s.Permission.Bash) > 0 || s.Permission.Edit != "" {
+	// Add permission if it has content (bash rules or edit patterns)
+	hasEdit := s.Permission.Edit != nil && (len(s.Permission.Edit.Allow) > 0 || len(s.Permission.Edit.Deny) > 0)
+	if len(s.Permission.Bash) > 0 || hasEdit {
 		result["permission"] = s.Permission
 	}
 
