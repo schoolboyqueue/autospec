@@ -73,8 +73,12 @@ Originally inspired by [GitHub SpecKit](https://github.com/github/spec-kit), Aut
 
 2. Initialize Autospec (config, commands, and scripts):
    ```bash
-   autospec init
+   autospec init                    # Interactive agent selection
+   autospec init --ai opencode      # Configure specific agent
+   autospec init --ai claude,opencode  # Configure multiple agents
+   autospec init --project          # Project-level config (.autospec/config.yml)
    ```
+   > When a single agent is selected, `agent_preset` is automatically set so that agent is used for execution.
 
 3. Create project constitution (once per project, triggers Claude session):
    ```bash

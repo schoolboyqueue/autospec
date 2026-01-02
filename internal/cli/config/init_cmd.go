@@ -87,9 +87,9 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// ═══════════════════════════════════════════════════════════════════════
 	// Phase 1: Fast setup (immediate file operations)
 	// ═══════════════════════════════════════════════════════════════════════
-	if err := installCommandTemplates(out); err != nil {
-		return fmt.Errorf("installing command templates: %w", err)
-	}
+	// Note: Command templates are installed per-agent in handleAgentConfiguration()
+	// via cliagent.Configure(), not here. This ensures templates only go to
+	// directories for agents the user actually selected.
 
 	newConfigCreated, err := initializeConfig(out, project, force)
 	if err != nil {
@@ -173,6 +173,13 @@ func handleAgentConfiguration(cmd *cobra.Command, out io.Writer, project, noAgen
 
 	// Run agent selection prompt
 	selected := promptAgentSelection(cmd.InOrStdin(), out, agents)
+
+	// Show selected agents feedback
+	if len(selected) > 0 {
+		fmt.Fprintf(out, "%s %s: %s\n", cGreen("✓"), cBold("Selected"), strings.Join(selected, ", "))
+	} else {
+		fmt.Fprintf(out, "%s No agents selected\n", cYellow("⚠"))
+	}
 
 	// Configure selected agents and save preferences
 	// Use "." as project directory for real init command
@@ -618,6 +625,7 @@ func displayAgentConfigResult(out io.Writer, agentName string, result *cliagent.
 }
 
 // persistAgentPreferences saves the selected agents to config for future init runs.
+// Also updates agent_preset if only one agent is selected and agent_preset is currently empty.
 func persistAgentPreferences(out io.Writer, selected []string, cfg *config.Configuration, configPath string) error {
 	// Update config with new agent preferences
 	cfg.DefaultAgents = selected
@@ -631,6 +639,13 @@ func persistAgentPreferences(out io.Writer, selected []string, cfg *config.Confi
 
 	// Update the default_agents line in the config file
 	newContent := updateDefaultAgentsInConfig(string(existingContent), selected)
+
+	// If exactly one agent selected and agent_preset is empty, set it as the default
+	// This ensures the selected agent is used for execution, not just configuration
+	if len(selected) == 1 && cfg.AgentPreset == "" {
+		newContent = updateAgentPresetInConfig(newContent, selected[0])
+		fmt.Fprintf(out, "%s %s: %s %s\n", cGreen("✓"), cBold("agent_preset"), selected[0], cDim("(set as default for execution)"))
+	}
 
 	if err := os.WriteFile(configPath, []byte(newContent), 0o644); err != nil {
 		return fmt.Errorf("saving agent preferences: %w", err)
@@ -676,27 +691,36 @@ func formatAgentList(agents []string) string {
 	return strings.Join(quoted, ", ")
 }
 
+// updateAgentPresetInConfig updates the agent_preset line in the config content.
+func updateAgentPresetInConfig(content, agentName string) string {
+	lines := strings.Split(content, "\n")
+	found := false
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "agent_preset:") {
+			lines[i] = fmt.Sprintf("agent_preset: %s", agentName)
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		// Insert after first line (usually a comment) or at start
+		newLine := fmt.Sprintf("agent_preset: %s", agentName)
+		if len(lines) > 0 {
+			lines = append([]string{lines[0], newLine}, lines[1:]...)
+		} else {
+			lines = []string{newLine}
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
 // isTerminal returns true if stdin is connected to a terminal.
 func isTerminal() bool {
 	return term.IsTerminal(int(os.Stdin.Fd()))
-}
-
-// installCommandTemplates installs command templates and prints status
-func installCommandTemplates(out io.Writer) error {
-	cmdDir := commands.GetDefaultCommandsDir()
-	cmdResults, err := commands.InstallTemplates(cmdDir)
-	if err != nil {
-		return fmt.Errorf("failed to install commands: %w", err)
-	}
-
-	cmdInstalled, cmdUpdated := countResults(cmdResults)
-	if cmdInstalled+cmdUpdated > 0 {
-		fmt.Fprintf(out, "%s %s: %d installed, %d updated → %s/\n",
-			cGreen("✓"), cBold("Commands"), cmdInstalled, cmdUpdated, cDim(cmdDir))
-	} else {
-		fmt.Fprintf(out, "%s %s: up to date\n", cGreen("✓"), cBold("Commands"))
-	}
-	return nil
 }
 
 // initializeConfig creates or updates config file.

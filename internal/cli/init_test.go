@@ -241,7 +241,7 @@ func TestRunInit_CreateUserConfig(t *testing.T) {
 	require.NoError(t, err)
 
 	output := buf.String()
-	assert.Contains(t, output, "Commands:")
+	// Note: "Commands:" only appears when agents are selected (not with --no-agents)
 	assert.Contains(t, output, "Config:")
 }
 
