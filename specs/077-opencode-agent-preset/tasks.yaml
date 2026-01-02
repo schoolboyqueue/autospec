@@ -150,7 +150,7 @@ phases:
             - "Functions are idempotent (safe to call multiple times)"
         - id: "T011"
           title: "Write tests for internal/opencode/settings_test.go"
-          status: "InProgress"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-004"
@@ -169,7 +169,7 @@ phases:
       tasks:
         - id: "T012"
           title: "Update CLAUDE.md references to AGENTS.md pattern in internal/commands/*.md"
-          status: "Pending"
+          status: "Completed"
           type: "refactor"
           parallel: true
           story_id: "US-003"
@@ -181,7 +181,7 @@ phases:
             - "No OpenCode-specific syntax"
         - id: "T013"
           title: "Add GetCommandsDir(agentName) function to internal/commands/templates.go"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: true
           story_id: "US-003"
@@ -193,7 +193,7 @@ phases:
             - "Handles unknown agents with sensible default or error"
         - id: "T014"
           title: "Update InstallTemplates() to accept agent name parameter"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-003"
@@ -205,7 +205,7 @@ phases:
             - "Backward compatible (default to claude if empty)"
         - id: "T015"
           title: "Write tests for agent-specific command directory logic in internal/commands/templates_test.go"
-          status: "Pending"
+          status: "Completed"
           type: "test"
           parallel: false
           story_id: "US-003"
@@ -223,7 +223,7 @@ phases:
       tasks:
         - id: "T016"
           title: "Implement Configurator interface (ConfigureProject) on OpenCode struct"
-          status: "Pending"
+          status: "Completed"
           type: "implementation"
           parallel: false
           story_id: "US-002"
@@ -236,7 +236,7 @@ phases:
             - "Idempotent (safe to call multiple times)"
         - id: "T017"
           title: "Write tests for OpenCode ConfigureProject() in internal/cliagent/opencode_test.go"
-          status: "Pending"
+          status: "InProgress"
           type: "test"
           parallel: false
           story_id: "US-002"

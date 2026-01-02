@@ -1,7 +1,12 @@
 package cliagent
 
 import (
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
+
+	"github.com/ariel-frischer/autospec/internal/opencode"
 )
 
 func TestNewOpenCode(t *testing.T) {

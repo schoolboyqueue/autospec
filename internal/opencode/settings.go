@@ -202,8 +202,8 @@ func (s *Settings) Check() SettingsCheckResult {
 
 	if s.IsPermissionDenied() {
 		return SettingsCheckResult{
-			Status:  StatusDenied,
-			Message: fmt.Sprintf("'%s' permission is explicitly denied in %s", RequiredPattern, s.filePath),
+			Status:   StatusDenied,
+			Message:  fmt.Sprintf("'%s' permission is explicitly denied in %s", RequiredPattern, s.filePath),
 			FilePath: s.filePath,
 		}
 	}
