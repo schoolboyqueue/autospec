@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Security notice about `--dangerously-skip-permissions` now only shows for Claude agent (skipped for OpenCode, Gemini, etc.)
 - `skip_permissions_notice_shown` config key now properly recognized and persists after first display
-- OpenCode agent now configures granular `edit.allow` permissions for `.autospec/**` and `specs/**` directories, fixing constitution/artifact file creation failures
+- OpenCode `permission.edit` now correctly uses simple string format (`"allow"`) instead of object with patterns, fixing `Invalid option: expected one of "ask"|"allow"|"deny"` error
 
 ### Changed
 - Agent permissions now write to global/user-level config by default; use `--project` flag for project-level config:

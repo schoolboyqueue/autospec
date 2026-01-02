@@ -1170,7 +1170,7 @@ func collectPendingActions(cmd *cobra.Command, out io.Writer, constitutionExists
 	// Info: Worktree script (only if not exists)
 	if !worktreeScriptExists {
 		fmt.Fprintf(out, "\n%s %s\n", cDim("💡"), cDim("Git worktrees let you run parallel autospec sessions without conflicts."))
-		fmt.Fprintf(out, "   %s Run %s to generate a project-specific setup script.\n", cDim("→"), cBold("autospec worktree gen-script"))
+		fmt.Fprintf(out, "   %s Run %s to generate a project-specific setup script.\n", cDim("→"), cCyan("autospec worktree gen-script"))
 	}
 
 	return pending

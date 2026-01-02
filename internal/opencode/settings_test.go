@@ -549,7 +549,7 @@ func TestCheckInDir(t *testing.T) {
 	t.Parallel()
 
 	dir := t.TempDir()
-	createSettingsFile(t, dir, `{"permission": {"bash": {"autospec *": "allow"}, "edit": {"allow": ["./.autospec/**", "./specs/**"]}}}`)
+	createSettingsFile(t, dir, `{"permission": {"bash": {"autospec *": "allow"}, "edit": "allow"}}`)
 
 	result, err := CheckInDir(dir)
 
