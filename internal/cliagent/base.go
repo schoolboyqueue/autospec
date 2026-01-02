@@ -79,10 +79,16 @@ func (b *BaseAgent) buildArgs(prompt string, opts ExecOptions) []string {
 	var args []string
 	pd := b.AgentCaps.PromptDelivery
 
-	// Interactive mode: use positional argument (enables multi-turn conversation)
+	// Interactive mode: use InteractiveFlag if set, otherwise positional argument
 	// Automated mode: use configured prompt delivery method (e.g., -p flag)
 	if opts.Interactive {
-		args = append(args, prompt)
+		if pd.InteractiveFlag != "" {
+			// Some agents (e.g., OpenCode) need a flag for interactive mode
+			args = append(args, pd.InteractiveFlag, prompt)
+		} else {
+			// Default: positional argument (enables multi-turn conversation in Claude)
+			args = append(args, prompt)
+		}
 	} else {
 		switch pd.Method {
 		case PromptMethodArg:

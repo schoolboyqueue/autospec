@@ -77,6 +77,15 @@ func TestNewOpenCode(t *testing.T) {
 				caps.AutonomousFlag)
 		}
 	})
+
+	t.Run("interactive flag", func(t *testing.T) {
+		t.Parallel()
+		caps := agent.Capabilities()
+		if caps.PromptDelivery.InteractiveFlag != "--prompt" {
+			t.Errorf("PromptDelivery.InteractiveFlag = %q, want %q",
+				caps.PromptDelivery.InteractiveFlag, "--prompt")
+		}
+	})
 }
 
 func TestOpenCode_BuildCommand(t *testing.T) {
@@ -232,6 +241,54 @@ func TestOpenCode_BuildCommand_SlashCommand(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			cmd, err := agent.BuildCommand(tt.prompt, ExecOptions{})
+			if err != nil {
+				t.Fatalf("BuildCommand() error = %v", err)
+			}
+			if len(cmd.Args) != len(tt.wantArgs) {
+				t.Fatalf("args len = %d, want %d\ngot: %v\nwant: %v",
+					len(cmd.Args), len(tt.wantArgs), cmd.Args, tt.wantArgs)
+			}
+			for i, arg := range cmd.Args {
+				if arg != tt.wantArgs[i] {
+					t.Errorf("args[%d] = %q, want %q", i, arg, tt.wantArgs[i])
+				}
+			}
+		})
+	}
+}
+
+// TestOpenCode_BuildCommand_Interactive verifies that OpenCode uses --prompt flag
+// for interactive mode (e.g., clarify, analyze stages).
+func TestOpenCode_BuildCommand_Interactive(t *testing.T) {
+	t.Parallel()
+	agent := NewOpenCode()
+
+	tests := map[string]struct {
+		prompt   string
+		opts     ExecOptions
+		wantArgs []string
+	}{
+		"interactive mode uses --prompt flag": {
+			prompt:   "/autospec.clarify",
+			opts:     ExecOptions{Interactive: true},
+			wantArgs: []string{"opencode", "--prompt", "/autospec.clarify"},
+		},
+		"interactive mode with extra args": {
+			prompt:   "/autospec.analyze",
+			opts:     ExecOptions{Interactive: true, ExtraArgs: []string{"--model", "opus"}},
+			wantArgs: []string{"opencode", "--prompt", "/autospec.analyze", "--model", "opus"},
+		},
+		"non-interactive mode uses run subcommand": {
+			prompt:   `/autospec.specify "feature"`,
+			opts:     ExecOptions{Interactive: false},
+			wantArgs: []string{"opencode", "run", "feature", "--command", "autospec.specify"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			cmd, err := agent.BuildCommand(tt.prompt, tt.opts)
 			if err != nil {
 				t.Fatalf("BuildCommand() error = %v", err)
 			}

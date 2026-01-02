@@ -23,9 +23,10 @@ func NewOpenCode() *OpenCode {
 			AgentCaps: Caps{
 				Automatable: true,
 				PromptDelivery: PromptDelivery{
-					Method:      PromptMethodSubcommandWithFlag,
-					Flag:        "run",
-					CommandFlag: "--command",
+					Method:          PromptMethodSubcommandWithFlag,
+					Flag:            "run",
+					CommandFlag:     "--command",
+					InteractiveFlag: "--prompt",
 				},
 				// run subcommand is inherently non-interactive
 				AutonomousFlag: "",

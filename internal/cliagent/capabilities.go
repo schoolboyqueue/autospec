@@ -49,6 +49,12 @@ type PromptDelivery struct {
 	// Only used with PromptMethodSubcommandWithFlag (e.g., "--command" for OpenCode).
 	// Pattern: <agent> <subcommand> <prompt> <CommandFlag> <command-name>
 	CommandFlag string
+
+	// InteractiveFlag is used for agents that require a flag even in interactive mode.
+	// When set, interactive mode uses: <agent> <InteractiveFlag> <prompt>
+	// Example: opencode --prompt "/autospec.clarify"
+	// If empty, interactive mode uses positional argument (default behavior).
+	InteractiveFlag string
 }
 
 // Caps contains self-describing feature flags for agent discovery and automation.
