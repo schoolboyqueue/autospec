@@ -312,7 +312,7 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 		existingJSON         string
 		specsDir             string
 		wantAlreadyConfig    bool
-		wantPermissionsLen   int // Now expects 3: 1 bash + 2 edit patterns
+		wantPermissionsLen   int // Now expects 2: 1 bash + 1 edit (string, not patterns)
 		wantWarning          bool
 		wantCommandsDirExist bool
 	}{
@@ -320,7 +320,7 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 			existingJSON:         "",
 			specsDir:             "specs",
 			wantAlreadyConfig:    false,
-			wantPermissionsLen:   3, // Bash(autospec *) + Edit(./.autospec/**) + Edit(./specs/**)
+			wantPermissionsLen:   2, // Bash(autospec *) + Edit(allow)
 			wantWarning:          false,
 			wantCommandsDirExist: true,
 		},
@@ -328,7 +328,7 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 			existingJSON:         "{}",
 			specsDir:             "specs",
 			wantAlreadyConfig:    false,
-			wantPermissionsLen:   3,
+			wantPermissionsLen:   2,
 			wantWarning:          false,
 			wantCommandsDirExist: true,
 		},
@@ -336,13 +336,13 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 			existingJSON:         `{"permission": {"bash": {"npm *": "allow"}}}`,
 			specsDir:             "specs",
 			wantAlreadyConfig:    false,
-			wantPermissionsLen:   3,
+			wantPermissionsLen:   2,
 			wantWarning:          false,
 			wantCommandsDirExist: true,
 		},
 		"project already configured": {
-			// Now requires both bash AND edit patterns to be considered already configured
-			existingJSON:         `{"permission": {"bash": {"autospec *": "allow"}, "edit": {"allow": ["./.autospec/**", "./specs/**"]}}}`,
+			// Now requires both bash AND edit: "allow" to be considered already configured
+			existingJSON:         `{"permission": {"bash": {"autospec *": "allow"}, "edit": "allow"}}`,
 			specsDir:             "specs",
 			wantAlreadyConfig:    true,
 			wantPermissionsLen:   0,
@@ -350,11 +350,11 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 			wantCommandsDirExist: true,
 		},
 		"project with only bash permission": {
-			// Bash only is no longer sufficient - needs edit patterns too
+			// Bash only is no longer sufficient - needs edit: "allow" too
 			existingJSON:         `{"permission": {"bash": {"autospec *": "allow"}}}`,
 			specsDir:             "specs",
 			wantAlreadyConfig:    false,
-			wantPermissionsLen:   3,
+			wantPermissionsLen:   2,
 			wantWarning:          false,
 			wantCommandsDirExist: true,
 		},
@@ -362,7 +362,7 @@ func TestOpenCode_ConfigureProject(t *testing.T) {
 			existingJSON:         `{"permission": {"bash": {"autospec *": "deny"}}}`,
 			specsDir:             "specs",
 			wantAlreadyConfig:    false,
-			wantPermissionsLen:   3,
+			wantPermissionsLen:   2,
 			wantWarning:          true,
 			wantCommandsDirExist: true,
 		},

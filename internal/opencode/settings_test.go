@@ -340,14 +340,14 @@ func TestCheck(t *testing.T) {
 				createSettingsFile(t, dir, `{
 					"permission": {
 						"bash": {"autospec *": "allow"},
-						"edit": {"allow": ["./.autospec/**", "./specs/**"]}
+						"edit": "allow"
 					}
 				}`)
 			},
 			wantStatus:      StatusConfigured,
 			wantMsgContains: "configured",
 		},
-		"bash allowed but no edit patterns": {
+		"bash allowed but no edit": {
 			setup: func(t *testing.T, dir string) {
 				createSettingsFile(t, dir, `{
 					"permission": {"bash": {"autospec *": "allow"}}
