@@ -6,6 +6,12 @@ Guidance for Claude Code when working with this repository.
 
 Files in `.claude/commands/` (e.g., `autospec.plan.md`, `speckit.specify.md`) are **slash commands**, NOT skills. **DO NOT use the Skill tool to invoke them.** They are user-invoked via `/autospec.plan` syntax, not model-invoked.
 
+## Prerequisites
+
+- **Go 1.25+**: Check with `go version`
+- **Claude CLI**: Authenticated (`claude --version`)
+- **Make, golangci-lint**: For build/lint (`make lint`)
+
 ## Commands
 
 ```bash
@@ -26,6 +32,42 @@ autospec implement --phases              # Each phase in separate session
 autospec implement --tasks               # Each task in separate session
 autospec st                              # Show status and task progress
 autospec doctor                          # Check dependencies
+```
+
+## Core Workflow
+
+### Stage Dependencies (MUST follow this order)
+
+```
+constitution → specify → plan → tasks → implement
+     ↓            ↓        ↓       ↓
+constitution.yaml spec.yaml plan.yaml tasks.yaml
+```
+
+| Stage | Requires | Produces |
+|-------|----------|----------|
+| `constitution` | — | `.autospec/memory/constitution.yaml` |
+| `specify` | constitution | `specs/NNN-feature/spec.yaml` |
+| `plan` | spec.yaml | `plan.yaml` |
+| `tasks` | plan.yaml | `tasks.yaml` |
+| `implement` | tasks.yaml | code changes |
+
+**Constitution is REQUIRED before any workflow stage.**
+
+### What `autospec init` Does
+
+1. Creates config (`~/.config/autospec/config.yml` or `.autospec/config.yml`)
+2. Installs slash commands to agent's command directory (e.g., `.claude/commands/`)
+3. Configures agent permissions and sandbox settings
+4. Prompts for constitution creation (one-time per project)
+
+### First-Time Project Setup
+
+```bash
+autospec init              # Interactive setup (config + agent + constitution)
+autospec doctor            # Verify dependencies
+autospec prep "feature"    # specify → plan → tasks
+autospec implement         # Execute tasks
 ```
 
 ## Documentation
@@ -232,6 +274,22 @@ Body text here.
 Co-Authored-By: Ariel Frischer <arielfrischer@gmail.com>"
 ```
 
+## Pre-Commit Checklist
+
+```bash
+make fmt && make lint && make test && make build
+```
+
+All must pass before committing. Run `make test-v` for verbose output on failures.
+
+## Debugging
+
+```bash
+autospec --debug <command>    # Verbose logging
+autospec --verbose <command>  # Progress details
+cat ~/.autospec/state/retry.json | jq .  # Check retry state
+```
+
 ## Exit Codes
 
 - `0`: Success
@@ -241,9 +299,17 @@ Co-Authored-By: Ariel Frischer <arielfrischer@gmail.com>"
 - `4`: Missing dependencies
 - `5`: Timeout
 
+## Common Gotchas
+
+- **Branch naming**: Must match `^\d{3}-.+$` (e.g., `001-feature`) for spec auto-detection
+- **Slash commands vs skills**: Claude Code may incorrectly invoke slash commands as skills (see `docs/public/troubleshooting.md`)
+- **Sandbox heredocs**: Use quoted strings, not heredocs, for git commits in sandbox mode
+- **Constitution required**: All workflow stages fail without `.autospec/memory/constitution.yaml`
+
 ## Key Files
 
 - `~/.config/autospec/config.yml`: User config
 - `.autospec/config.yml`: Project config
+- `.autospec/memory/constitution.yaml`: Project principles (REQUIRED)
 - `~/.autospec/state/retry.json`: Retry state
 - `specs/*/`: Feature specs (spec.yaml, plan.yaml, tasks.yaml)

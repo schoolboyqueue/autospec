@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `autospec init [path]` now accepts an optional path argument to initialize projects at specified locations (e.g., `autospec init ~/projects/myapp`)
 - Colored output formatting with clear visual markers to distinguish agent output from autospec status messages
 - OpenCode agent preset now fully functional with `autospec init --ai opencode` or `agent_preset: opencode` in config
 - Interactive agent selection during `autospec init` - choose between Claude Code and OpenCode
