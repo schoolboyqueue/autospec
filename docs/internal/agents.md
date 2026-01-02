@@ -250,22 +250,34 @@ Use `autospec doctor` to verify agent availability and configuration.
 
 ## Checking Agent Status
 
-The `autospec doctor` command shows the status of all registered agents:
+The `autospec doctor` command shows the status of available agents.
+
+**Production builds** only check production agents (claude, opencode):
 
 ```bash
 $ autospec doctor
 
-Dependencies:
-  Git: installed
-  Claude CLI: installed
+✓ Claude CLI: Claude CLI found
+✓ Git: Git found
+✓ Claude settings: Bash(autospec:*) permission configured
 
 CLI Agents:
-  claude: installed (v1.0.5)
-  cline: not found in PATH
-  codex: missing OPENAI_API_KEY environment variable
-  gemini: installed (v0.8.2)
-  goose: not found in PATH
-  opencode: installed (v2.1.0)
+  ✓ claude: installed (v2.0.76)
+  ✓ opencode: installed (v1.0.223)
+```
+
+**Dev builds** check all registered agents:
+
+```bash
+$ autospec doctor
+
+CLI Agents:
+  ✓ claude: installed (v2.0.76)
+  ○ cline: not found in PATH
+  ○ codex: missing OPENAI_API_KEY environment variable
+  ○ gemini: not found in PATH
+  ○ goose: not found in PATH
+  ✓ opencode: installed (v1.0.223)
 ```
 
 ## Agent Configuration

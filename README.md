@@ -132,6 +132,10 @@ autospec run -tlzi
 
 # All core with skip confirmations (-y)
 autospec run -a -y "Feature description"
+
+# Use a specific agent (claude or opencode)
+autospec run -a --agent opencode "Add REST API endpoints"
+autospec run -a --agent claude "Add unit tests"
 ```
 
 ### Shortcut Commands
@@ -277,7 +281,7 @@ Priority: Environment vars > Project config > User config > Defaults
 # .autospec/config.yml
 
 # Agent configuration (recommended)
-agent_preset: claude                  # Built-in: claude | gemini | cline | codex | opencode | goose
+agent_preset: claude                  # Built-in: claude | opencode
 custom_agent_cmd: ""                  # Custom agent template with {{PROMPT}} placeholder
 
 # Legacy Claude CLI settings (deprecated - use agent_preset instead)
