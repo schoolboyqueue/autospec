@@ -17,14 +17,9 @@ func IsDevBuild() bool {
 }
 
 // MultiAgentEnabled returns true if multi-agent selection is enabled.
-// Currently tied to dev builds. When ready for production, change to return true.
-//
-// TODO: Re-enable when multi-agent feature development begins.
-// The agent selection prompt in `autospec init` is confusing without the
-// full feature implemented. Keeping the code but hiding the UI until ready.
-// To re-enable: return IsDevBuild()
+// Enabled now that OpenCode is production-ready alongside Claude.
 func MultiAgentEnabled() bool {
-	return false
+	return true
 }
 
 // ProductionAgents returns the list of agents available in production builds.

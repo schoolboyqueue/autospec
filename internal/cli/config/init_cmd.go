@@ -68,10 +68,7 @@ func init() {
 	initCmd.Flags().BoolP("project", "p", false, "Create project-level config (.autospec/config.yml)")
 	initCmd.Flags().BoolP("force", "f", false, "Overwrite existing config with defaults")
 	initCmd.Flags().StringSlice("ai", nil, "Configure specific agents (comma-separated: claude,opencode)")
-	// Multi-agent selection only available in dev builds
-	if build.MultiAgentEnabled() {
-		initCmd.Flags().Bool("no-agents", false, "[DEV] Skip agent configuration prompt")
-	}
+	initCmd.Flags().Bool("no-agents", false, "Skip agent configuration prompt")
 	// Keep --global as hidden alias for backward compatibility
 	initCmd.Flags().BoolP("global", "g", false, "Deprecated: use default behavior instead (creates user-level config)")
 	initCmd.Flags().MarkHidden("global")
@@ -81,11 +78,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	project, _ := cmd.Flags().GetBool("project")
 	force, _ := cmd.Flags().GetBool("force")
 	aiAgents, _ := cmd.Flags().GetStringSlice("ai")
-	// Only check --no-agents flag if multi-agent is enabled (dev builds)
-	var noAgents bool
-	if build.MultiAgentEnabled() {
-		noAgents, _ = cmd.Flags().GetBool("no-agents")
-	}
+	noAgents, _ := cmd.Flags().GetBool("no-agents")
 	out := cmd.OutOrStdout()
 
 	// Print the banner
@@ -146,49 +139,11 @@ func runInit(cmd *cobra.Command, args []string) error {
 // If aiAgents is provided, those specific agents are configured directly.
 // If noAgents is true, the prompt is skipped. In non-interactive mode without
 // --no-agents or --ai, it returns an error with a helpful message.
-// In production builds (multi-agent disabled), only Claude is configured by default,
-// unless --ai flag specifies different agents.
 func handleAgentConfiguration(cmd *cobra.Command, out io.Writer, project, noAgents bool, aiAgents []string) error {
 	// If --ai flag was provided, validate and configure those agents directly
 	if len(aiAgents) > 0 {
 		return configureSpecificAgents(cmd, out, project, aiAgents)
 	}
-
-	// In production builds, skip agent selection and configure Claude only
-	if !build.MultiAgentEnabled() {
-		fmt.Fprintf(out, "%s %s: Claude Code (default)\n", cGreen("✓"), cBold("Agent"))
-		agent := cliagent.Get("claude")
-		if agent != nil {
-			specsDir := "specs"
-			configPath, _ := getConfigPath(project)
-			if cfg, err := config.Load(configPath); err == nil && cfg.SpecsDir != "" {
-				specsDir = cfg.SpecsDir
-			}
-
-			// Configure permissions and display result
-			result, err := cliagent.Configure(agent, ".", specsDir)
-			if err != nil {
-				fmt.Fprintf(out, "%s Claude configuration: %v\n", cYellow("⚠"), err)
-			} else {
-				displayAgentConfigResult(out, "claude", result)
-			}
-
-			// Check and handle sandbox configuration
-			if info := checkSandboxConfiguration("claude", agent, ".", specsDir); info != nil {
-				// Sandbox needs configuration - prompt user
-				if err := promptAndConfigureSandbox(cmd, out, *info, ".", specsDir); err != nil {
-					fmt.Fprintf(out, "%s Sandbox configuration failed: %v\n", cYellow("⚠"), err)
-				}
-			} else {
-				// Sandbox is fully configured - show checkmark with details
-				fmt.Fprintf(out, "%s %s: enabled with write paths for autospec\n", cGreen("✓"), cBold("Sandbox"))
-			}
-		}
-		return nil
-	}
-
-	// DEV build: show experimental warning
-	fmt.Fprintln(out, "\n[Experimental] Multi-agent support is in development")
 
 	if noAgents {
 		fmt.Fprintln(out, "⏭ Agent configuration: skipped (--no-agents)")
