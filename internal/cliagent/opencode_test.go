@@ -204,6 +204,50 @@ func TestOpenCode_BuildCommand_Pattern(t *testing.T) {
 	}
 }
 
+// TestOpenCode_BuildCommand_SlashCommand verifies the slash command parsing
+// works correctly for OpenCode's PromptMethodSubcommandWithFlag.
+func TestOpenCode_BuildCommand_SlashCommand(t *testing.T) {
+	t.Parallel()
+	agent := NewOpenCode()
+
+	tests := map[string]struct {
+		prompt   string
+		wantArgs []string
+	}{
+		"slash command with quoted args": {
+			prompt:   `/autospec.specify "feature description"`,
+			wantArgs: []string{"opencode", "run", "feature description", "--command", "autospec.specify"},
+		},
+		"slash command without args": {
+			prompt:   `/autospec.plan`,
+			wantArgs: []string{"opencode", "run", "", "--command", "autospec.plan"},
+		},
+		"slash command with unquoted args": {
+			prompt:   `/autospec.tasks generate all tasks`,
+			wantArgs: []string{"opencode", "run", "generate all tasks", "--command", "autospec.tasks"},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			cmd, err := agent.BuildCommand(tt.prompt, ExecOptions{})
+			if err != nil {
+				t.Fatalf("BuildCommand() error = %v", err)
+			}
+			if len(cmd.Args) != len(tt.wantArgs) {
+				t.Fatalf("args len = %d, want %d\ngot: %v\nwant: %v",
+					len(cmd.Args), len(tt.wantArgs), cmd.Args, tt.wantArgs)
+			}
+			for i, arg := range cmd.Args {
+				if arg != tt.wantArgs[i] {
+					t.Errorf("args[%d] = %q, want %q", i, arg, tt.wantArgs[i])
+				}
+			}
+		})
+	}
+}
+
 func TestOpenCode_ConfigureProject(t *testing.T) {
 	t.Parallel()
 

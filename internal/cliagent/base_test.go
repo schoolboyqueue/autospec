@@ -157,7 +157,7 @@ func TestBaseAgent_BuildCommand(t *testing.T) {
 			opts:     ExecOptions{},
 			wantArgs: []string{"run", "-t", "fix bug"},
 		},
-		"subcommand-with-flag method": {
+		"subcommand-with-flag method without slash command": {
 			agent: &BaseAgent{
 				Cmd: "opencode",
 				AgentCaps: Caps{
@@ -172,6 +172,36 @@ func TestBaseAgent_BuildCommand(t *testing.T) {
 			opts:     ExecOptions{},
 			wantArgs: []string{"run", "fix bug"},
 		},
+		"subcommand-with-flag method with slash command": {
+			agent: &BaseAgent{
+				Cmd: "opencode",
+				AgentCaps: Caps{
+					PromptDelivery: PromptDelivery{
+						Method:      PromptMethodSubcommandWithFlag,
+						Flag:        "run",
+						CommandFlag: "--command",
+					},
+				},
+			},
+			prompt:   `/autospec.specify "feature description"`,
+			opts:     ExecOptions{},
+			wantArgs: []string{"run", "feature description", "--command", "autospec.specify"},
+		},
+		"subcommand-with-flag method with slash command no args": {
+			agent: &BaseAgent{
+				Cmd: "opencode",
+				AgentCaps: Caps{
+					PromptDelivery: PromptDelivery{
+						Method:      PromptMethodSubcommandWithFlag,
+						Flag:        "run",
+						CommandFlag: "--command",
+					},
+				},
+			},
+			prompt:   `/autospec.plan`,
+			opts:     ExecOptions{},
+			wantArgs: []string{"run", "", "--command", "autospec.plan"},
+		},
 		"subcommand-with-flag method with extra args for command": {
 			agent: &BaseAgent{
 				Cmd: "opencode",
@@ -184,8 +214,8 @@ func TestBaseAgent_BuildCommand(t *testing.T) {
 				},
 			},
 			prompt:   "fix bug",
-			opts:     ExecOptions{ExtraArgs: []string{"--command", "autospec.specify"}},
-			wantArgs: []string{"run", "fix bug", "--command", "autospec.specify"},
+			opts:     ExecOptions{ExtraArgs: []string{"--model", "opus"}},
+			wantArgs: []string{"run", "fix bug", "--model", "opus"},
 		},
 		"with autonomous flag": {
 			agent: &BaseAgent{
@@ -605,6 +635,76 @@ func TestBaseAgent_BuildCommand_Interactive(t *testing.T) {
 						t.Errorf("args should not contain %q in interactive mode", excluded)
 					}
 				}
+			}
+		})
+	}
+}
+
+// TestParseSlashCommand tests parsing of slash commands.
+func TestParseSlashCommand(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		input      string
+		wantCmd    string
+		wantPrompt string
+	}{
+		"slash command with quoted args": {
+			input:      `/autospec.specify "feature description"`,
+			wantCmd:    "autospec.specify",
+			wantPrompt: "feature description",
+		},
+		"slash command with single quoted args": {
+			input:      `/autospec.plan 'my plan'`,
+			wantCmd:    "autospec.plan",
+			wantPrompt: "my plan",
+		},
+		"slash command without args": {
+			input:      "/autospec.plan",
+			wantCmd:    "autospec.plan",
+			wantPrompt: "",
+		},
+		"slash command with unquoted args": {
+			input:      "/autospec.tasks generate tasks",
+			wantCmd:    "autospec.tasks",
+			wantPrompt: "generate tasks",
+		},
+		"not a slash command": {
+			input:      "regular prompt",
+			wantCmd:    "",
+			wantPrompt: "regular prompt",
+		},
+		"empty string": {
+			input:      "",
+			wantCmd:    "",
+			wantPrompt: "",
+		},
+		"whitespace only": {
+			input:      "   ",
+			wantCmd:    "",
+			wantPrompt: "",
+		},
+		"slash command with leading whitespace": {
+			input:      "  /autospec.clarify",
+			wantCmd:    "autospec.clarify",
+			wantPrompt: "",
+		},
+		"slash command with complex args": {
+			input:      `/autospec.specify "I want a feature with 'quotes' inside"`,
+			wantCmd:    "autospec.specify",
+			wantPrompt: "I want a feature with 'quotes' inside",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			gotCmd, gotPrompt := parseSlashCommand(tt.input)
+			if gotCmd != tt.wantCmd {
+				t.Errorf("parseSlashCommand() cmd = %q, want %q", gotCmd, tt.wantCmd)
+			}
+			if gotPrompt != tt.wantPrompt {
+				t.Errorf("parseSlashCommand() prompt = %q, want %q", gotPrompt, tt.wantPrompt)
 			}
 		})
 	}

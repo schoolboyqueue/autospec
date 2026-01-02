@@ -96,8 +96,12 @@ func (b *BaseAgent) buildArgs(prompt string, opts ExecOptions) []string {
 		case PromptMethodSubcommandWithFlag:
 			// Pattern: <agent> <subcommand> <prompt> <command-flag> <command-name>
 			// Example: opencode run "fix bug" --command autospec.specify
-			// The command name comes from ExtraArgs when using slash commands
-			args = append(args, pd.Flag, prompt)
+			// Parse slash commands to extract command name and actual prompt
+			cmdName, actualPrompt := parseSlashCommand(prompt)
+			args = append(args, pd.Flag, actualPrompt)
+			if cmdName != "" && pd.CommandFlag != "" {
+				args = append(args, pd.CommandFlag, cmdName)
+			}
 		}
 		// Add default args (e.g., --verbose --output-format stream-json for Claude)
 		// Only in automated mode - interactive mode omits these for conversation
@@ -118,6 +122,38 @@ func (b *BaseAgent) appendAutonomousArgs(args []string, opts ExecOptions) []stri
 		args = append(args, b.AgentCaps.AutonomousFlag)
 	}
 	return args
+}
+
+// parseSlashCommand extracts command name and actual prompt from a slash command.
+// Input: `/autospec.specify "feature description"` or `/autospec.plan`
+// Returns: ("autospec.specify", "feature description") or ("autospec.plan", "")
+// If not a slash command, returns ("", original prompt).
+func parseSlashCommand(prompt string) (cmdName, actualPrompt string) {
+	prompt = strings.TrimSpace(prompt)
+	if !strings.HasPrefix(prompt, "/") {
+		return "", prompt
+	}
+
+	// Find end of command name (space or end of string)
+	rest := prompt[1:] // Remove leading /
+	spaceIdx := strings.Index(rest, " ")
+	if spaceIdx == -1 {
+		// No space - entire string is the command name
+		return rest, ""
+	}
+
+	cmdName = rest[:spaceIdx]
+	actualPrompt = strings.TrimSpace(rest[spaceIdx+1:])
+
+	// Remove surrounding quotes if present
+	if len(actualPrompt) >= 2 {
+		if (actualPrompt[0] == '"' && actualPrompt[len(actualPrompt)-1] == '"') ||
+			(actualPrompt[0] == '\'' && actualPrompt[len(actualPrompt)-1] == '\'') {
+			actualPrompt = actualPrompt[1 : len(actualPrompt)-1]
+		}
+	}
+
+	return cmdName, actualPrompt
 }
 
 // configureCmd sets working directory and environment on the command.
