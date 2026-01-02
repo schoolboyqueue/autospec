@@ -45,7 +45,8 @@ autospec doctor                          # Check dependencies
 | `docs/public/SHELL-COMPLETION.md` | Shell completion implementation |
 | `docs/public/troubleshooting.md` | Common issues and solutions |
 | `docs/public/claude-settings.md` | Claude Code settings and sandboxing configuration |
-| `docs/internal/agents.md` | CLI agent configuration (in development, Claude only) |
+| `docs/public/opencode-settings.md` | OpenCode configuration, permissions, and command patterns |
+| `docs/internal/agents.md` | CLI agent configuration (Claude and OpenCode supported) |
 
 ## Architecture Overview
 
