@@ -108,14 +108,19 @@ Network access is controlled via a proxy server:
 
 ### Automatic Configuration
 
-Running `autospec init` automatically configures Claude Code permissions:
+Running `autospec init` configures Claude Code permissions and sandbox:
 
 ```bash
-autospec init
-# Output: Created .claude/settings.local.json with Claude Code permissions for autospec
+autospec init                # Permissions → global (~/.claude/settings.json)
+autospec init --project      # Permissions → project (.claude/settings.local.json)
 ```
 
-This creates `.claude/settings.local.json` with the `Bash(autospec:*)` permission in the allow list.
+**What gets configured where:**
+
+| Config Type | Location | Why |
+|-------------|----------|-----|
+| **Permissions** (`Bash(autospec:*)`, `Write`, `Edit`) | Global by default | Works across all projects |
+| **Sandbox** (`additionalAllowWritePaths`) | Always project-level | Uses relative paths (`.autospec`, `specs`) |
 
 **Behavior:**
 - Creates settings file if missing
@@ -242,7 +247,7 @@ This provides:
 2. Don't allowlist broad domains unnecessarily
 3. Review `excludedCommands` carefully
 4. Set `allowUnsandboxedCommands: false` for stricter isolation
-5. Use project-level settings (`.claude/settings.local.json`) over global
+5. Use global settings for permissions (shared across projects), project-level for sandbox (relative paths)
 
 ## Disabling for Enterprise
 

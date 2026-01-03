@@ -75,15 +75,17 @@ The `*` glob matches any arguments, so `autospec run`, `autospec implement`, `au
 
 ### Automatic Configuration
 
-Running `autospec init --ai opencode` automatically adds the required permission:
+Running `autospec init --ai opencode` configures the required permissions:
 
 ```bash
-# Initialize for OpenCode
-autospec init --ai opencode
+autospec init --ai opencode           # Permissions → global (~/.config/opencode/opencode.json)
+autospec init --ai opencode --project # Permissions → project (./opencode.json)
 
 # Initialize for both Claude and OpenCode
 autospec init --ai claude,opencode
 ```
+
+**Default behavior:** Permissions write to global config so they apply across all projects. Use `--project` for project-specific overrides.
 
 ## Command Directory Structure
 
