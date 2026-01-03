@@ -153,7 +153,11 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 	// Sync user config with new schema
 	syncUserConfig(yellow, green, dim)
 
+	fmt.Printf("\n")
 	fmt.Printf("  Run 'autospec version' to verify the update.\n")
+	fmt.Printf("\n")
+	fmt.Printf("%s Run 'autospec init' in each project to update slash commands.\n", yellow("!"))
+	fmt.Printf("  Command templates may have been improved in this release.\n")
 
 	return nil
 }
