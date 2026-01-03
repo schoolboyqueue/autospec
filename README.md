@@ -287,18 +287,17 @@ Priority: Environment vars > Project config > User config > Defaults
 ```yaml
 # .autospec/config.yml
 
-# Agent configuration (recommended)
+# Agent configuration
 agent_preset: claude                  # Built-in: claude | opencode
-custom_agent_cmd: ""                  # Custom agent template with {{PROMPT}} placeholder
-
-# Legacy Claude CLI settings (deprecated - use agent_preset instead)
-claude_cmd: claude                    # Claude CLI command
-claude_args:                          # Arguments passed to Claude CLI
-  - -p
-  - --verbose
-  - --output-format
-  - stream-json
-custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
+custom_agent_cmd: ""                  # Custom command template with {{PROMPT}} placeholder
+# custom_agent:                       # Structured agent config (alternative to custom_agent_cmd)
+#   command: claude
+#   args:
+#     - -p
+#     - --dangerously-skip-permissions
+#     - --output-format
+#     - stream-json
+#     - "{{PROMPT}}"
 
 # Workflow settings
 max_retries: 0                        # Max retry attempts per stage (0-10)
@@ -327,47 +326,27 @@ notifications:
   long_running_threshold: 2m          # Duration threshold
 ```
 
-> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/public/agents.md](docs/public/agents.md) for details.
+### Custom Agent Configuration
 
-### Claude CLI Arguments (`claude_args`)
-
-The default `claude_args` are optimized for Autospec's orchestration workflow:
-
-| Argument | Purpose |
-|----------|---------|
-| `-p` | **Print mode** — Runs Claude with a prompt and exits (non-interactive) |
-| `--verbose` | Shows detailed progress and tool calls |
-| `--output-format stream-json` | Streams JSON output for real-time parsing |
-
-**Common Customizations:**
+For full control over agent invocation, use `custom_agent`:
 
 ```yaml
-# Minimal (faster, less output)
-claude_args:
-  - -p
-
-# With model selection
-claude_args:
-  - -p
-  - --model
-  - claude-sonnet-4-5-20250929
-
-# With streaming output (shows Claude's messages as it runs)
-claude_args:
-  - -p
-  - --verbose
-  - --output-format
-  - stream-json
-
-# Allow all permissions (use with caution in sandboxed environments)
-claude_args:
-  - -p
-  - --dangerously-skip-permissions
+custom_agent:
+  command: claude
+  args:
+    - -p
+    - --model
+    - claude-sonnet-4-5-20250929
+    - "{{PROMPT}}"
 ```
 
-> **Warning:** `--dangerously-skip-permissions` bypasses all Claude safety prompts. Only use in trusted environments with proper sandboxing. See [Claude Settings docs](docs/public/claude-settings.md).
+Or as a single command string:
 
-> For complete control, use `custom_claude_cmd` to replace both `claude_cmd` and `claude_args`. See [Pro Tips](#readable-streaming-output-with-claude-clean) for examples.
+```yaml
+custom_agent_cmd: "claude -p --model claude-sonnet-4-5-20250929 {{PROMPT}}"
+```
+
+See [Agent Configuration](docs/public/agents.md) for complete details including OpenCode setup and environment variables.
 
 ### Commands
 
