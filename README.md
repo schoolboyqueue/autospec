@@ -287,18 +287,17 @@ Priority: Environment vars > Project config > User config > Defaults
 ```yaml
 # .autospec/config.yml
 
-# Agent configuration (recommended)
+# Agent configuration
 agent_preset: claude                  # Built-in: claude | opencode
-custom_agent_cmd: ""                  # Custom agent template with {{PROMPT}} placeholder
-
-# Legacy Claude CLI settings (deprecated - use agent_preset instead)
-claude_cmd: claude                    # Claude CLI command
-claude_args:                          # Arguments passed to Claude CLI
-  - -p
-  - --verbose
-  - --output-format
-  - stream-json
-custom_claude_cmd: ""                 # Custom command (overrides claude_cmd + claude_args)
+custom_agent_cmd: ""                  # Custom command template with {{PROMPT}} placeholder
+# custom_agent:                       # Structured agent config (alternative to custom_agent_cmd)
+#   command: claude
+#   args:
+#     - -p
+#     - --dangerously-skip-permissions
+#     - --output-format
+#     - stream-json
+#     - "{{PROMPT}}"
 
 # Workflow settings
 max_retries: 0                        # Max retry attempts per stage (0-10)
@@ -314,6 +313,8 @@ enable_risk_assessment: false         # Enable risk section in plan.yaml (opt-in
 # Output formatting (Claude agent only)
 cclean:
   style: default                      # Output style: default | minimal | detailed
+  verbose: false                      # Show verbose output
+  linenumbers: false                  # Show line numbers in output
 
 # Notifications (all platforms)
 notifications:
@@ -327,47 +328,27 @@ notifications:
   long_running_threshold: 2m          # Duration threshold
 ```
 
-> **Migration note:** The `claude_cmd`, `claude_args`, and `custom_claude_cmd` fields are deprecated. Use `agent_preset` instead. See [docs/internal/agents.md](docs/internal/agents.md) for details.
+### Custom Agent Configuration
 
-### Claude CLI Arguments (`claude_args`)
-
-The default `claude_args` are optimized for Autospec's orchestration workflow:
-
-| Argument | Purpose |
-|----------|---------|
-| `-p` | **Print mode** — Runs Claude with a prompt and exits (non-interactive) |
-| `--verbose` | Shows detailed progress and tool calls |
-| `--output-format stream-json` | Streams JSON output for real-time parsing |
-
-**Common Customizations:**
+For full control over agent invocation, use `custom_agent`:
 
 ```yaml
-# Minimal (faster, less output)
-claude_args:
-  - -p
-
-# With model selection
-claude_args:
-  - -p
-  - --model
-  - claude-sonnet-4-5-20250929
-
-# With streaming output (shows Claude's messages as it runs)
-claude_args:
-  - -p
-  - --verbose
-  - --output-format
-  - stream-json
-
-# Allow all permissions (use with caution in sandboxed environments)
-claude_args:
-  - -p
-  - --dangerously-skip-permissions
+custom_agent:
+  command: claude
+  args:
+    - -p
+    - --model
+    - claude-sonnet-4-5-20250929
+    - "{{PROMPT}}"
 ```
 
-> **Warning:** `--dangerously-skip-permissions` bypasses all Claude safety prompts. Only use in trusted environments with proper sandboxing. See [Claude Settings docs](docs/public/claude-settings.md).
+Or as a single command string:
 
-> For complete control, use `custom_claude_cmd` to replace both `claude_cmd` and `claude_args`. See [Pro Tips](#readable-streaming-output-with-claude-clean) for examples.
+```yaml
+custom_agent_cmd: "claude -p --model claude-sonnet-4-5-20250929 {{PROMPT}}"
+```
+
+See [Agent Configuration](docs/public/agents.md) for complete details including OpenCode setup and environment variables.
 
 ### Commands
 
@@ -442,7 +423,7 @@ Use these when you prefer chat-based iteration over autospec's automated (`-p`) 
 |----------|-------------|
 | [Quickstart Guide](docs/public/quickstart.md) | Complete your first workflow in 10 minutes |
 | [CLI Reference](docs/public/reference.md) | Full command reference with all flags and options |
-| [Agent Configuration](docs/internal/agents.md) | Agent configuration (in development, Claude only) |
+| [Agent Configuration](docs/public/agents.md) | Agent configuration (in development, Claude only) |
 | [Worktree Management](docs/public/worktree.md) | Run multiple features in parallel with git worktrees |
 | [Claude Settings](docs/public/claude-settings.md) | Sandboxing, permissions, and Claude Code configuration |
 | [Troubleshooting](docs/public/troubleshooting.md) | Common issues and solutions |
@@ -472,4 +453,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **Issues:** [github.com/ariel-frischer/autospec/issues](https://github.com/ariel-frischer/autospec/issues)
 
-**Star us on GitHub if you find Autospec useful!**
+⭐ **[Star us on GitHub](https://github.com/ariel-frischer/autospec) if you find Autospec useful!**
