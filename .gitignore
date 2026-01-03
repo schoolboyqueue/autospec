@@ -1,10 +1,6 @@
 # Retry state files (created in /tmp)
 /tmp/speckit_retry_*
 
-# Development directories (tracked on feature branches, not main)
-.dev/
-specs/
-
 # Isolated settings files (user-specific)
 .claude/*-settings.json
 !.claude/spec-workflow-settings.json

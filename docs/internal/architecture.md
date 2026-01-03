@@ -704,7 +704,8 @@ autospec run -a "$(cat .dev/tasks/fixes/fix-1-file-reading-discipline.md)"
 
 ## Further Reading
 
-- **[Quick Start Guide](../public/quickstart.md)**: Get started with basic usage
-- **[Command Reference](../public/reference.md)**: Complete command and configuration documentation
-- **[Troubleshooting](../public/troubleshooting.md)**: Common issues and solutions
+- **[Quick Start Guide](../quickstart.md)**: Get started with basic usage
+- **[Command Reference](../reference.md)**: Complete command and configuration documentation
+- **[Troubleshooting](../troubleshooting.md)**: Common issues and solutions
 - **[CLAUDE.md](../../CLAUDE.md)**: Detailed development guidelines for contributors
+- **[Architecture Decoupling Analysis](../../.dev/tasks/architecture-decoupling-analysis.md)**: Full analysis document
