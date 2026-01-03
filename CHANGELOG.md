@@ -8,9 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- OpenCode agent preset now fully functional with `autospec init --ai opencode` or `agent_preset: opencode` in config
 - `autospec init [path]` now accepts an optional path argument to initialize projects at specified locations (e.g., `autospec init ~/projects/myapp`)
 - Colored output formatting with clear visual markers to distinguish agent output from autospec status messages
-- OpenCode agent preset now fully functional with `autospec init --ai opencode` or `agent_preset: opencode` in config
 - Interactive agent selection during `autospec init` - choose between Claude Code and OpenCode
 - `config sync` command to synchronize configuration with current schema (adds new options with defaults, removes deprecated options)
 - `config toggle` command to toggle boolean configuration values
@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic config sync after `autospec update` - new config options are added and deprecated ones removed while preserving user settings
 
 ### Fixed
+- Implement template now has explicit "Execution Boundaries" section preventing agents from continuing past `--phase N` scope
 - Security notice about `--dangerously-skip-permissions` now only shows for Claude agent (skipped for OpenCode, Gemini, etc.)
 - `skip_permissions_notice_shown` config key now properly recognized and persists after first display
 - OpenCode `permission.edit` now correctly uses simple string format (`"allow"`) instead of object with patterns, fixing `Invalid option: expected one of "ask"|"allow"|"deny"` error
