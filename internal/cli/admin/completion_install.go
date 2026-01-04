@@ -166,6 +166,8 @@ func init() {
 	completionCmd.AddCommand(completionZshCmd)
 	completionCmd.AddCommand(completionFishCmd)
 	completionCmd.AddCommand(completionPowershellCmd)
+	completionCmd.AddCommand(completionNushellCmd)
+	completionCmd.AddCommand(completionCarapaceCmd)
 
 	// Add the install subcommand
 	completionCmd.AddCommand(completionInstallCmd)

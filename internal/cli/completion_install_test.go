@@ -235,3 +235,143 @@ func TestCompletionShellGeneration(t *testing.T) {
 		})
 	}
 }
+
+func TestCompletionNushellGeneration(t *testing.T) {
+	cmd := rootCmd
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs([]string{"completion", "nushell"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// Verify header
+	expectedStrings := []string{
+		"# Nushell completions for autospec",
+		"export extern \"autospec\"",
+		"--config",
+		"--debug",
+		"--verbose",
+	}
+
+	for _, want := range expectedStrings {
+		if !strings.Contains(output, want) {
+			t.Errorf("nushell output should contain %q", want)
+		}
+	}
+
+	// Verify subcommands are included
+	subcommands := []string{
+		"export extern \"autospec all\"",
+		"export extern \"autospec plan\"",
+		"export extern \"autospec implement\"",
+		"export extern \"autospec completion\"",
+	}
+
+	for _, want := range subcommands {
+		if !strings.Contains(output, want) {
+			t.Errorf("nushell output should contain subcommand %q", want)
+		}
+	}
+}
+
+func TestCompletionCarapaceGeneration(t *testing.T) {
+	cmd := rootCmd
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs([]string{"completion", "carapace"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// Verify YAML structure
+	expectedStrings := []string{
+		"# yaml-language-server: $schema=https://carapace.sh/schemas/command.json",
+		"name: autospec",
+		"description:",
+		"persistentflags:",
+		"commands:",
+		"--config=",
+		"--debug:",
+	}
+
+	for _, want := range expectedStrings {
+		if !strings.Contains(output, want) {
+			t.Errorf("carapace output should contain %q", want)
+		}
+	}
+
+	// Verify subcommands are included with proper format
+	subcommands := []string{
+		"- name: all",
+		"- name: plan",
+		"- name: implement",
+		"- name: completion",
+	}
+
+	for _, want := range subcommands {
+		if !strings.Contains(output, want) {
+			t.Errorf("carapace output should contain subcommand %q", want)
+		}
+	}
+}
+
+func TestCompletionNushellFlagTypes(t *testing.T) {
+	cmd := rootCmd
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs([]string{"completion", "nushell"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// Boolean flags should not have a type annotation
+	if strings.Contains(output, "--debug: bool") {
+		t.Error("boolean flags should not have type annotation in nushell")
+	}
+
+	// String flags should have string type
+	if !strings.Contains(output, "--config: string") {
+		t.Error("string flags should have 'string' type in nushell")
+	}
+
+	// Int flags should have int type
+	if !strings.Contains(output, "--max-retries: int") {
+		t.Error("int flags should have 'int' type in nushell")
+	}
+}
+
+func TestCompletionCarapaceAliases(t *testing.T) {
+	cmd := rootCmd
+	buf := new(bytes.Buffer)
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+	cmd.SetArgs([]string{"completion", "carapace"})
+
+	err := cmd.Execute()
+	if err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+
+	output := buf.String()
+
+	// Commands with aliases should include them
+	if !strings.Contains(output, "aliases:") {
+		t.Error("carapace output should include aliases section for commands with aliases")
+	}
+}

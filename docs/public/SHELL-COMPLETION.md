@@ -1,13 +1,13 @@
 # Shell Completion for autospec
 
-autospec provides built-in shell completion support for `bash`, `zsh`, `fish`, and `powershell` using Cobra's completion system.
+autospec provides built-in shell completion support for `bash`, `zsh`, `fish`, and `powershell` using Cobra's completion system. Additionally, `nushell` and many other shells are supported via native generators and `carapace`.
 
 ## Features
 
 - **Automatic command completion**: Tab-complete all commands (`full`, `prep`, `specify`, `plan`, `tasks`, `implement`, etc.)
 - **Flag completion**: Complete command flags (e.g., `--max-retries`, `--debug`, `--specs-dir`)
 - **Stays in sync**: Automatically updates as commands change
-- **Multiple shells**: Works with bash, zsh, fish, and powershell
+- **Multiple shells**: Works with bash, zsh, fish, powershell, nushell, and many more via carapace
 - **One-command installation**: Use `autospec completion install` to automatically configure your shell
 
 ## Quick Start (Recommended)
@@ -164,6 +164,56 @@ autospec completion powershell | Out-String | Invoke-Expression
 # Add to your PowerShell profile
 autospec completion powershell >> $PROFILE
 ```
+
+## Nushell Setup
+
+Nushell uses native `extern` definitions for completions.
+
+### 1. Generate Completion File
+
+```bash
+mkdir -p ~/.cache/autospec
+autospec completion nushell | save -f ~/.cache/autospec/completions.nu
+```
+
+### 2. Add to config.nu
+
+Add the following to your `~/.config/nushell/config.nu`:
+
+```nushell
+source ~/.cache/autospec/completions.nu
+```
+
+### 3. Reload Configuration
+
+```nushell
+source ~/.config/nushell/config.nu
+```
+
+## Carapace (Multi-Shell) Setup
+
+For shells not directly supported (Elvish, Ion, Oil, Tcsh, Xonsh) or for using carapace-bin:
+
+### 1. Generate Spec File
+
+```bash
+mkdir -p ~/.config/carapace/specs
+autospec completion carapace > ~/.config/carapace/specs/autospec.yaml
+```
+
+### 2. Initialize carapace-bin
+
+Follow the [carapace-bin documentation](https://carapace-sh.github.io/carapace-bin/) to set up carapace for your shell.
+
+### Supported Shells via Carapace
+
+- Elvish
+- Ion
+- Oil
+- Tcsh
+- Xonsh
+- Nushell (alternative to native)
+- And more
 
 ## Verification
 
