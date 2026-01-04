@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `autospec init` now correctly installs `.claude/commands/` slash command templates when Claude is selected as an agent
+
 ## [0.8.0] - 2026-01-03
 
 ### Added
