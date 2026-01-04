@@ -511,6 +511,39 @@ func TestClaudeConfigureProject_NoDuplicates(t *testing.T) {
 	}
 }
 
+func TestClaudeConfigureProject_CommandsInstalled(t *testing.T) {
+	t.Parallel()
+
+	tempDir := t.TempDir()
+	claude := NewClaude()
+
+	_, err := claude.ConfigureProject(tempDir, "specs", true)
+	if err != nil {
+		t.Fatalf("ConfigureProject() error = %v", err)
+	}
+
+	// Verify command templates are installed
+	cmdDir := filepath.Join(tempDir, ".claude", "commands")
+	entries, err := os.ReadDir(cmdDir)
+	if err != nil {
+		t.Fatalf("failed to read commands dir: %v", err)
+	}
+
+	// Should have at least one autospec.*.md file
+	foundAutospec := false
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".md" {
+			if len(entry.Name()) > 9 && entry.Name()[:9] == "autospec." {
+				foundAutospec = true
+				break
+			}
+		}
+	}
+	if !foundAutospec {
+		t.Error("no autospec.*.md files found in .claude/commands/")
+	}
+}
+
 func TestClaudeImplementsConfigurator(t *testing.T) {
 	t.Parallel()
 
